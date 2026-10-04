@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bladewatch_companion/tv.dart';
 import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_companion/screens/alerts/alert_settings_screen.dart';
 import 'package:bladewatch_companion/screens/alerts/alerts_controller.dart';
@@ -12,6 +13,7 @@ import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support.dart';
@@ -112,6 +114,39 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ClipPlayerScreen), findsOneWidget);
       expect(find.text('clip-2.mp4'), findsOneWidget);
+      await unmount(tester);
+      alerts.dispose();
+    });
+
+    // The owner, 2026-10-04: on the TV the remote could not go down the list of alerts. Most open
+    // nothing, so they could not take focus, and down from the tabs went to the side panel.
+    testWidgets('on a TV the remote goes from the tabs down the alerts, those that open nothing too', (tester) async {
+      final s = TestSession();
+      inbox(s, [entry(1), entry(2), entry(3, url: '/events?filter=sentry&file=clip-3.mp4')]);
+      s.rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': []});
+      final alerts = AlertsController(session: s.session, store: testStore(car: testCar()));
+      await alerts.refresh();
+      await pumpScreen(tester, s, DpadFieldExit(child: TvPane(child: EventsScreen(alerts: alerts))));
+      await tester.pump();
+
+      // The title of the alert row that has focus: around a row that opens a clip, or wrapped by one that does not.
+      String focused() {
+        final ctx = FocusManager.instance.primaryFocus!.context!;
+        HudListRow? row = ctx.findAncestorWidgetOfExactType<HudListRow>();
+        void visit(Element e) => e.widget is HudListRow ? row = e.widget as HudListRow : e.visitChildren(visit);
+        if (row == null) (ctx as Element).visitChildren(visit);
+        return row?.title ?? '';
+      }
+
+      Focus.of(tester.element(find.text(t('companion.alerts')))).requestFocus();
+      await tester.pump();
+      final seen = <String>[];
+      for (var i = 0; i < 3; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+        seen.add(focused());
+      }
+      expect(seen, ['alert 3', 'alert 2', 'alert 1'], reason: 'newest first, every one reached in turn');
       await unmount(tester);
       alerts.dispose();
     });

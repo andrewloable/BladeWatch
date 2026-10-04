@@ -31,24 +31,31 @@ android {
         minSdk = 29
         targetSdk = flutter.targetSdkVersion
 
-        // flutter_pear ships native code for these two ABIs only; an armeabi-v7a build would
-        // install on a 32-bit phone and then fail at worklet start. This keeps armeabi-v7a out
-        // of every APK and bundle, and makes --split-per-abi fail at configuration (AGP refuses
-        // ndk abiFilters alongside ABI splits) instead of emitting that broken split. It only
-        // holds because gradle.properties sets disable-abi-filtering: without that, the Flutter
-        // plugin replaces this list with its own, armeabi-v7a included.
+        // Exactly the ABIs flutter_pear ships native code for. armeabi-v7a since 0.4.8, for
+        // Android TV: many TVs run a 32-bit-only userspace even on Android 10+ (a Sony BRAVIA
+        // on Android 12 reports only armeabi-v7a and refused the 64-bit-only APK with
+        // INSTALL_FAILED_NO_MATCHING_ABIS, 2026-10-04). 32-bit x86 stays out: flutter_pear has
+        // no native code for it. `flutter build apk --target-platform` narrows the list, so
+        // `--target-platform android-arm` is the TV-only APK (all three ABIs weigh ~200 MB in
+        // release, too much for a TV's 4 GB). This list also makes --split-per-abi fail at
+        // configuration (AGP refuses ndk abiFilters alongside ABI splits). It only holds because
+        // gradle.properties sets disable-abi-filtering: without that, the Flutter plugin
+        // replaces it with its own.
+        val pearAbis = mapOf("android-arm64" to "arm64-v8a", "android-x64" to "x86_64", "android-arm" to "armeabi-v7a")
+        val requested = (project.findProperty("target-platform") as String?)
+            ?.split(",")?.mapNotNull { pearAbis[it.trim()] }.orEmpty()
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            abiFilters += requested.ifEmpty { pearAbis.values.toList() }
         }
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
         // flag during build.
         versionCode = flutter.versionCode
-        // BladeWatch versions have FOUR parts and pub rejects that in pubspec.yaml (1.4.1+14101 there),
+        // BladeWatch versions have FOUR parts and pub rejects that in pubspec.yaml (1.4.1+14102 there),
         // so the name is written out, as the in-car app's build does. The companion carries the car
         // apps' version (the owner, 2026-10-04): keep it in step with app/build.gradle.kts.
-        versionName = "1.4.1.1"
+        versionName = "1.4.1.2"
     }
 
     signingConfigs {

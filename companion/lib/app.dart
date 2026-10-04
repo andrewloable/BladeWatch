@@ -16,6 +16,7 @@ import 'screens/common/shell_nav.dart';
 import 'screens/destinations.dart';
 import 'screens/pairing/pairing_controller.dart';
 import 'screens/pairing/pairing_screen.dart';
+import 'tv.dart';
 
 /// The companion app: pairing until a car is paired, then the car's screens.
 class CompanionApp extends StatefulWidget {
@@ -26,6 +27,8 @@ class CompanionApp extends StatefulWidget {
     this.openSession = CarSession.open,
     this.scan,
     this.pairing,
+    this.wifiPairing = false,
+    this.tv = false,
   });
 
   final CarStore store;
@@ -35,6 +38,12 @@ class CompanionApp extends StatefulWidget {
 
   /// Test seam; by default pairing opens sessions with [openSession].
   final PairingController? pairing;
+
+  /// Pairing by number over the car's Wi-Fi, for a device without a camera: TVs and desktops.
+  final bool wifiPairing;
+
+  /// An Android TV: the remote's up and down leave text fields ([DpadFieldExit]).
+  final bool tv;
 
   @override
   State<CompanionApp> createState() => CompanionAppState();
@@ -132,7 +141,7 @@ class CompanionAppState extends State<CompanionApp> {
     } else if (session == null) {
       home = store.car != null
           ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-          : PairingScreen(controller: _pairing, onPaired: _paired, scan: widget.scan);
+          : PairingScreen(controller: _pairing, onPaired: _paired, scan: widget.scan, wifi: widget.wifiPairing);
     } else {
       home = SessionScope(
         session: session,
@@ -144,7 +153,10 @@ class CompanionAppState extends State<CompanionApp> {
       debugShowCheckedModeBanner: false,
       theme: BwHud.themeData(Brightness.light),
       darkTheme: BwHud.themeData(Brightness.dark),
-      builder: (context, child) => tr == null ? child! : TrScope(tr: tr, child: child!),
+      builder: (context, child) {
+        final page = widget.tv ? DpadFieldExit(child: TvFocusRing(child: child!)) : child!;
+        return tr == null ? page : TrScope(tr: tr, child: page);
+      },
       home: home,
     );
   }
@@ -216,8 +228,8 @@ class _HomeShellState extends State<HomeShell> {
         backgroundColor: hud.pageBackground,
         body: Row(
           children: [
-            _SidePanel(all: all, index: _index, onSelect: _go, alerts: widget.alerts),
-            Expanded(child: SafeArea(left: false, child: stage)),
+            TvPane(child: _SidePanel(all: all, index: _index, onSelect: _go, alerts: widget.alerts)),
+            Expanded(child: TvPane(child: SafeArea(left: false, child: stage))),
           ],
         ),
       );

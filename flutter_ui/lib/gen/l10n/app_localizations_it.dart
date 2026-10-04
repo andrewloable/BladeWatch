@@ -2827,7 +2827,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'Scansiona con l\'app BladeWatch sul telefono o sul computer. Il codice funziona una sola volta.';
+      'Scansiona con l\'app BladeWatch sul telefono. Il codice funziona una sola volta.';
 
   @override
   String pairing_expires_in(String time) {
@@ -2872,6 +2872,25 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get pairing_error =>
       'Il servizio fotocamera non ha risposto. Riprova.';
+
+  @override
+  String get pairing_wifi_hint =>
+      'TV o computer? Scegli «Associa tramite Wi-Fi» nella sua app BladeWatch. La connessione diretta deve essere attiva.';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return 'Associare $name?';
+  }
+
+  @override
+  String get pairing_wifi_body =>
+      'Associa solo se mostra questo stesso numero.';
+
+  @override
+  String get pairing_wifi_accept => 'Associa';
+
+  @override
+  String get pairing_wifi_refuse => 'Non associare';
 
   @override
   String get daemon_name_pear => 'Accesso remoto (Pear)';

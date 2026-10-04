@@ -2794,7 +2794,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'अपने फ़ोन या कंप्यूटर पर BladeWatch ऐप से स्कैन करें। यह कोड केवल एक बार काम करता है।';
+      'अपने फ़ोन पर BladeWatch ऐप से स्कैन करें। यह कोड केवल एक बार काम करता है।';
 
   @override
   String pairing_expires_in(String time) {
@@ -2839,6 +2839,24 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get pairing_error =>
       'कैमरा सेवा ने जवाब नहीं दिया। फिर से प्रयास करें।';
+
+  @override
+  String get pairing_wifi_hint =>
+      'टीवी या कंप्यूटर? उसके BladeWatch ऐप में “वाई-फ़ाई से जोड़ें” चुनें। सीधा कनेक्शन चालू होना चाहिए।';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return '$name जोड़ें?';
+  }
+
+  @override
+  String get pairing_wifi_body => 'तभी जोड़ें जब उस पर यही संख्या दिखे।';
+
+  @override
+  String get pairing_wifi_accept => 'जोड़ें';
+
+  @override
+  String get pairing_wifi_refuse => 'न जोड़ें';
 
   @override
   String get daemon_name_pear => 'रिमोट एक्सेस (Pear)';

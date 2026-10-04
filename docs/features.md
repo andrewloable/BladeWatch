@@ -122,6 +122,9 @@ v1.4.1.0 — see [UI/UX Design Language](ui-ux-design-language.md)):
   longer than the window background survives. The two must be changed together
   or the handoff visibly jumps. The pre-surface frame is white in light mode and
   black in dark (`values/colors.xml` + `values-night/colors.xml`).
+- The Startup screen's timers (the header and each daemon row) count from the moment it
+  opened, whether or not the daemon channel answers yet; they used to stay at "0s" until the
+  first successful poll, which is the whole ~45 s after a boot (v1.4.1.2, BladeWatch-y87b).
 - Startup / daemon boot progress.
 - Dashboard.
 - Live camera view (the one platform-channel exception: a Kotlin texture plugin
@@ -386,6 +389,24 @@ others. Pairing and removing are only possible in the car. The companion names i
 list with the device's own name -- the computer name on macOS and Windows, the phone's name on
 Android and iOS (iOS 16+ gives only "iPhone") -- and the owner can edit it before pairing.
 
+**Pairing a TV or a computer (v1.4.1.2).** Devices without a camera -- Android TVs, and the
+macOS, Windows and Linux companions -- pair over the car's Wi-Fi instead of scanning: with
+Pair a device open in the car and Direct connection on, choose **Pair over Wi-Fi** on the device.
+Both screens show the same six-digit number and the owner taps **Pair** in the car if they match.
+Phones keep scanning the QR; desktops no longer offer the scan. The in-car dashboard also lists
+the paired devices in a **PAIRED DEVICES** card, each with when it was paired and a Remove
+button (which asks first).
+
+**Android TV (v1.4.1.2).** The companion installs on Android TV (Google TV, Sony BRAVIA and the
+like), including 32-bit ones (flutter_pear 0.4.8+). It is driven by the remote: a bright ring
+marks the focused control; up and down stay in the side panel or the page, scrolling the page to
+its text before focus leaves it, and leave text fields rather than move their caret; the remote
+walks down Events' alerts, surveillance and proximity clips one at a time; per-clip delete buttons
+are hidden (Select still deletes) so the remote lands on the clips themselves; the Location and trip
+maps are for looking at on a TV -- the remote passes over them to the map's buttons; on a page with
+nothing to select below its title bar, such as a trip's summary, up and down scroll it; a slider
+(Surveillance's sensitivity and AI confidence) changes with left and right, and up and down move past it.
+
 **The companion app (v1.4.0.0, BladeWatch-rdtj.11).** The phone and desktop app that
 replaced the web UI. It reaches the car directly on its Wi-Fi when both are on one network,
 otherwise over Pear. Pear cannot connect a phone on mobile data to a car on its built-in SIM,
@@ -406,7 +427,8 @@ It has every page the web app had (the web app itself is gone):
   a trip's detail adds energy used, speeds in the owner's unit and banded score bars. Money is written as the car
   writes it (`₱49.96`). The trip settings (Trips' Storage tab, and Settings > Trips & costs > Trip Analytics) put
   the currency first, then the electricity rate (₱/kWh), fuel price (₱/L) and tank size.
-- Surveillance: arm and disarm, detection settings, camera snapshots and safe zones.
+- Surveillance: arm and disarm, detection settings and safe zones. (Its camera snapshots were
+  removed in v1.4.1.2: Live shows the cameras.)
 - Notifications: which alert categories this device shows, and a test alert.
 - Settings.
 - Performance.

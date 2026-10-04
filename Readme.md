@@ -8,7 +8,7 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
-**Contents:** [What's new](#whats-new-in-v1411) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
+**Contents:** [What's new](#whats-new-in-v1412) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
 
@@ -21,7 +21,46 @@ They share one Android UID, which is what lets the UI talk to the daemons over l
 
 A third app, the **companion** (`net.bladewatch.companionapp`), goes on your phone or computer, never on the car. It is optional, and it is how you reach the car remotely: see [Install the companion app](#install-the-companion-app).
 
-## What's new in v1.4.1.1
+## What's new in v1.4.1.2
+
+The companion comes to the TV, and devices without a camera pair without a QR.
+
+- **The companion runs on Android TV** (Google TV, Sony BRAVIA and the like, 32-bit ones included)
+  and is driven with the remote: a bright ring shows what is selected, up and down walk the side
+  menu or the page and scroll it, and Events, Recordings, Trips, Surveillance and Location all work
+  from the couch. On a TV, a clip's delete button is hidden (Select still deletes) so the remote
+  lands on the clips, and the map is for looking at, not panning.
+- **Pair a TV or a computer over Wi-Fi, by number.** With **Pair a device** open in the car and
+  **Direct connection on this Wi-Fi** on, choose **Pair over Wi-Fi** on the device: both screens
+  show the same six-digit number, and you tap **Pair** in the car if they match. Phones still scan
+  the QR; the macOS app no longer offers the scan.
+- **A PAIRED DEVICES card on the in-car dashboard** lists every paired phone, TV and computer, with
+  when it was paired and a Remove button.
+- **Smaller downloads.** The companion now comes as one file per kind of processor: three Android
+  APKs (phones, 32-bit TVs, emulators) and two macOS zips (Apple silicon, Intel), each about half the
+  size of the old all-in-one file. See [Install the companion app](#install-the-companion-app).
+- **Direct connection finds the car more reliably** when it has moved to a new address on your
+  Wi-Fi: the search now goes out a few addresses at a time instead of all at once, which some
+  devices (a TV among them) silently dropped.
+- **The car's startup screen counts while the services start.** Its timers stayed at "0s" until
+  the first service answered.
+- **The companion's Surveillance page drops its camera snapshots:** Live shows the cameras.
+- **One version everywhere:** 1.4.1.2.
+
+Known, not fixed:
+
+- **A phone on mobile data cannot reach a car on its built-in SIM.** Both sit behind carrier NAT,
+  which peer-to-peer connections cannot cross, and BladeWatch runs no relay. Put the phone on
+  Wi-Fi in that case. See [Remote Access](#remote-access-pear).
+- On the head unit, the VEHICLE card pushes the dashboard's tile row down far enough that it takes
+  a short scroll to reach.
+
+**Upgrading from v1.4.1.1:** the app IDs are unchanged, so both car APKs and the companion update
+in place, and paired devices stay paired. On Android, take the companion APK for your device
+(`arm64-v8a` for a phone). BYD resets its Auto-Start restriction on every install, so allow both
+BladeWatch entries again afterwards.
+
+### v1.4.1.1
 
 A polish release for the dashboards, trips and the companion app. Pairing, recording and remote
 access are unchanged.
@@ -272,8 +311,15 @@ Remote access goes through the **BladeWatch companion app** on your phone or com
 no account, no server in the middle, and nothing to forward on your router.
 
 **Setup:** install the companion ([below](#install-the-companion-app)), then on the car's
-Dashboard tap **Pair a device** and scan the code with the companion. The code works once and expires after five minutes. Pairing turns remote access
-on; the same dialog lists paired devices and removes any you no longer trust.
+Dashboard tap **Pair a device**:
+
+- **Phone:** scan the code with the companion. The code works once and expires after five minutes.
+- **TV or computer** (no camera): turn on **Direct connection on this Wi-Fi** in the same dialog,
+  put the device on the car's Wi-Fi, and choose **Pair over Wi-Fi** in the companion. Both screens
+  show the same six-digit number; tap **Pair** in the car only if they match.
+
+Pairing turns remote access on. The dashboard's **Paired devices** card, and the pairing dialog,
+list paired devices and remove any you no longer trust.
 
 **On the same Wi-Fi:** turn on **Direct connection on this Wi-Fi** in the pairing dialog and
 a paired phone on the car's network connects straight to it, encrypted, without going
@@ -288,13 +334,17 @@ on Wi-Fi instead. Over a mobile connection, live video is smoothest at Medium qu
 
 ## Install the Companion App
 
-The companion runs on your phone or computer and **never on the car**. Every
-[release](../../releases) carries it for four platforms; iOS is built from source.
+The companion runs on your phone, TV or computer and **never on the car**. Every
+[release](../../releases) carries it for four platforms, one file per kind of processor so each
+download carries only what your device runs; iOS is built from source.
 
 | Platform | Release file | Needs |
 |---|---|---|
-| Android | `bladewatch-companion-<version>-android-unsigned.apk` | Android 10 or later, a 64-bit (arm64 or x86_64) device |
-| macOS | `bladewatch-companion-<version>-macos-unsigned.zip` | macOS 12 or later |
+| Android phone or tablet | `bladewatch-companion-<version>-android-arm64-v8a-unsigned.apk` | Android 10 or later, 64-bit |
+| Android TV (most are 32-bit) | `bladewatch-companion-<version>-android-armeabi-v7a-unsigned.apk` | Android 10 or later |
+| Android emulator, x86 Chromebook | `bladewatch-companion-<version>-android-x86_64-unsigned.apk` | Android 10 or later |
+| Mac with Apple silicon | `bladewatch-companion-<version>-macos-arm64-unsigned.zip` | macOS 12 or later |
+| Mac with an Intel processor | `bladewatch-companion-<version>-macos-x86_64-unsigned.zip` | macOS 12 or later |
 | Windows | `bladewatch-companion-<version>-windows-unsigned.zip` | 64-bit Windows |
 | Linux | `bladewatch-companion-<version>-linux-unsigned.tar.gz` | 64-bit Linux with GTK 3 |
 | iOS | not published: build from source | iOS 15 or later, a Mac with Xcode |
@@ -307,9 +357,14 @@ Sign the APK once with a key of your own, then install it:
 
 ```bash
 apksigner sign --ks my-companion.jks --ks-key-alias key0 \
-  --out bladewatch-companion.apk bladewatch-companion-*-android-unsigned.apk
+  --out bladewatch-companion.apk bladewatch-companion-*-android-arm64-v8a-unsigned.apk
 adb install bladewatch-companion.apk      # or copy it to the phone and open it
 ```
+
+On an **Android TV**, take the `armeabi-v7a` APK (`adb shell getprop ro.product.cpu.abi` says
+which one a device runs) and install it with `adb connect <tv-ip>:5555` and `adb install`, after
+turning on the TV's developer options and network debugging. The companion appears among the
+TV's apps and is driven with the remote.
 
 It does not have to be the car's key, but **keep using the same key for every update**:
 Android refuses an update signed with a different key, and the only way out is to uninstall the
@@ -351,25 +406,39 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
   Signing & Capabilities, and run it on your connected iPhone (Developer Mode on). A free
   Apple ID signs apps that stop opening after 7 days until you run them again; a paid Apple
   Developer account lasts a year.
-- **With a sideloading tool** such as SideStore: build an unsigned app with
-  `cd companion && flutter build ios --release --no-codesign`, put `build/ios/iphoneos/Runner.app`
-  in a folder named `Payload`, zip that folder as `BladeWatch.ipa`, and import it in the tool,
-  which signs it and keeps it refreshed.
+- **With a sideloading tool** such as SideStore: build an unsigned app, wrap it as an `.ipa`, and
+  import that in the tool, which signs it with your Apple ID and keeps it refreshed:
+
+  ```bash
+  cd companion
+  flutter build ios --release --no-codesign
+  rm -rf build/ipa && mkdir -p build/ipa/Payload
+  cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+  (cd build/ipa && zip -qry BladeWatch.ipa Payload)
+  # build/ipa/BladeWatch.ipa: AirDrop or copy it to the iPhone, then open SideStore > My Apps > +
+  ```
+
+  To update, build and import again: SideStore replaces the app and keeps its data, so it stays
+  paired.
 
 ### Pair it with the car
 
 1. On the car's Dashboard, tap **Pair a device**. A QR code appears; it works once and expires
    after five minutes, after which **New code** makes another. Pairing turns remote access on.
-2. In the companion, scan the code. On Android, iOS and macOS the app uses the camera. On
-   Windows and Linux, read the QR with any other QR reader (your phone's camera app will do),
-   copy its text, and paste it into the companion.
+2. **On a phone** (Android, iOS), scan the code with the companion's camera.
+   **On a TV or a computer** (Android TV, macOS, Windows, Linux), there is no scan: turn on
+   **Direct connection on this Wi-Fi** in the same dialog, put the device on the car's Wi-Fi, and
+   choose **Pair over Wi-Fi** in the companion. Both screens show the same six-digit number; tap
+   **Pair** in the car only if they match. (Pasting the QR's text, read with any QR reader, still
+   works everywhere.)
 3. The companion finds the car over Pear, from anywhere except the network combinations under
 [Limits](#remote-access-pear); the first time can take up to a minute.
    To connect directly when you are on the car's Wi-Fi, turn on **Direct connection on this
    Wi-Fi** in the same dialog on the car.
 
-A pairing lasts until you remove it; restarts, updates and reboots keep it. **Pair a device** on
-the car lists every paired device with a **Remove** button, which cuts that device off at once.
+A pairing lasts until you remove it; restarts, updates and reboots keep it. The car's dashboard
+(**Paired devices**) and **Pair a device** list every paired device with a **Remove** button,
+which cuts that device off at once.
 **Unpair this device** in the companion's Settings makes the phone forget the car, but the car
 keeps listing it until you remove it there too.
 
@@ -409,8 +478,8 @@ The two APKs build independently, from different toolchains:
 cd flutter_ui && flutter build apk --target-platform android-arm64 --debug
 # Output: flutter_ui/build/app/outputs/flutter-apk/app-debug.apk
 
-# Companion (net.bladewatch.companionapp) — phones and desktops, never the car
-cd companion && flutter build apk --debug      # Android (arm64-v8a + x86_64)
+# Companion (net.bladewatch.companionapp) — phones, TVs and desktops, never the car
+cd companion && flutter build apk --debug --target-platform android-arm64   # one ABI; omit for all three
 cd companion && flutter build macos --debug    # or: ios, windows, linux on their own OS
 ```
 
@@ -439,6 +508,59 @@ The Gradle build orchestrates everything:
 - `generateConnectProtos` regenerates the Java, Kotlin and Dart stubs from `proto/bladewatch/v1/*.proto` (only needed when the API schemas change).
 
 The in-car UI talks to the daemon over ConnectRPC on `127.0.0.1:8080`, with privileged operations going through loopback IPC on `127.0.0.1:19876`; the companion uses the same ConnectRPC API, over TLS on the car's Wi-Fi (port 8443, opt-in) or through the Pear stream. For device install, daemon cleanup, and the full development workflow, see [`CLAUDE.md`](CLAUDE.md) and the [`docs/`](docs/) directory.
+
+### Build and install the companion
+
+Release builds come out unsigned unless `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD` and
+`KEY_ALIAS` are set; sign them with your own key (`apksigner`, from the Android SDK build-tools) and
+**keep using that key**: Android refuses an update signed with a different one, and uninstalling
+to get past that unpairs the device.
+
+**Android phone** (64-bit):
+
+```bash
+cd companion
+flutter build apk --release --target-platform android-arm64
+apksigner sign --ks my-companion.jks --ks-key-alias key0 \
+  --out build/bladewatch-companion.apk build/app/outputs/flutter-apk/app-release.apk
+adb install -r build/bladewatch-companion.apk   # USB, or wireless debugging: adb pair, then adb connect
+```
+
+**Android TV** (most are 32-bit):
+
+1. On the TV, turn on developer options (Settings > System > About, select **Android TV OS build**
+   seven times), then in Developer options turn on **USB debugging** (and **Network debugging** or
+   **Wireless debugging**, if the TV lists one).
+2. From the computer, on the same network:
+
+   ```bash
+   adb connect <tv-ip>:5555                        # accept the prompt on the TV
+   adb -s <tv-ip>:5555 shell getprop ro.product.cpu.abi   # armeabi-v7a on most TVs
+   cd companion
+   flutter build apk --release --target-platform android-arm   # android-arm64 if it said arm64-v8a
+   apksigner sign --ks my-companion.jks --ks-key-alias key0 \
+     --out build/bladewatch-companion-tv.apk build/app/outputs/flutter-apk/app-release.apk
+   adb -s <tv-ip>:5555 install -r build/bladewatch-companion-tv.apk
+   ```
+
+3. Open **BladeWatch** from the TV's apps and choose **Pair over Wi-Fi**
+   ([Pair it with the car](#pair-it-with-the-car)).
+
+A TV has little storage: the release APK is about 85 MB, a debug build about 400 MB that often does
+not fit, and an update needs room for both copies. `INSTALL_FAILED_INSUFFICIENT_STORAGE` means
+freeing space on the TV (Settings > System > Storage, or clearing other apps' caches), not
+uninstalling BladeWatch, which would unpair it.
+
+**iOS:** see [iOS](#ios) above -- Xcode with your Apple ID, or an unsigned `.ipa` for SideStore.
+
+**macOS:** Flutter builds a universal app; the script makes the half-size copy for one kind of Mac
+(`arm64` for Apple silicon, `x86_64` for Intel). From the repository root:
+
+```bash
+(cd companion && flutter build macos --release)
+tools/thin_macos_app.sh companion/build/macos/Build/Products/Release/BladeWatch.app arm64 companion/build/thin
+# companion/build/thin/BladeWatch.app, ad-hoc signed: see "macOS" above for opening an unsigned app
+```
 
 ### Documentation
 In-depth documentation lives in [`docs/`](docs/) — architecture, daemons and processes, IPC/auth/secrets, networking and remote access, the HTTP and ConnectRPC API reference, BYD integrations, the surveillance pipeline, and storage.

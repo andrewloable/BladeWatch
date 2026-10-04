@@ -104,7 +104,7 @@ void main() {
       ..stub('pairing', 'list', {'companions': []});
     await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
     await tester.pump();
-    expect(pairing.calls, isEmpty, reason: 'nothing is minted until the owner asks');
+    expect(pairing.calls.map((c) => c.method), isNot(contains('mint')), reason: 'nothing is minted until the owner asks');
     expect(find.byKey(const ValueKey('pairing.qr')), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('dashboard.pair')));
@@ -140,6 +140,45 @@ void main() {
     await pumpDashboard(tester, buildController());
     await tester.pump();
     expect(find.byKey(const ValueKey('dashboard.pair')), findsNothing);
+    expect(find.text('PAIRED DEVICES'), findsNothing);
+  });
+
+  // The owner, 2026-10-04: a section on the dashboard for the paired devices.
+  testWidgets('PAIRED DEVICES lists what can reach the car, and removing one asks first', (tester) async {
+    final pairing = FakePlatformChannel()
+      ..stub('pairing', 'list', {
+        'companions': [
+          <Object?, Object?>{'id': 'a1', 'name': 'Owner phone', 'pairedAt': DateTime(2026, 9, 24).millisecondsSinceEpoch},
+          <Object?, Object?>{'id': 'b2', 'name': 'Living room TV', 'pairedAt': DateTime(2026, 10, 4).millisecondsSinceEpoch},
+        ],
+      })
+      ..stub('pairing', 'revoke', {'status': 'ok'});
+    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
+    await tester.pump();
+    expect(find.text('PAIRED DEVICES'), findsOneWidget);
+    expect(find.text('Owner phone'), findsOneWidget);
+    expect(find.text('Living room TV'), findsOneWidget);
+    expect(find.textContaining('Oct 4'), findsOneWidget);
+
+    final remove = find.descendant(of: find.byKey(const ValueKey('dashboard.device.b2')), matching: find.byType(TextButton));
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(pairing.calls.map((c) => c.method), isNot(contains('revoke')), reason: 'nothing is removed before the owner confirms');
+    await tester.tap(find.byKey(const ValueKey('pairing.removeConfirm')));
+    await tester.pumpAndSettle();
+    expect(pairing.calls.where((c) => c.method == 'revoke').single.args, {'id': 'b2'});
+  });
+
+  testWidgets('PAIRED DEVICES says when there are none, and when the car does not answer', (tester) async {
+    final pairing = FakePlatformChannel()..stub('pairing', 'list', {'companions': []});
+    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
+    await tester.pump();
+    expect(find.text('No devices paired yet.'), findsOneWidget);
+
+    pairing.stubError('pairing', 'list', const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'));
+    await tester.pump(const Duration(seconds: 15));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dashboard.devicesError')), findsOneWidget);
   });
 
   testWidgets('loading state shows pending placeholders, not a crash', (tester) async {

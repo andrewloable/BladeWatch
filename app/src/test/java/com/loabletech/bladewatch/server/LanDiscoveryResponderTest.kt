@@ -97,6 +97,23 @@ class LanDiscoveryResponderTest {
         assertNull(responder().answer(p, lan))
     }
 
+    // BladeWatch 1.4.1.2: a device with no camera looking for a car to pair with over Wi-Fi.
+    @Test
+    fun `a pairing probe is answered with the TLS port, and only while the owner has pairing open`() {
+        var open = false
+        val r = LanDiscoveryResponder(probeKey = { key }, replyInfo = { null }, enabled = { true }, pairingOpen = { open })
+        val n = ByteArray(16) { 3 }
+        val p = LanDiscoveryResponder.PAIR_PROBE_MAGIC + n + ByteArray(LanDiscoveryResponder.PROBE_BYTES - 24)
+        assertNull("silence while pairing is shut", r.answer(p, lan))
+        open = true
+        val reply = r.answer(p, lan)!!
+        assertArrayEquals(LanDiscoveryResponder.PAIR_REPLY_MAGIC, reply.copyOfRange(0, 8))
+        assertArrayEquals("the reply must echo the probe's nonce", n, reply.copyOfRange(8, 24))
+        assertEquals(LanTls.PORT, JSONObject(String(reply.copyOfRange(24, reply.size), Charsets.UTF_8)).getInt("port"))
+        assertTrue("never an amplifier", reply.size < p.size)
+        assertNull("still exactly 256 bytes", r.answer(p.copyOf(255), lan))
+    }
+
     @Test
     fun `a replayed probe gets silence`() {
         val r = responder()

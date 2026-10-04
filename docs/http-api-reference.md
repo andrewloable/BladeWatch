@@ -33,7 +33,7 @@ The server exposes two parallel API surfaces over the same port:
 
    | Route | Why it cannot be an RPC |
    |---|---|
-   | `/auth/pair`, `/auth/companion` | the companion's pairing and login; public, plain JSON |
+   | `/auth/pair`, `/auth/companion`, `/auth/wifi-pair/*` | the companion's pairing and login; public, plain JSON |
    | `/video/*` | player byte-range requests (Range, 206, ETag) |
    | `/thumb/*` | `<img src>` |
    | `/api/stream/still` | a JPEG the live view consumes as an image URL |
@@ -49,7 +49,7 @@ The server exposes two parallel API surfaces over the same port:
 
 ## Auth
 
-Handled by `AuthApiHandler`. Only the companion's two calls exist (all `/auth/*` paths are routed
+Handled by `AuthApiHandler`. Only the companion's calls exist (all `/auth/*` paths are routed
 before the auth middleware runs, so they are reachable without a session); the web app's login
 (`/auth/token`, `/auth/logout`, `/auth/status`) and its cookie session were removed with it
 (BladeWatch-rdtj.22), and any other `/auth/*` path answers 404:
@@ -60,13 +60,26 @@ before the auth middleware runs, so they are reachable without a session); the w
 - `POST /auth/companion` — body `{companionId, token}`; a paired companion's token for a session
   JWT, returned in the body (`{success, jwt, expiresIn}`). The JWT carries `cid` and stops
   validating the moment that companion is un-paired. Public.
+- `POST /auth/wifi-pair/start`, `/reveal`, `/result` -- pairing a device with no camera over the
+  car's Wi-Fi by number (BladeWatch 1.4.1.2; protocol in `docs/networking-and-tunnels.md`). On the
+  **LAN TLS listener only** (8443); anywhere else they are 404. All answer `{success:false,
+  error}` on refusal: `wifi_pairing_closed` (no window open, another request in progress, too many
+  attempts, or a malformed commitment) or `wifi_pairing_refused` (the owner said no, the nonce did
+  not match its commitment, or the request is over).
+  - `start` -- body `{name, commitment}` (64 lowercase hex: SHA-256 of a 32-byte nonce) ->
+    `{success, id, carNonce}`.
+  - `reveal` -- body `{id, deviceNonce}` (64 lowercase hex) -> `{success}`.
+  - `result` -- body `{id}` -> `{success, state:"waiting"}` until the owner answers in the car,
+    then `{success, state:"accepted", payload}` (the QR's payload, handed over once).
+  Bodies need a `Content-Length`: the server reads no chunked body, and a chunked `start` arrived
+  empty -- refused as `wifi_pairing_closed`.
 
 Neither is rate limited, deliberately (BladeWatch-rlgv): what they check is 128 random bits or an
 HMAC, so a limit adds nothing against guessing and only lets anyone who can reach them lock every
 companion out (every remote peer shares one `127.0.0.1` address).
 
-Every other route requires a `Authorization: Bearer` JWT (see `AuthMiddleware`); `/auth/pair` and
-`/auth/companion` are the only paths that bypass auth. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
+Every other route requires a `Authorization: Bearer` JWT (see `AuthMiddleware`); `/auth/pair`,
+`/auth/companion` and `/auth/wifi-pair/*` are the only paths that bypass auth. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
 
 ## Connect / gRPC Layer
 

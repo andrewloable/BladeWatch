@@ -4967,7 +4967,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairing_scan_hint.
   ///
   /// In en, this message translates to:
-  /// **'Scan with the BladeWatch app on your phone or computer. The code works once.'**
+  /// **'Scan with the BladeWatch app on your phone. The code works once.'**
   String get pairing_scan_hint;
 
   /// No description provided for @pairing_expires_in.
@@ -5041,6 +5041,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The camera service did not respond. Try again.'**
   String get pairing_error;
+
+  /// No description provided for @pairing_wifi_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'TV or computer? Choose “Pair over Wi-Fi” in its BladeWatch app. Direct connection must be on.'**
+  String get pairing_wifi_hint;
+
+  /// No description provided for @pairing_wifi_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair {name}?'**
+  String pairing_wifi_title(String name);
+
+  /// No description provided for @pairing_wifi_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair only if it shows this same number.'**
+  String get pairing_wifi_body;
+
+  /// No description provided for @pairing_wifi_accept.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair'**
+  String get pairing_wifi_accept;
+
+  /// No description provided for @pairing_wifi_refuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t pair'**
+  String get pairing_wifi_refuse;
 
   /// No description provided for @daemon_name_pear.
   ///

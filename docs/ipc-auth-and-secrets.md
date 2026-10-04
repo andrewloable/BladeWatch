@@ -358,6 +358,14 @@ owner's other devices nor pair itself further. This is a decision, not an accide
 the commands landed on; remote revocation would need its own Connect endpoint and its own
 threat analysis, and does not exist.
 
+**Pairing without a camera (BladeWatch 1.4.1.2).** TVs and desktops pair over the car's Wi-Fi by
+comparing a number instead of scanning (protocol: "Pairing over Wi-Fi by number" in
+`docs/networking-and-tunnels.md`). The in-car side is three more in-car-only IPC commands, same
+gate: `pairingWifiWindow {open}` (the dialog opens the window, refreshes it every 2 s, shuts it on
+close; it lapses 15 s after the last refresh), `pairingWifiPending` (the request waiting for the
+owner: `{id, name, number}` or null) and `pairingWifiDecide {id, accept}` (the owner's tap).
+Confirming mints an ordinary pairing payload, so everything below applies to it unchanged.
+
 Minting also switches the Pear peer on (`PEAR_PEER`): pairing is what turns remote access on,
 and a companion that is not on the car's Wi-Fi can only redeem its code over Pear. The LAN
 opt-in (`lanAccessSet`, `network.lanHttpEnabled`) is a separate, explained switch in the same

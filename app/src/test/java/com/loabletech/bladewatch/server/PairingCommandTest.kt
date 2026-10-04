@@ -7,6 +7,7 @@ import java.nio.file.Files
 import java.util.Base64
 import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.auth.CompanionPairing
+import net.bladewatch.app.auth.WifiPairing
 import net.bladewatch.app.config.SecretConfigStore
 import net.bladewatch.app.daemon.PearTopic
 import org.json.JSONObject
@@ -35,6 +36,7 @@ class PairingCommandTest {
         TcpCommandServer.lanEnabledForTest = false
         pairing = CompanionPairing(store, { "device-secret" })
         CompanionPairing.sharedForTest = pairing
+        WifiPairing.sharedForTest = WifiPairing()
         AuthManager.setTestState(AuthManager.AuthState().apply { deviceId = "byd-test"; deviceSecret = "device-secret" })
     }
 
@@ -44,6 +46,7 @@ class PairingCommandTest {
         TcpCommandServer.daemonEnabledWritesForTest = null
         TcpCommandServer.lanEnabledForTest = null
         CompanionPairing.sharedForTest = null
+        WifiPairing.sharedForTest = null
         AuthManager.setTestState(null)
         PeerCredentials.peerUidForTest = null
         PeerCredentials.appUidOverrideForTest = null
@@ -111,6 +114,9 @@ class PairingCommandTest {
                 JSONObject().put("cmd", "pairingList"),
                 JSONObject().put("cmd", "pairingRevoke").put("id", victim.companionId),
                 JSONObject().put("cmd", "lanAccessSet").put("enabled", true),
+                JSONObject().put("cmd", "pairingWifiWindow").put("open", true),
+                JSONObject().put("cmd", "pairingWifiPending"),
+                JSONObject().put("cmd", "pairingWifiDecide").put("id", "x").put("accept", true),
             )) {
                 IpcRoundTripTest.TcpClient(port).use { client ->
                     val reply = try {
@@ -126,6 +132,7 @@ class PairingCommandTest {
             assertTrue("the attacker must not have un-paired anyone", pairing.isPaired(victim.companionId))
             assertEquals(emptyMap<String, Boolean>(), TcpCommandServer.daemonEnabledWritesForTest)
             assertEquals(false, TcpCommandServer.lanEnabledForTest)
+            assertEquals("the attacker must not have opened Wi-Fi pairing", false, WifiPairing.shared.isOpen())
         } finally {
             tcp.stop()
         }

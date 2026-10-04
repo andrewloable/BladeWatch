@@ -14,7 +14,7 @@ import 'pairing_controller.dart';
 /// Scans (or takes the pasted text of) the car's "Pair a device" QR and pairs with it.
 class PairingScreen extends StatefulWidget {
   const PairingScreen(
-      {super.key, required this.controller, required this.onPaired, this.scan, this.defaultName, this.detectName});
+      {super.key, required this.controller, required this.onPaired, this.scan, this.wifi = false, this.defaultName, this.detectName});
 
   final PairingController controller;
   final ValueChanged<PairedCar> onPaired;
@@ -22,6 +22,10 @@ class PairingScreen extends StatefulWidget {
   /// Opens the camera and resolves to the QR's text, or null if cancelled. Null when this
   /// platform has no camera scanner (Windows, Linux): pasting still works everywhere.
   final Future<String?> Function(BuildContext context)? scan;
+
+  /// Offers pairing over the car's Wi-Fi with a matching number (BladeWatch 1.4.1.2): TVs and
+  /// desktops only. Phones scan the QR -- the number adds nothing a camera does not already give.
+  final bool wifi;
 
   /// Pre-filled device name, as the car's "Paired devices" list will show it. Without one, the
   /// screen asks [detectName] -- by default this device's own name ([deviceName]).
@@ -60,6 +64,7 @@ class _PairingScreenState extends State<PairingScreen> {
 
   @override
   void dispose() {
+    widget.controller.cancel();
     _code.dispose();
     _name.dispose();
     super.dispose();
@@ -68,6 +73,11 @@ class _PairingScreenState extends State<PairingScreen> {
   Future<void> _submit(String text) async {
     final car = await widget.controller.pair(text, _name.text);
     if (car != null) widget.onPaired(car);
+  }
+
+  Future<void> _pairOverWifi() async {
+    final car = await widget.controller.pairOverWifi(_name.text);
+    if (car != null && mounted) widget.onPaired(car);
   }
 
   Future<void> _scan() async {
@@ -101,7 +111,8 @@ class _PairingScreenState extends State<PairingScreen> {
                         title: tr('companion.pair_title').toUpperCase(),
                         trailing: Icon(Icons.qr_code_2, size: 28, color: hud.accent),
                       ),
-                      Text(tr('companion.pair_hint'), style: hudText(12, hud.textSecondary, lineHeight: 16)),
+                      Text(tr(widget.wifi ? 'companion.wifi_pair_hint' : 'companion.pair_hint'),
+                          style: hudText(12, hud.textSecondary, lineHeight: 16)),
                       const SizedBox(height: 24),
                       HudPanel(
                         gradient: LinearGradient(
@@ -123,6 +134,22 @@ class _PairingScreenState extends State<PairingScreen> {
                               decoration: InputDecoration(labelText: tr('companion.pair_device_name')),
                             ),
                             const SizedBox(height: 16),
+                            if (widget.wifi) ...[
+                              FilledButton.icon(
+                                key: const ValueKey('pair.wifi'),
+                                onPressed: c.busy ? null : _pairOverWifi,
+                                icon: const Icon(Icons.wifi),
+                                label: Text(tr('companion.wifi_pair')),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            if (c.step == PairingStep.comparing && c.number != null) ...[
+                              _Number(number: c.number!),
+                              const SizedBox(height: 8),
+                              Text(tr('companion.wifi_compare'),
+                                  textAlign: TextAlign.center, style: hudText(12, hud.textSecondary, lineHeight: 16)),
+                              const SizedBox(height: 16),
+                            ],
                             if (widget.scan != null) ...[
                               FilledButton.icon(
                                 key: const ValueKey('pair.scan'),
@@ -155,12 +182,19 @@ class _PairingScreenState extends State<PairingScreen> {
                                   const SizedBox(width: 12),
                                   Flexible(
                                     child: Text(
-                                      tr(c.step == PairingStep.connecting ? 'companion.pair_finding' : 'companion.pair_redeeming'),
+                                      tr(switch (c.step) {
+                                        PairingStep.searching => 'companion.wifi_searching',
+                                        PairingStep.comparing => 'companion.wifi_waiting',
+                                        PairingStep.connecting => 'companion.pair_finding',
+                                        _ => 'companion.pair_redeeming',
+                                      }),
                                       style: hudText(12, hud.textSecondary, lineHeight: 16),
                                     ),
                                   ),
                                 ],
                               ),
+                            if (c.step == PairingStep.searching || c.step == PairingStep.comparing)
+                              TextButton(key: const ValueKey('pair.cancel'), onPressed: c.cancel, child: Text(tr('common.cancel'))),
                             if (c.error != null)
                               Text(
                                 tr(c.error!),
@@ -179,6 +213,25 @@ class _PairingScreenState extends State<PairingScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The six digits the owner compares with the car's, split in two like the car shows them.
+class _Number extends StatelessWidget {
+  const _Number({required this.number});
+
+  final String number;
+
+  @override
+  Widget build(BuildContext context) {
+    final hud = BwHud.of(context);
+    return Text(
+      number.length == 6 ? '${number.substring(0, 3)} ${number.substring(3)}' : number,
+      key: const ValueKey('pair.number'),
+      textAlign: TextAlign.center,
+      style: hudText(40, hud.textPrimary, lineHeight: 48, weight: FontWeight.w700, em: 0.1)
+          .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
     );
   }
 }

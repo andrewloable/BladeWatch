@@ -19,6 +19,7 @@ import net.bladewatch.app.camera.AvcHalWarmup
 import net.bladewatch.app.camera.BydCameraCoordinator
 import net.bladewatch.app.camera.PanoramicCameraGpu
 import net.bladewatch.app.auth.AuthManager
+import net.bladewatch.app.auth.WifiPairing
 import net.bladewatch.app.config.SecretConfigStore
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.daemon.proxy.Safe
@@ -629,6 +630,8 @@ object CameraDaemon {
                 }
             },
             enabled = { UnifiedConfigManager.isLanHttpEnabled() },
+            // BladeWatch 1.4.1.2: a TV or desktop finds the car only while the owner pairs in the car.
+            pairingOpen = { WifiPairing.shared.isOpen() },
         )
         lanDiscovery = discovery
         Thread(discovery::run, "LanDiscovery").start()

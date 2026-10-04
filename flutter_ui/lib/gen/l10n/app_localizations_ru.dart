@@ -2825,7 +2825,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'Отсканируйте в приложении BladeWatch на телефоне или компьютере. Код действует один раз.';
+      'Отсканируйте в приложении BladeWatch на телефоне. Код действует один раз.';
 
   @override
   String pairing_expires_in(String time) {
@@ -2869,6 +2869,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pairing_error => 'Служба камеры не ответила. Повторите попытку.';
+
+  @override
+  String get pairing_wifi_hint =>
+      'Телевизор или компьютер? Выберите «Подключить по Wi-Fi» в его приложении BladeWatch. Прямое подключение должно быть включено.';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return 'Подключить $name?';
+  }
+
+  @override
+  String get pairing_wifi_body =>
+      'Подключайте, только если там показано то же число.';
+
+  @override
+  String get pairing_wifi_accept => 'Подключить';
+
+  @override
+  String get pairing_wifi_refuse => 'Не подключать';
 
   @override
   String get daemon_name_pear => 'Удалённый доступ (Pear)';

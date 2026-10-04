@@ -14,6 +14,7 @@ Future<void> showPairingDialog(BuildContext context, PairingChannel channel) asy
   final controller = PairingController(channel);
   unawaited(controller.start());
   await showHudDialog<void>(context: context, builder: (_) => PairingDialog(controller: controller));
+  unawaited(controller.closeWifi());
   controller.dispose();
 }
 
@@ -33,7 +34,11 @@ class _PairingDialogState extends State<PairingDialog> {
   void initState() {
     super.initState();
     // The countdown, and the switch to "expired": a code that has lapsed must stop looking valid.
-    _tick = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    // Every other second, Wi-Fi pairing too.
+    _tick = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (t.tick.isEven) widget.controller.pollWifi();
+      setState(() {});
+    });
   }
 
   @override
@@ -63,7 +68,13 @@ class _PairingDialogState extends State<PairingDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _code(context, c, l10n, theme),
+                  if (c.wifiRequest case final request?)
+                    _wifiRequest(request, c, l10n, theme)
+                  else ...[
+                    _code(context, c, l10n, theme),
+                    const SizedBox(height: 12),
+                    Text(l10n.pairing_wifi_hint, textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+                  ],
                   const Divider(height: 32),
                   SwitchListTile(
                     key: const ValueKey('pairing.lan'),
@@ -149,22 +160,61 @@ class _PairingDialogState extends State<PairingDialog> {
     );
   }
 
-  Future<void> _confirmRemove(BuildContext context, PairedDevice device, AppLocalizations l10n) async {
-    final confirmed = await showHudDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.pairing_remove_confirm_title(device.name)),
-        content: Text(l10n.pairing_remove_confirm_body),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.action_cancel)),
-          FilledButton(
-            key: const ValueKey('pairing.removeConfirm'),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.pairing_remove),
+  /// A device without a camera asking to pair: the owner compares the number with the device's.
+  Widget _wifiRequest(WifiPairingRequest r, PairingController c, AppLocalizations l10n, ThemeData theme) {
+    final n = r.number;
+    return Center(
+      key: const ValueKey('pairing.wifi'),
+      child: Column(children: [
+        Text(l10n.pairing_wifi_title(r.name), style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+        const SizedBox(height: 16),
+        Text(
+          n.length == 6 ? '${n.substring(0, 3)} ${n.substring(3)}' : n,
+          key: const ValueKey('pairing.wifi.number'),
+          style: theme.textTheme.displayMedium?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+        ),
+        const SizedBox(height: 12),
+        Text(l10n.pairing_wifi_body, textAlign: TextAlign.center),
+        const SizedBox(height: 16),
+        Wrap(alignment: WrapAlignment.center, spacing: 16, runSpacing: 8, children: [
+          OutlinedButton(
+            key: const ValueKey('pairing.wifi.refuse'),
+            onPressed: () => c.decideWifi(false),
+            child: Text(l10n.pairing_wifi_refuse),
           ),
-        ],
-      ),
+          FilledButton(
+            key: const ValueKey('pairing.wifi.accept'),
+            onPressed: () => c.decideWifi(true),
+            child: Text(l10n.pairing_wifi_accept),
+          ),
+        ]),
+      ]),
     );
-    if (confirmed == true) await widget.controller.remove(device.id);
   }
+
+  Future<void> _confirmRemove(BuildContext context, PairedDevice device, AppLocalizations l10n) async {
+    if (await confirmRemovePairedDevice(context, device)) await widget.controller.remove(device.id);
+  }
+}
+
+/// Asks before un-pairing [device]: it loses access at once. Shared by this dialog and the
+/// dashboard's PAIRED DEVICES card.
+Future<bool> confirmRemovePairedDevice(BuildContext context, PairedDevice device) async {
+  final l10n = AppLocalizations.of(context)!;
+  final confirmed = await showHudDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.pairing_remove_confirm_title(device.name)),
+      content: Text(l10n.pairing_remove_confirm_body),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.action_cancel)),
+        FilledButton(
+          key: const ValueKey('pairing.removeConfirm'),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(l10n.pairing_remove),
+        ),
+      ],
+    ),
+  );
+  return confirmed == true;
 }

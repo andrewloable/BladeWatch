@@ -1,5 +1,6 @@
 import 'package:bladewatch_companion/screens/common/car_map.dart';
 import 'package:bladewatch_companion/screens/common/format.dart';
+import 'package:bladewatch_companion/tv.dart';
 import 'package:bladewatch_theme/bladewatch_theme.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
@@ -47,5 +48,28 @@ void main() {
     await tester.pumpWidget(MaterialApp(theme: BladeWatchTheme.light(), home: const Scaffold(body: CarMap(center: a, markers: [a]))));
     await tester.pump();
     expect(find.byType(ColorFiltered), findsNothing);
+  });
+
+  // The owner, 2026-10-04: on the TV, focus that reached the Location map never left it -- the map
+  // took the remote's arrows to pan. On a TV it takes no focus; with a keyboard it still pans.
+  testWidgets('on a TV the map takes no focus, elsewhere it still can', (tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    const a = LatLng(14.5, 121.0);
+    Future<bool> mapFocusable({required bool tv}) async {
+      const map = CarMap(center: a, markers: [a]);
+      await tester.pumpWidget(MaterialApp(
+        theme: BladeWatchTheme.light(),
+        home: const Scaffold(body: map),
+        builder: (context, child) => tv ? DpadFieldExit(child: child!) : child!,
+      ));
+      await tester.pump();
+      final focus = tester.widget<Focus>(find.byWidgetPredicate((w) => w is Focus && w.debugLabel == 'FlutterMap'));
+      return focus.focusNode!.canRequestFocus;
+    }
+
+    expect(await mapFocusable(tv: false), isTrue);
+    expect(await mapFocusable(tv: true), isFalse);
   });
 }

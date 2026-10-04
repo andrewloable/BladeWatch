@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bladewatch_companion/tv.dart';
 import 'package:bladewatch_companion/car/media.dart';
 import 'package:bladewatch_companion/screens/common/car_map.dart';
 import 'package:bladewatch_companion/screens/common/loader.dart';
@@ -57,6 +58,19 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('delete.confirm')));
       await tester.pumpAndSettle();
       expect(find.text(t('events.alert_delete_failed_generic')), findsOneWidget);
+      await unmount(tester);
+    });
+
+    // A Sony BRAVIA, 2026-10-04: the remote went from bin to bin down the trash column and never
+    // onto a clip. On a TV a clip row is just the clip; Select still deletes.
+    testWidgets('on a TV a clip has no delete button of its own', (tester) async {
+      final s = TestSession();
+      s.rpc.stubJson('RecordingsService', 'GetStats', {'stats': {'totalCount': 1, 'totalSizeBytes': '2048'}});
+      s.rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': [clip('a.mp4')]});
+      await pumpScreen(tester, s, const DpadFieldExit(child: RecordingsScreen()));
+      expect(find.byKey(const ValueKey('clip.a.mp4')), findsOneWidget);
+      expect(find.byKey(const ValueKey('clip.delete.a.mp4')), findsNothing);
+      expect(find.byKey(const ValueKey('rec.select')), findsOneWidget);
       await unmount(tester);
     });
 
@@ -442,6 +456,42 @@ void main() {
       expect(parseFix('{"lat":95,"lng":0}'), isNull);
       final f = parseFix('{"latitude":14.5,"longitude":121.0,"isStale":true,"accuracy":12}')!;
       expect((f.at.latitude, f.stale, f.accuracy), (14.5, true, 12.0));
+    });
+
+    // The owner, 2026-10-04: on the TV, focus that reached the map never left it (flutter_map pans on
+    // the arrows). The map takes no focus there; the remote goes between the map's button and copy.
+    testWidgets('on a TV the remote moves between recenter and copy, never into the map', (tester) async {
+      final s = TestSession();
+      s.rpc.stubJson('VehicleService', 'GetGpsLocation', {
+        'locationJson': '{"lat":14.5,"lng":121.0,"accuracy":8}',
+        'googleMapsUrl': 'https://maps.example/x',
+      });
+      // A side panel beside the page, as on the TV: down from copy finds a panel item below it.
+      await pumpScreen(
+        tester,
+        s,
+        DpadFieldExit(
+          child: Row(children: [
+            TvPane(child: SizedBox(width: 200, child: ListView(children: [for (var i = 0; i < 12; i++) SizedBox(height: 80, child: TextButton(onPressed: () {}, child: Text('place $i')))]))),
+            const Expanded(child: TvPane(child: LocationScreen())),
+          ]),
+        ),
+        size: const Size(1200, 900),
+      );
+      FocusNode node(String key) => Focus.of(tester.element(find.descendant(of: find.byKey(ValueKey(key)), matching: find.byType(Icon))));
+      node('location.copy').requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(node('location.copy').hasPrimaryFocus, isTrue, reason: 'nothing below on the page; the panel is another column');
+      // Seen on the BRAVIA: this up did nothing -- Flutter took it for undoing the down that was undone.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(node('location.recenter').hasPrimaryFocus, isTrue, reason: 'up from copy reaches the map\'s button');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(node('location.copy').hasPrimaryFocus, isTrue, reason: 'and down comes back, past the map');
+      await unmount(tester);
     });
 
     testWidgets('shows the fix on a map and copies the maps link', (tester) async {

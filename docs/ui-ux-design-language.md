@@ -695,8 +695,8 @@ the theme's fields, dropdown and switch in `Section`s, distance unit and storage
 currency-symbol picker is unchanged.
 
 **Surveillance, Performance, Diagnostics, About, Settings (BladeWatch-0glp.6).** All `Section`s over the shared rows,
-so they were on the HUD already; what was restyled by hand: Surveillance's snapshots are 4 dp bordered frames and the
-zone delete is magenta; Diagnostics carries a `HudStatusDot` on the rows that are a state (LAN access and the camera
+so they were on the HUD already; what was restyled by hand: Surveillance's zone delete is magenta (its 4 dp framed
+camera snapshots were removed in 1.4.1.2, repeating Live); Diagnostics carries a `HudStatusDot` on the rows that are a state (LAN access and the camera
 pipeline cyan when on and a grey dot when off, the SD card that failed to mount magenta) and the SOH reset confirm is
 magenta; Settings' recording mode is a column of `HudListRow`s, the car's configured mode the accent-bordered one, the
 trip-costs entry is a row, the Trips costs form opens under a `HudTitleBar` with the way back, and every destructive
@@ -714,6 +714,17 @@ head unit the Vehicle and Trips content ran off the 24 dp gutter and some contro
 Still open: an iOS run, a real car's data on the companion (video, the live picture), Turkish capitalisation
 (Dart's `toUpperCase` is not locale-aware, so "Diğer" reads DIĞER, not DİĞER), and the independent review
 (BladeWatch-0glp.7). The desktop label/value rows still put the value at the card's half.
+
+**On a TV (BladeWatch 1.4.1.2)** the remote moves focus, and the HUD's own controls showed it barely or not
+at all, so `TvFocusRing` (`companion/lib/tv.dart`) draws one ring around whatever control has focus: the
+accent, a 3 dp stroke over a soft 8 dp glow, 10 dp corners, 3 dp outside the control. It is the only
+focus indicator; nothing per widget. Whole-screen nodes (pages, scopes) get none. Up and down stay in their
+column -- the side panel and the page are each a `TvPane` -- and scroll a page to its text before leaving it
+(from a title bar's button with nothing focusable below, as on a trip's summary, they scroll the page under it);
+rows that open nothing (most of Events' alerts) still take focus on a TV (`tvReadable`) so the remote can walk
+the list; per-clip delete buttons are hidden on a TV so the remote lands on the clips; the map takes no focus on
+a TV (`CarMap`), since flutter_map pans on the arrow keys and focus could never leave it; and a slider on a TV
+is in directional navigation (`tvSlider`): left and right change it, up and down move on.
 
 ## Source References
 

@@ -2800,7 +2800,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'Telefonunuzdaki veya bilgisayarınızdaki BladeWatch uygulamasıyla tarayın. Kod yalnızca bir kez çalışır.';
+      'Telefonunuzdaki BladeWatch uygulamasıyla tarayın. Kod yalnızca bir kez çalışır.';
 
   @override
   String pairing_expires_in(String time) {
@@ -2844,6 +2844,25 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pairing_error => 'Kamera hizmeti yanıt vermedi. Tekrar deneyin.';
+
+  @override
+  String get pairing_wifi_hint =>
+      'TV veya bilgisayar mı? Onun BladeWatch uygulamasında “Wi-Fi ile eşleştir”i seçin. Doğrudan bağlantı açık olmalıdır.';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return '$name eşleştirilsin mi?';
+  }
+
+  @override
+  String get pairing_wifi_body =>
+      'Yalnızca aynı sayıyı gösteriyorsa eşleştirin.';
+
+  @override
+  String get pairing_wifi_accept => 'Eşleştir';
+
+  @override
+  String get pairing_wifi_refuse => 'Eşleştirme';
 
   @override
   String get daemon_name_pear => 'Uzaktan erişim (Pear)';

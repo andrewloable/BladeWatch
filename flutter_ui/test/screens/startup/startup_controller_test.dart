@@ -229,6 +229,69 @@ void main() {
       }
     });
 
+    // BladeWatch-y87b: on the head unit the header and every row said "WAITING 0s" for as long as
+    // the channel was down -- the rows' elapsed time was only ever written after a successful poll.
+    void channelDown() => fakeChannel.stubError(
+          'daemon',
+          'processStatus',
+          const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'),
+        );
+
+    test('with the channel down, waiting rows count up, tick after tick', () async {
+      channelDown();
+      final c = buildController();
+      clock.advance(const Duration(seconds: 7));
+      await c.tick();
+      for (final d in CoreDaemon.values) {
+        expect(c.rows[d]!.status, DaemonRowStatus.waiting);
+        expect(c.rows[d]!.elapsed, const Duration(seconds: 7), reason: '$d');
+      }
+      clock.advance(const Duration(seconds: 3));
+      await c.tick();
+      for (final d in CoreDaemon.values) {
+        expect(c.rows[d]!.elapsed, const Duration(seconds: 10), reason: '$d keeps ticking');
+      }
+    });
+
+    test('a timing-out channel counts up the same way', () async {
+      fakeChannel.stubTimeout('daemon', 'processStatus');
+      final c = buildController();
+      clock.advance(const Duration(seconds: 7));
+      await c.tick();
+      for (final d in CoreDaemon.values) {
+        expect(c.rows[d]!.elapsed, const Duration(seconds: 7), reason: '$d');
+      }
+    });
+
+    test('a channel that fails after a daemon was seen running keeps it ready and frozen', () async {
+      final c = buildController();
+      clock.advance(const Duration(seconds: 4));
+      stubStatuses(camera: true);
+      await c.tick();
+      channelDown();
+      clock.advance(const Duration(seconds: 6));
+      await c.tick();
+      expect(c.rows[CoreDaemon.camera]!.status, DaemonRowStatus.ready);
+      expect(c.rows[CoreDaemon.camera]!.elapsed, const Duration(seconds: 4), reason: 'frozen at its ready time');
+      expect(c.rows[CoreDaemon.sentry]!.status, DaemonRowStatus.waiting);
+      expect(c.rows[CoreDaemon.sentry]!.elapsed, const Duration(seconds: 10), reason: 'still counting');
+      expect(c.rows[CoreDaemon.accSentry]!.elapsed, const Duration(seconds: 10));
+    });
+
+    test('rows that become ready after the channel recovers freeze at that time', () async {
+      channelDown();
+      final c = buildController();
+      clock.advance(const Duration(seconds: 5));
+      await c.tick();
+      stubStatuses(camera: true, sentry: true, accSentry: true);
+      clock.advance(const Duration(seconds: 1));
+      await c.tick();
+      for (final d in CoreDaemon.values) {
+        expect(c.rows[d]!.status, DaemonRowStatus.ready);
+        expect(c.rows[d]!.elapsed, const Duration(seconds: 6), reason: '$d');
+      }
+    });
+
     test('a failing channel does not poison later ticks once it recovers', () async {
       fakeChannel.stubError(
         'daemon',
