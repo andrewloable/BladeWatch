@@ -8,7 +8,7 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
-**Contents:** [What's new](#whats-new-in-v1410) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
+**Contents:** [What's new](#whats-new-in-v1411) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
 
@@ -21,7 +21,47 @@ They share one Android UID, which is what lets the UI talk to the daemons over l
 
 A third app, the **companion** (`net.bladewatch.companionapp`), goes on your phone or computer, never on the car. It is optional, and it is how you reach the car remotely: see [Install the companion app](#install-the-companion-app).
 
-## What's new in v1.4.1.0
+## What's new in v1.4.1.1
+
+A polish release for the dashboards, trips and the companion app. Pairing, recording and remote
+access are unchanged.
+
+- **Battery and fuel left as an amount, not just a percentage:** `77% / 14.1 kWh` and `30% / 14 L`,
+  in the car and in the companion. The battery amount uses your car's pack size (from the model
+  picked in the car's Vehicle dialog); the fuel amount appears once you enter your tank size in
+  Settings > Trips. It is an estimate: battery health and BYD's reserve are not counted.
+- **A VEHICLE card on the in-car dashboard.** Battery, EV range, fuel and fuel range moved out of
+  THIS WEEK into their own card below it, so the week's card holds only the week.
+- **The companion dashboard, reorganised.** Vehicle comes first (battery, range, fuel, fuel range,
+  then charging, health and 12 V), This week below it. The duplicate SOC and total-range rows are
+  gone, and so is the Battery capacity dialog: the pack size comes from the selected model.
+- **The companion's Trips page now shows what the car shows:** 7, 14 and 30-day periods, the
+  period summary with kWh/100km and the fuel, electric and total cost, each trip's cost, the
+  driver score out of 500, the cost card, BYD's own fuel-range estimate, and driving DNA as bars.
+  A trip's detail adds the energy used, and speeds and distances follow your km/mi setting.
+- **Money looks the same in both apps** (`₱49.96`, not `49.96 PHP`).
+- **Trip settings are easier to find in the companion:** Settings > Trips & costs > **Trip
+  Analytics** (it was labelled "Electricity Rate"). The currency comes first, and the rates show
+  their unit in it (`₱/kWh`, `₱/L`).
+- **Tidier companion screens:** figures in a card share one size and line up, labels wrap between
+  words instead of shrinking or breaking mid-word, and every bottom-bar label is the same size.
+- **A speed test in the companion's Diagnostics:** the delay and download speed between your
+  phone and the car, and whether it went over the car's Wi-Fi or Pear.
+- **One version everywhere.** The companion now carries the car's version number, 1.4.1.1.
+
+Known, not fixed:
+
+- **A phone on mobile data cannot reach a car on its built-in SIM.** Both sit behind carrier NAT,
+  which peer-to-peer connections cannot cross, and BladeWatch runs no relay. Put the phone on
+  Wi-Fi in that case. See [Remote Access](#remote-access-pear).
+- On the head unit, the new VEHICLE card pushes the dashboard's tile row down far enough that it
+  takes a short scroll to reach.
+
+**Upgrading from v1.4.1.0:** the app IDs are unchanged, so both car APKs and the companion update
+in place, and a paired phone stays paired. BYD resets its Auto-Start restriction on every install,
+so allow both BladeWatch entries again afterwards.
+
+### v1.4.1.0
 
 A redesign release: a new "cyberpunk HUD" look across the in-car UI and the companion app, in dark
 and light. What the apps do and how you pair, record and control the car are unchanged.
