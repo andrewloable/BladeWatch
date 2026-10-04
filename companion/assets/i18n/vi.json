@@ -1561,6 +1561,7 @@
     "sync_database": "Đồng bộ cơ sở dữ liệu"
   },
   "companion": {
+    "energy": "Năng lượng",
     "looking": "Đang tìm xe của bạn…",
     "looking_hint": "Qua Internet có thể mất tới một phút. Trên Wi-Fi của xe sẽ nhanh hơn.",
     "reconnecting": "Đang kết nối lại với xe…",

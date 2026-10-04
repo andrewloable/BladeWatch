@@ -144,8 +144,6 @@ void main() {
     for (final key in ['dashboard', 'live', 'events', 'recordings']) {
       await open(key, '');
     }
-    await open('dashboard', '');
-    await dialog(find.text(t('dashboard.battery_capacity')));
 
     for (final key in ['vehicle', 'location', 'trips', 'surveillance', 'notifications', 'settings', 'performance', 'diagnostics', 'about']) {
       await open(key, 'more');

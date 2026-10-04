@@ -13,6 +13,15 @@ void main() {
     expect(Fmt.duration(3725), '1h 2m');
     expect(Fmt.distance(16.09344, unit: 'mi'), '10.0\u00A0mi');
     expect(Fmt.distance(3), '3.0\u00A0km');
+    expect(Fmt.distance(118.4, decimals: 0), '118\u00A0km');
+    expect(Fmt.speed(64.37376, unit: 'mi'), '40\u00A0mph');
+    expect(Fmt.speed(64.4), '64\u00A0km/h');
+    // Money as the in-car Currency.format: an ISO code through intl, a symbol first, none bare,
+    // and a code intl does not know in the plain form.
+    expect(Fmt.money(49.96, 'PHP'), '\u20B149.96');
+    expect(Fmt.money(49.96, '\u20B1'), '\u20B1 49.96');
+    expect(Fmt.money(1.5, ''), '1.50');
+    expect(Fmt.money(2, 'ZZZ'), anyOf('2.00 ZZZ', 'ZZZ2.00'));
     expect(Fmt.bytes(512), '512\u00A0B');
     expect(Fmt.bytes(1536), '1.5\u00A0KB');
     expect(Fmt.bytes(5 * 1024 * 1024 * 1024 * 1024 * 3), '15.0\u00A0TB');

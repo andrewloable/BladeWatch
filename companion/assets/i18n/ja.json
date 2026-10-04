@@ -1561,6 +1561,7 @@
     "sync_database": "データベースを同期"
   },
   "companion": {
+    "energy": "消費電力",
     "looking": "車を探しています…",
     "looking_hint": "インターネット経由では最大1分かかることがあります。車の Wi-Fi ならもっと速くつながります。",
     "reconnecting": "車に再接続しています…",

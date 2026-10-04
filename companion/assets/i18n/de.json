@@ -1561,6 +1561,7 @@
     "sync_database": "Datenbank abgleichen"
   },
   "companion": {
+    "energy": "Energie",
     "looking": "Suche nach Ihrem Auto…",
     "looking_hint": "Über das Internet kann das bis zu einer Minute dauern. Im WLAN des Autos geht es schneller.",
     "reconnecting": "Verbindung zum Auto wird wiederhergestellt…",

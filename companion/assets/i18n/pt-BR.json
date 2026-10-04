@@ -1561,6 +1561,7 @@
     "sync_database": "Sincronizar banco de dados"
   },
   "companion": {
+    "energy": "Energia",
     "looking": "Procurando seu carro…",
     "looking_hint": "Pela internet isso pode levar até um minuto. No Wi-Fi do carro é mais rápido.",
     "reconnecting": "Reconectando ao seu carro…",

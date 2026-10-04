@@ -1,4 +1,5 @@
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/trips/energy_left.dart';
 import 'package:bladewatch_rpc/trips/trip_costs.dart';
 
 /// Trip-stats hero state — ground truth: `DashboardFragment.refreshTripStats()`.
@@ -69,6 +70,12 @@ class EnergyState {
   /// "km" or "mi", the car's own setting.
   final String distanceUnit;
 
+  /// Pack size in kWh (`GetSohNominal`) and tank size in litres (the trip config's
+  /// `fuelTankCapacityL`, set by the owner: BYD exposes none). 0 when unknown, and then only the
+  /// percentage is shown.
+  final double packKwh;
+  final double tankL;
+
   const EnergyState({
     required this.available,
     this.socPercent = 0,
@@ -76,18 +83,26 @@ class EnergyState {
     this.fuelPercent = 0,
     this.fuelRangeKm = 0,
     this.distanceUnit = 'km',
+    this.packKwh = 0,
+    this.tankL = 0,
   });
 
   const EnergyState.unavailable() : this(available: false);
 
-  factory EnergyState.of(GetStatusResponse s) => EnergyState(
+  factory EnergyState.of(GetStatusResponse s, {double packKwh = 0, double tankL = 0}) => EnergyState(
         available: s.hasSoc() || s.hasRange(),
         socPercent: s.soc.percent,
         elecRangeKm: s.range.elecRangeKm,
         fuelPercent: s.range.fuelPercent,
         fuelRangeKm: s.range.fuelRangeKm,
         distanceUnit: s.distanceUnit.isEmpty ? 'km' : s.distanceUnit,
+        packKwh: packKwh,
+        tankL: tankL,
       );
+
+  /// "77% / 14.1 kWh" and "30% / 14 L", or just "77%" while the size is unknown.
+  String get batteryLabel => energyLeft(socPercent, packKwh, 'kWh', decimals: 1);
+  String get fuelLabel => energyLeft(fuelPercent, tankL, 'L');
 
   /// A car with a tank. The fuel fields are only filled on a PHEV, and proto3 cannot tell "0" from
   /// "absent", so a BEV reads zero for both.
@@ -104,10 +119,13 @@ class EnergyState {
       other.elecRangeKm == elecRangeKm &&
       other.fuelPercent == fuelPercent &&
       other.fuelRangeKm == fuelRangeKm &&
-      other.distanceUnit == distanceUnit;
+      other.distanceUnit == distanceUnit &&
+      other.packKwh == packKwh &&
+      other.tankL == tankL;
 
   @override
-  int get hashCode => Object.hash(available, socPercent, elecRangeKm, fuelPercent, fuelRangeKm, distanceUnit);
+  int get hashCode =>
+      Object.hash(available, socPercent, elecRangeKm, fuelPercent, fuelRangeKm, distanceUnit, packKwh, tankL);
 }
 
 /// Recordings metric tile — ground truth: `refreshMetricsTiles()`/

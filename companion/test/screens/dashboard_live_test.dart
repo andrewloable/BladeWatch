@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:bladewatch_companion/car/media.dart';
 import 'package:bladewatch_companion/screens/common/loader.dart';
+import 'package:bladewatch_companion/screens/common/stats.dart';
 import 'package:bladewatch_companion/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_companion/screens/common/shell_nav.dart';
 import 'package:bladewatch_companion/screens/live/live_screen.dart';
@@ -22,7 +23,7 @@ void status(TestSession s, {bool recording = true, bool safe = true}) => s.rpc.s
       'acc': true,
       'distanceUnit': 'mi',
       'soc': {'percent': 81.0},
-      'range': {'totalRangeKm': 321.0},
+      'range': {'totalRangeKm': 321.0, 'elecRangeKm': 321.0},
       'charging': {'stateName': 'Charging'},
       'soh': {'percent': 97.5},
       'battery': {'level': '12.6 V'},
@@ -51,8 +52,8 @@ void main() {
       expect(find.text(t('dashboard.recording').toUpperCase()), findsOneWidget);
       expect(find.text(t('dashboard.services_up').toUpperCase()), findsOneWidget);
       expect(find.text('HOME'), findsOneWidget);
-      expect(find.text('81%'), findsNWidgets(2), reason: 'SOC under Vehicle, and Battery under This week (BladeWatch-4zr7)');
-      expect(find.text('199.5\u00A0mi'), findsOneWidget, reason: '321 km in the owner\'s miles');
+      expect(find.text('81%'), findsOneWidget, reason: 'Battery under Vehicle, and no SOC row repeating it');
+      expect(find.text('199.5\u00A0mi'), findsOneWidget, reason: '321 km of range in the owner\'s miles');
       expect(find.text('12.6 V'), findsOneWidget);
       expect(find.text('2'), findsOneWidget);
       expect(find.text('1h 0m'), findsOneWidget);
@@ -94,7 +95,11 @@ void main() {
       expect(drive.style!.color, hud.driveTimeValue);
       expect(tester.widget<Text>(find.text(t('dashboard.drive_time'))).style!.color, hud.magenta);
       expect(tester.widget<Text>(find.text('2')).style!.color, hud.textPrimary);
-      expect(find.ancestor(of: find.text('1h 0m'), matching: find.byType(FittedBox)), findsOneWidget);
+      // One size for every figure of the week and one for every label (the owner, 2026-10-04).
+      final week = find.ancestor(of: find.text('1h 0m'), matching: find.byType(StatGrid));
+      final texts = tester.widgetList<Text>(find.descendant(of: week, matching: find.byType(Text)));
+      expect({for (final t in texts.where((t) => t.style!.fontSize == 20)) t.textScaler}, hasLength(1));
+      expect({for (final t in texts.where((t) => t.style!.fontSize == 12)) t.textScaler}, hasLength(1));
       await unmount(tester);
     });
 
@@ -115,9 +120,10 @@ void main() {
       await unmount(tester);
     });
 
-    // BladeWatch-4zr7: the car's charge and fuel now, in This week.
-    testWidgets('this week shows battery and electric range, and fuel and its range only with a tank', (tester) async {
-      Future<void> show(Map<String, Object?> range, String unit) async {
+    // BladeWatch-4zr7: the car's charge and fuel now. Under Vehicle since 2026-10-04 (they were under
+    // This week), each a value over its label, as the in-car VEHICLE card.
+    testWidgets('vehicle shows battery and range, and fuel and its range only with a tank', (tester) async {
+      Future<void> show(Map<String, Object?> range, String unit, {bool sized = false}) async {
         final s = TestSession(phase: TransportPhase.pear);
         s.rpc.stubJson('SystemService', 'GetStatus', {
           'vehicleDataReady': true,
@@ -127,23 +133,45 @@ void main() {
           'recordingStatus': {'isRecording': false},
         });
         s.rpc.stubJson('TripsService', 'ListTrips', {'trips': []});
+        if (sized) {
+          s.rpc.stubJson('SystemService', 'GetSohNominal', {'nominalKwh': 18.3, 'nominalSource': 'catalogue'});
+          s.rpc.stubJson('TripsService', 'GetConfig', {'success': true, 'config': {'fuelTankCapacityL': 48.0}});
+        }
         await pumpScreen(tester, s, const DashboardScreen(), size: const Size(420, 1600));
         await tester.pump();
       }
 
-      InfoRow row(String key) => tester.widget<InfoRow>(find.widgetWithText(InfoRow, t(key)));
+      Finder section(String key) => find.byWidgetPredicate((w) => w is Section && w.title == t(key));
+      void has(String text) =>
+          expect(find.descendant(of: section('dashboard.vehicle'), matching: find.text(text)), findsOneWidget, reason: text);
 
       await show({'elecRangeKm': 81.0, 'fuelRangeKm': 351.0, 'totalRangeKm': 432.0, 'fuelPercent': 30.0}, 'km');
-      expect(row('companion.week_battery').value, '77%');
-      expect(row('companion.week_elec_range').value, '81.0\u00A0km');
-      expect(row('companion.week_fuel').value, '30%');
-      expect(row('companion.week_fuel_range').value, '351.0\u00A0km');
+      for (final text in [
+        '77%', t('companion.week_battery'),
+        '81.0\u00A0km', t('companion.week_elec_range'),
+        '30%', t('companion.week_fuel'),
+        '351.0\u00A0km', t('companion.week_fuel_range'),
+      ]) {
+        has(text);
+      }
+      // The duplicates are gone: Battery is the SOC, and the total range is the two ranges added up.
+      expect(find.text('SOC'), findsNothing);
+      expect(find.text('432.0\u00A0km'), findsNothing);
+      expect(find.descendant(of: section('dashboard.this_week'), matching: find.text(t('companion.week_battery'))), findsNothing);
       await unmount(tester);
 
       await show({'elecRangeKm': 300.0, 'totalRangeKm': 300.0}, 'mi');
-      expect(row('companion.week_elec_range').value, '186.4\u00A0mi');
+      has('186.4\u00A0mi');
+      has(t('vehicle.range'));
       expect(find.text(t('companion.week_fuel')), findsNothing, reason: 'a BEV: no fuel, not 0%');
       expect(find.text(t('companion.week_fuel_range')), findsNothing);
+      await unmount(tester);
+
+      // With the pack and tank size known: what is left, as a share and as an amount.
+      await show({'elecRangeKm': 81.0, 'fuelRangeKm': 351.0, 'fuelPercent': 30.0}, 'km', sized: true);
+      await tester.pump();
+      has('77%\u00A0/ 14.1\u00A0kWh');
+      has('30%\u00A0/ 14\u00A0L');
       await unmount(tester);
     });
 
@@ -159,9 +187,9 @@ void main() {
       });
       await pumpScreen(tester, s, const DashboardScreen(), size: const Size(420, 1600));
       await tester.pump();
-      expect(find.text('100.00 PHP'), findsOneWidget);
-      expect(find.text('80.00 PHP'), findsOneWidget);
-      expect(find.text('180.00 PHP'), findsOneWidget);
+      expect(find.text('₱100.00'), findsOneWidget);
+      expect(find.text('₱80.00'), findsOneWidget);
+      expect(find.text('₱180.00'), findsOneWidget);
       expect(find.text(t('companion.total_cost')), findsOneWidget);
       await unmount(tester);
 
@@ -211,53 +239,6 @@ void main() {
       await unmount(tester);
     });
 
-    testWidgets('battery capacity: validates, saves, resets and reports a refusal', (tester) async {
-      final s = TestSession();
-      status(s);
-      s.rpc.stubJson('TripsService', 'ListTrips', {'trips': []});
-      s.rpc.stubJson('SystemService', 'GetSohStatus', {'displaySoh': 96.0, 'nominalCapacityKwh': 82.5, 'nominalSource': 'model', 'displaySource': 'bms'});
-      s.rpc.stubJson('SystemService', 'SetSohNominal', {'success': true});
-      await pumpScreen(tester, s, const DashboardScreen());
-      await tester.tap(find.byKey(const ValueKey('dash.capacity')));
-      await tester.pumpAndSettle();
-      expect(find.text('82.5'), findsOneWidget, reason: 'editing starts from the current value');
-      expect(find.text('96.0%'), findsOneWidget);
-      // BladeWatch-rdtj.57: the web dialog's capacity in use and where the health figure came from.
-      expect(find.text('82.5 kWh'), findsOneWidget);
-      expect(find.text('bms'), findsOneWidget);
-
-      await tester.enterText(find.byKey(const ValueKey('capacity.input')), '500');
-      await tester.tap(find.byKey(const ValueKey('capacity.save')));
-      await tester.pumpAndSettle();
-      expect(find.text(t('companion.capacity_range')), findsOneWidget);
-
-      await tester.enterText(find.byKey(const ValueKey('capacity.input')), '75');
-      await tester.tap(find.byKey(const ValueKey('capacity.save')));
-      await tester.pumpAndSettle();
-      expect(find.text(t('toast.saved')), findsOneWidget);
-      expect((s.rpc.calls.lastWhere((c) => c.method == 'SetSohNominal').request as dynamic).nominalKwh, 75);
-
-      s.rpc.stubJson('SystemService', 'SetSohNominal', {'success': false, 'error': 'nope'});
-      await tester.tap(find.byKey(const ValueKey('capacity.reset')));
-      await tester.pumpAndSettle();
-      expect(find.text('nope'), findsOneWidget);
-      expect((s.rpc.calls.lastWhere((c) => c.method == 'SetSohNominal').request as dynamic).hasNominalKwh(), isFalse);
-
-      s.rpc.stubJson('SystemService', 'SetSohNominal', {'success': false});
-      await tester.tap(find.byKey(const ValueKey('capacity.reset')));
-      await tester.pumpAndSettle();
-      expect(find.text(t('errors.save_failed')), findsOneWidget);
-
-      s.rpc.stubError('SystemService', 'SetSohNominal', const ConnectError('unavailable', 'x'));
-      await tester.tap(find.byKey(const ValueKey('capacity.save')));
-      await tester.pumpAndSettle();
-      expect(find.text(t('errors.save_failed')), findsOneWidget);
-
-      await tester.tap(find.text(t('dashboard.close')));
-      await tester.pumpAndSettle();
-      await unmount(tester);
-    });
-
     testWidgets('a status that never loads offers a retry', (tester) async {
       final s = TestSession();
       s.rpc.stubError('SystemService', 'GetStatus', const ConnectError('unavailable', 'x'));
@@ -268,7 +249,7 @@ void main() {
       await tester.tap(find.text(t('common.retry')));
       await tester.pump();
       await tester.pump();
-      expect(find.text('81%'), findsNWidgets(2), reason: 'SOC under Vehicle, and Battery under This week (BladeWatch-4zr7)');
+      expect(find.text('81%'), findsOneWidget, reason: 'Battery under Vehicle, and no SOC row repeating it');
       await unmount(tester);
     });
   });

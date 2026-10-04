@@ -1561,6 +1561,7 @@
     "sync_database": "同步数据库"
   },
   "companion": {
+    "energy": "能耗",
     "looking": "正在查找您的车辆…",
     "looking_hint": "通过互联网可能需要一分钟。在车辆的 Wi-Fi 上会更快。",
     "reconnecting": "正在重新连接车辆…",

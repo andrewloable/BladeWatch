@@ -1561,6 +1561,7 @@
     "sync_database": "Veritabanını eşitle"
   },
   "companion": {
+    "energy": "Enerji",
     "looking": "Aracınız aranıyor…",
     "looking_hint": "İnternet üzerinden bu bir dakikayı bulabilir. Aracın Wi-Fi ağında daha hızlıdır.",
     "reconnecting": "Aracınıza yeniden bağlanılıyor…",

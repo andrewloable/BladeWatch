@@ -105,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final hud = BwHud.of(context);
     final c = widget.controller;
 
-    // The four blocks are spread down the page (the reference's justify-between) when the window is
+    // The blocks are spread down the page (the reference's justify-between) when the window is
     // taller than they are, and the page scrolls when it is shorter. The margins under the first
     // three are the minimum gaps.
     final blocks = <Widget>[
@@ -126,11 +126,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // access code) went with tor (BladeWatch-rdtj.12).
         child: _TripStatsCard(
           state: c.tripStats,
-          energy: c.energy,
           l10n: l10n,
           hud: hud,
           onViewAllTrips: () => widget.onNavigate(BwRoutes.trips),
         ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: _VehicleCard(energy: c.energy, l10n: l10n, hud: hud),
       ),
       Padding(
         padding: const EdgeInsets.only(bottom: 20),
@@ -222,14 +225,12 @@ class _Stat {
 
 class _TripStatsCard extends StatelessWidget {
   final TripStatsState state;
-  final EnergyState energy;
   final AppLocalizations l10n;
   final BwHud hud;
   final VoidCallback onViewAllTrips;
 
   const _TripStatsCard({
     required this.state,
-    required this.energy,
     required this.l10n,
     required this.hud,
     required this.onViewAllTrips,
@@ -248,10 +249,6 @@ class _TripStatsCard extends StatelessWidget {
         ? l10n.dashboard_trips_no_data
         : null;
     final pending = l10n.dashboard_metric_value_pending;
-
-    final e = energy;
-    String dist(double km) => e.available ? formatDistance(km, e.distanceUnit, decimals: 0) : pending;
-    bool known(String v) => v != pending;
 
     // The week's figures: trips, distance and drive time. The first two glow cyan, the drive time magenta.
     final trips = [
@@ -279,19 +276,13 @@ class _TripStatsCard extends StatelessWidget {
     final costFigures = [
       for (final (value, label) in costs?.figures ?? const <(String, String)>[]) _Stat(value, label),
     ];
-    // BladeWatch-4zr7: the car's charge and fuel now (current values, where the rows above are the
-    // week's): battery and electric range, and fuel and fuel range on a car with a tank.
-    final battery = _Stat(e.available ? '${e.socPercent.round()}%' : pending, l10n.dashboard_week_battery);
-    final evRange = _Stat(dist(e.elecRangeKm), l10n.dashboard_week_elec_range, hasUnit: known(dist(e.elecRangeKm)));
-    final fuel = _Stat('${e.fuelPercent.round()}%', l10n.dashboard_week_fuel);
-    final fuelRange = _Stat(dist(e.fuelRangeKm), l10n.dashboard_week_fuel_range, hasUnit: known(dist(e.fuelRangeKm)));
-
     final costMessage = costs?.message;
     // The vertical rules run through the rows that are stat rows; a message row breaks them.
     final rows = <Widget>[
       _StatRow(
         hud: hud,
-        gapBelow: costMessage == null,
+        // The rules run on into the cost row; the last row ends the card.
+        gapBelow: costs != null && costMessage == null,
         cells: [for (final s in trips) _StatCell(stat: s, big: true, hud: hud)],
       ),
       if (costMessage != null) ...[
@@ -301,49 +292,75 @@ class _TripStatsCard extends StatelessWidget {
           key: const ValueKey('tripStats.costs.message'),
           style: hudText(12, hud.statLabel, lineHeight: 16, weight: hud.labelWeight, em: 0.05),
         ),
-        const SizedBox(height: 16),
       ] else if (costs != null)
         _StatRow(
           key: const ValueKey('tripStats.costs'),
           hud: hud,
-          gapBelow: true,
+          gapBelow: false,
           cells: [for (final s in costFigures) _StatCell(stat: s, hud: hud)],
         ),
-      _StatRow(
-        key: const ValueKey('tripStats.energy'),
-        hud: hud,
-        gapBelow: false,
-        cells: [
-          _StatCell(stat: battery, hud: hud),
-          _StatCell(stat: evRange, hud: hud),
-          // The third column holds Fuel and Fuel Range side by side on a car with a tank, and is
-          // empty on one without (a BEV shows no fuel rather than 0).
-          if (e.hasFuel)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              // Scaled down rather than overflowing when the column is narrow (portrait, a long label).
-              children: [
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: _StatCell(stat: fuel, hud: hud),
-                  ),
-                ),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: _StatCell(stat: fuelRange, hud: hud, alignEnd: true),
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
     ];
 
+    return _HeroPanel(
+      hud: hud,
+      icon: Icons.memory,
+      title: '${l10n.dashboard_trips_this_week} ${l10n.dashboard_hud_telemetry}',
+      // Top-right, level with the label, as native has it. The box is the reference's; the
+      // touch target stays 48 dp (TextButton pads it).
+      action: TextButton(
+        key: const ValueKey('tripStats.viewAll'),
+        onPressed: onViewAllTrips,
+        style: TextButton.styleFrom(
+          tapTargetSize: MaterialTapTargetSize.padded,
+          foregroundColor: hud.accent,
+          backgroundColor: hud.viewAllFill,
+          minimumSize: Size.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          side: BorderSide(color: hud.panelBorderStrong),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwHud.radiusSmall)),
+          textStyle: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.05),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.dashboard_trips_view_all),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, size: 14),
+          ],
+        ),
+      ),
+      children: [
+        if (headline != null) ...[
+          Text(
+            headline,
+            style: hudText(24, hud.textPrimary, lineHeight: 32, weight: FontWeight.w700, em: -0.025),
+          ),
+          const SizedBox(height: 16),
+        ],
+        ...rows,
+      ],
+    );
+  }
+}
+
+/// The hero's panel: the summary gradient, the two corner glows, and an icon and label over a divider.
+/// THIS WEEK and VEHICLE share it, so their stat columns line up down the page.
+class _HeroPanel extends StatelessWidget {
+  final BwHud hud;
+  final IconData icon;
+  final String title;
+
+  /// Ends the header row (THIS WEEK's View all trips).
+  final Widget? action;
+  final List<Widget> children;
+
+  const _HeroPanel({required this.hud, required this.icon, required this.title, this.action, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    // An action's 48 dp touch target adds 11 above and below the reference's 26 dp button, so the
+    // paddings around a header with one are 11 smaller: 13 above, 1 below the label instead of 24 and 12.
+    final trim = action == null ? 0.0 : 11.0;
     return HudPanel(
       color: null,
       gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: hud.summaryGradient),
@@ -358,15 +375,12 @@ class _TripStatsCard extends StatelessWidget {
           Positioned(right: -80, top: -80, width: 240, height: 240, child: _CornerGlow(color: hud.cornerGlowCyan)),
           Positioned(left: -80, bottom: -80, width: 240, height: 240, child: _CornerGlow(color: hud.cornerGlowMagenta)),
           Padding(
-            // The reference's 24 top padding, less the 11 the View all button's 48 dp touch target adds
-            // above the header row: the row is 48 tall where the reference's button is 26.
-            padding: const EdgeInsets.fromLTRB(24, 13, 24, 24),
+            padding: EdgeInsets.fromLTRB(24, 24 - trim, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
-                  // 12 in the reference, less the 11 the touch target adds below the button.
-                  padding: const EdgeInsets.only(bottom: 1),
+                  padding: EdgeInsets.only(bottom: 12 - trim),
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: hud.cardDivider)),
@@ -376,54 +390,93 @@ class _TripStatsCard extends StatelessWidget {
                     // label it pairs with (design review 2026-09-27).
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Icon(Icons.memory, size: 14, color: hud.magenta),
+                      Icon(icon, size: 14, color: hud.magenta),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '${l10n.dashboard_trips_this_week} ${l10n.dashboard_hud_telemetry}'.toUpperCase(),
+                          title.toUpperCase(),
                           style: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.1),
                         ),
                       ),
-                      // Top-right, level with the label, as native has it. The box is the reference's; the
-                      // touch target stays 48 dp (TextButton pads it).
-                      TextButton(
-                        key: const ValueKey('tripStats.viewAll'),
-                        onPressed: onViewAllTrips,
-                        style: TextButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.padded,
-                          foregroundColor: hud.accent,
-                          backgroundColor: hud.viewAllFill,
-                          minimumSize: Size.zero,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          side: BorderSide(color: hud.panelBorderStrong),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwHud.radiusSmall)),
-                          textStyle: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.05),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(l10n.dashboard_trips_view_all),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.chevron_right, size: 14),
-                          ],
-                        ),
-                      ),
+                      ?action,
                     ],
                   ),
                 ),
-                if (headline != null) ...[
-                  Text(
-                    headline,
-                    style: hudText(24, hud.textPrimary, lineHeight: 32, weight: FontWeight.w700, em: -0.025),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                ...rows,
+                ...children,
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The car now, in its own card under THIS WEEK (BladeWatch-4zr7 put these under the week's rows;
+/// the owner moved them out, 2026-10-04): battery and electric range, and fuel and fuel range on a
+/// car with a tank, on the same three columns as the card above.
+class _VehicleCard extends StatelessWidget {
+  final EnergyState energy;
+  final AppLocalizations l10n;
+  final BwHud hud;
+
+  const _VehicleCard({required this.energy, required this.l10n, required this.hud});
+
+  @override
+  Widget build(BuildContext context) => _HeroPanel(
+    hud: hud,
+    icon: Icons.directions_car,
+    title: l10n.dashboard_metric_vehicle,
+    children: [_energyRow()],
+  );
+
+  Widget _energyRow() {
+    final e = energy;
+    final pending = l10n.dashboard_metric_value_pending;
+    String dist(double km) => e.available ? formatDistance(km, e.distanceUnit, decimals: 0) : pending;
+    bool known(String v) => v != pending;
+    final battery = _Stat(
+      e.available ? e.batteryLabel : pending,
+      l10n.dashboard_week_battery,
+      hasUnit: e.available && e.packKwh > 0,
+    );
+    final evRange = _Stat(dist(e.elecRangeKm), l10n.dashboard_week_elec_range, hasUnit: known(dist(e.elecRangeKm)));
+    final fuel = _Stat(e.fuelLabel, l10n.dashboard_week_fuel, hasUnit: e.tankL > 0);
+    final fuelRange = _Stat(dist(e.fuelRangeKm), l10n.dashboard_week_fuel_range, hasUnit: known(dist(e.fuelRangeKm)));
+
+    return _StatRow(
+      key: const ValueKey('vehicle.energy'),
+      hud: hud,
+      gapBelow: false,
+      cells: [
+        // "77% / 14.1 kWh" is the row's longest value: scaled down rather than wrapped.
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: _StatCell(stat: battery, hud: hud)),
+        _StatCell(stat: evRange, hud: hud),
+        // The third column holds Fuel and Fuel Range side by side on a car with a tank, and is
+        // empty on one without (a BEV shows no fuel rather than 0).
+        if (e.hasFuel)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            // Scaled down rather than overflowing when the column is narrow (portrait, a long label).
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: _StatCell(stat: fuel, hud: hud),
+                ),
+              ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: _StatCell(stat: fuelRange, hud: hud, alignEnd: true),
+                ),
+              ),
+            ],
+          ),
+      ],
     );
   }
 }

@@ -19,7 +19,8 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+	<!-- The car apps' four-part version, which pubspec.yaml cannot hold: keep in step with app/build.gradle.kts. -->
+	<string>1.4.1.1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>

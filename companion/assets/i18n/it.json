@@ -1561,6 +1561,7 @@
     "sync_database": "Sincronizza database"
   },
   "companion": {
+    "energy": "Energia",
     "looking": "Ricerca della tua auto…",
     "looking_hint": "Via Internet può richiedere fino a un minuto. Sul Wi-Fi dell'auto è più veloce.",
     "reconnecting": "Riconnessione all'auto…",

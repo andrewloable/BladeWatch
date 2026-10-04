@@ -1561,6 +1561,7 @@
     "sync_database": "Database synchroniseren"
   },
   "companion": {
+    "energy": "Energie",
     "looking": "Je auto zoeken…",
     "looking_hint": "Via internet kan dit tot een minuut duren. Op de wifi van de auto gaat het sneller.",
     "reconnecting": "Opnieuw verbinden met je auto…",

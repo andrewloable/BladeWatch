@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import '../../car/car_page.dart';
 import '../../car/car_session.dart';
 import '../../i18n.dart';
+import '../common/energy_sizes.dart';
+import '../common/format.dart';
 import '../common/loader.dart';
 
 /// Runs actuating VehicleService calls with the car's short-lived action token -- the second
@@ -71,6 +73,8 @@ class VehicleScreen extends StatefulWidget {
 class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
   late final _state = loader(() => VehicleServiceClient(context.session.rpc).getState(GetVehicleStateRequest()),
       poll: const Duration(seconds: 3));
+  // Pack and tank size, for "77% / 14.1 kWh": they change only when the owner edits a setting.
+  late final _sizes = loader(() => EnergySizes.load(context.session.rpc), poll: const Duration(minutes: 1));
   late final _actions = VehicleActions(context.session);
   String? _busy;
 
@@ -120,13 +124,19 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
         // two answers to one question. The fuel fields are absent on a BEV.
         final fuel = b.fuelPercent > 0 || b.fuelRangeKm > 0;
         return PageList(children: [
-          Section(title: tr('vehicle.title'), children: [
-            InfoRow(tr('vehicle.lock'), s.doors.overall == 0 ? tr('vehicle.unlocked') : tr('companion.locked')),
-            InfoRow(tr('vehicle.charge'), '${b.soc.toStringAsFixed(0)}%'),
-            InfoRow(tr(fuel ? 'companion.week_elec_range' : 'vehicle.range'), '${b.rangeKm} km'),
-            if (b.fuelPercent > 0) InfoRow(tr('vehicle.fuel'), '${b.fuelPercent.toStringAsFixed(0)}%'),
-            if (b.fuelRangeKm > 0) InfoRow(tr('companion.week_fuel_range'), '${b.fuelRangeKm} km'),
-          ]),
+          ListenableBuilder(
+            listenable: _sizes,
+            builder: (context, _) {
+              final sizes = _sizes.value ?? EnergySizes.unknown;
+              return Section(title: tr('vehicle.title'), children: [
+                InfoRow(tr('vehicle.lock'), s.doors.overall == 0 ? tr('vehicle.unlocked') : tr('companion.locked')),
+                InfoRow(tr('vehicle.charge'), Fmt.energy(b.soc, sizes.packKwh, 'kWh', decimals: 1)),
+                InfoRow(tr(fuel ? 'companion.week_elec_range' : 'vehicle.range'), '${b.rangeKm} km'),
+                if (b.fuelPercent > 0) InfoRow(tr('vehicle.fuel'), Fmt.energy(b.fuelPercent, sizes.tankL, 'L')),
+                if (b.fuelRangeKm > 0) InfoRow(tr('companion.week_fuel_range'), '${b.fuelRangeKm} km'),
+              ]);
+            },
+          ),
           Section(title: tr('vehicle.climate'), children: [
             if (!s.hasClimate()) Text(tr('vehicle.climate_unavailable')),
             if (s.hasClimate()) ...[

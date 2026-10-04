@@ -77,7 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: HudTitleBar(
-                    title: tr('companion.trips_costs').toUpperCase(),
+                    title: tr('trips.trip_analytics').toUpperCase(),
                     onBack: () => Navigator.of(context).maybePop(),
                     backTooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   ),
@@ -332,8 +332,16 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
             HudListRow(
               key: const ValueKey('settings.trips'),
               icon: Icons.route_outlined,
-              title: tr('trip.settings.elec_rate_label'),
-              subtitle: '${tr('trips.currency')} · ${tr('trip.settings.distance_unit')} · ${tr('trips.storage_location')}',
+              // Named for what it opens, not its first field: it held fuel costs under "Electricity
+              // Rate" and nobody found the currency in it (the owner, 2026-10-04).
+              title: tr('trips.trip_analytics'),
+              subtitle: [
+                tr('trips.currency'),
+                tr('trip.settings.elec_rate_label'),
+                tr('trips.fuel_cost'),
+                tr('trip.settings.distance_unit'),
+                tr('trips.storage_location'),
+              ].join(' · '),
               trailing: const Icon(Icons.chevron_right, size: 16),
               onTap: _openTrips,
             ),

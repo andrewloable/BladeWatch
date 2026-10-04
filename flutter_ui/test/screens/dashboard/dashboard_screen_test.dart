@@ -42,7 +42,6 @@ void main() {
     });
     rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': [], 'total': 4});
     rpc.stubJson('SystemService', 'GetStatus', {'deviceId': 'byd-test', 'recording': [1]});
-    rpc.stubJson('SystemService', 'GetSohNominal', {'nominalKwh': 82.5, 'nominalSource': 'user'});
     rpc.stubJson('SystemService', 'GetSelectedModel', {'modelId': 'seal'});
     channel.stub('daemon', 'processStatus', {
       'status': 'ok',
@@ -239,7 +238,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 73}, 'range': {'elecRangeKm': 74, 'fuelRangeKm': 351, 'fuelPercent': 30}});
       await pumpDashboard(tester, buildController());
       await tester.pumpAndSettle();
-      final energy = find.byKey(const ValueKey('tripStats.energy'));
+      final energy = find.byKey(const ValueKey('vehicle.energy'));
       expect(find.descendant(of: energy, matching: find.text('73%')), findsOneWidget);
       int trips() => rpc.calls.where((c) => c.method == 'ListTrips').length;
       final afterOpen = trips();
@@ -273,13 +272,13 @@ void main() {
   });
 
   // BladeWatch-4zr7: the car's charge and fuel now, in THIS WEEK.
-  group('this week\'s charge and fuel', () {
+  group('the vehicle card\'s charge and fuel', () {
     Future<Finder> pumpWith(WidgetTester tester, Map<String, Object?>? status) async {
       stubHappyPath();
       if (status != null) rpc.stubJson('SystemService', 'GetStatus', status);
       await pumpDashboard(tester, buildController());
       await tester.pumpAndSettle();
-      return find.byKey(const ValueKey('tripStats.energy'));
+      return find.byKey(const ValueKey('vehicle.energy'));
     }
 
     Finder inRow(Finder row, String text) => find.descendant(of: row, matching: find.text(text));
@@ -297,6 +296,21 @@ void main() {
       }
     });
 
+    testWidgets('with the pack and tank size known, battery and fuel show what is left', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetSohNominal', {'nominalKwh': 18.3, 'nominalSource': 'catalogue'});
+      rpc.stubJson('TripsService', 'GetConfig', {'success': true, 'config': {'fuelTankCapacityL': 48}});
+      rpc.stubJson('SystemService', 'GetStatus', {
+        'soc': {'percent': 77},
+        'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+      });
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      final row = find.byKey(const ValueKey('vehicle.energy'));
+      expect(inRow(row, '77% / 14.1 kWh'), findsOneWidget);
+      expect(inRow(row, '30% / 14 L'), findsOneWidget);
+    });
+
     testWidgets('a BEV shows no fuel at all', (tester) async {
       final row = await pumpWith(tester, {'soc': {'percent': 60}, 'range': {'elecRangeKm': 300}, 'distanceUnit': 'km'});
       expect(inRow(row, '60%'), findsOneWidget);
@@ -305,8 +319,9 @@ void main() {
       expect(inRow(row, 'Fuel Range'), findsNothing);
     });
 
-    // The owner saw the rows drift once the charge row brought a fourth tile under three.
-    testWidgets('every row of the card sits on the same columns', (tester) async {
+    // The owner saw the rows drift once the charge row brought a fourth tile under three. Since
+    // 2026-10-04 the charge row is the VEHICLE card's, and its columns still line up with the week's.
+    testWidgets('every row of both cards sits on the same columns', (tester) async {
       stubHappyPath();
       rpc.stubJson('SystemService', 'GetStatus', {
         'soc': {'percent': 77},
@@ -322,7 +337,7 @@ void main() {
       await pumpDashboard(tester, buildController());
       await tester.pumpAndSettle();
       final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel));
-      double left(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dx;
+      double left(String label) => tester.getTopLeft(find.text(label)).dx;
       for (final column in [
         ['Trips', 'Battery', 'Fuel Cost'],
         ['Distance', 'EV Range', 'Electric Cost'],
@@ -331,10 +346,10 @@ void main() {
         expect(column.map(left).toSet(), hasLength(1), reason: '$column should share one left edge');
       }
 
-      // Design review 2026-09-27: the week's figures stay together, the car's state comes last,
-      // and the header's label and button share one line.
-      double top(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dy;
-      expect(top('Battery'), greaterThan(top('Total Cost')), reason: 'charge and fuel after the week\'s costs');
+      // The week's card holds only the week; the car's state is its own card, below it. The
+      // header's label and button share one line (design review 2026-09-27).
+      expect(find.descendant(of: card, matching: find.text('Battery')), findsNothing);
+      expect(tester.getTopLeft(find.text('Battery')).dy, greaterThan(tester.getRect(card).bottom));
       final labelY = tester.getCenter(find.descendant(of: card, matching: find.text('THIS WEEK TELEMETRY'))).dy;
       final buttonY = tester.getCenter(find.byKey(const ValueKey('tripStats.viewAll'))).dy;
       expect((labelY - buttonY).abs(), lessThan(1), reason: 'label and button on one line');
@@ -700,7 +715,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(rpc.calls.where((c) => c.method == 'SetSohNominal'), isEmpty);
-      expect(rpc.calls.where((c) => c.method == 'GetSohNominal'), isEmpty);
     });
 
     // A refusal arrives as HTTP 200 with ok:false, so nothing throws. Closing
@@ -958,8 +972,8 @@ void main() {
     group('summary card', () {
       testWidgets('three columns of labels share left edges, on every row (PHEV)', (tester) async {
         await pumpFull(tester, status: phev, trips: costed);
-        final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel)).first;
-        double left(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dx;
+        // Across both cards: the VEHICLE card is the same width and padding as THIS WEEK.
+        double left(String label) => tester.getTopLeft(find.text(label)).dx;
         expect({left('Trips'), left('Fuel Cost'), left('Battery')}, hasLength(1));
         expect({left('Distance'), left('Electric Cost'), left('EV Range')}, hasLength(1));
         expect({left('Drive Time'), left('Total Cost'), left('Fuel')}, hasLength(1));
@@ -969,19 +983,19 @@ void main() {
 
       testWidgets('Fuel and Fuel Range share the third column, Fuel Range right-aligned', (tester) async {
         await pumpFull(tester, status: phev, trips: costed);
-        final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel)).first;
+        final card = find.ancestor(of: find.byKey(const ValueKey('vehicle.energy')), matching: find.byType(HudPanel)).first;
         final cardRect = tester.getRect(card);
-        Rect rect(String label) => tester.getRect(find.descendant(of: card, matching: find.text(label)));
+        Rect rect(String label) => tester.getRect(find.text(label));
         expect(rect('Fuel').left, lessThan(rect('Fuel Range').left));
         expect(rect('Fuel').top, rect('Fuel Range').top, reason: 'side by side, one line');
-        // The content edge: 1 dp border + 24 dp padding.
+        // The VEHICLE card's content edge: 1 dp border + 24 dp padding.
         expect(rect('Fuel Range').right, closeTo(cardRect.right - 25, 1));
         expect(rect('Total Cost').left, rect('Fuel').left);
       });
 
       testWidgets('a BEV leaves the third column of the charge row empty', (tester) async {
         await pumpFull(tester, status: {'soc': {'percent': 60}, 'range': {'elecRangeKm': 300}, 'distanceUnit': 'km'});
-        final energy = find.byKey(const ValueKey('tripStats.energy'));
+        final energy = find.byKey(const ValueKey('vehicle.energy'));
         expect(find.descendant(of: energy, matching: find.text('Battery')), findsOneWidget);
         expect(find.descendant(of: energy, matching: find.text('EV Range')), findsOneWidget);
         expect(find.descendant(of: energy, matching: find.text('Fuel')), findsNothing);
@@ -1057,7 +1071,7 @@ void main() {
         ]);
         expect(find.byKey(const ValueKey('tripStats.costs')), findsNothing);
         expect(find.byKey(const ValueKey('tripStats.costs.message')), findsOneWidget);
-        expect(find.byKey(const ValueKey('tripStats.energy')), findsOneWidget);
+        expect(find.byKey(const ValueKey('vehicle.energy')), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     });
@@ -1198,7 +1212,7 @@ void main() {
 
         final watched = [
           find.byKey(const ValueKey('dashboard.title')),
-          find.byKey(const ValueKey('tripStats.energy')),
+          find.byKey(const ValueKey('vehicle.energy')),
           find.byKey(const ValueKey('chip.gear')),
           find.byKey(const ValueKey('tile.recordings')),
           find.byKey(const ValueKey('tile.vehicle')),
@@ -1235,6 +1249,33 @@ void main() {
         await tester.pumpAndSettle();
       }
 
+      // The owner asked whether a cost with more digits breaks the layout (2026-10-04). The test font
+      // is wider than Space Mono, so a cost that keeps to one line here keeps to one on the car.
+      testWidgets('head unit landscape: a seven-digit cost keeps to one line, nothing overflows', (tester) async {
+        stubHappyPath();
+        rpc.stubJson('SystemService', 'GetStatus', {...phev, 'deviceId': 'byd-test'});
+        rpc.stubJson('TripsService', 'ListTrips', {
+          'success': true,
+          'trips': [
+            {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 1234567.89, 'fuelCost': 1234517.93, 'currency': 'PHP', 'hasFuelData': true},
+          ],
+        });
+        tester.view.physicalSize = const Size(1200, 604);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        await tester.pumpWidget(wrap(buildController()));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        for (final cost in ['₱1,234,567.89', '₱1,234,517.93']) {
+          final text = find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText() == cost);
+          expect(text, findsOneWidget, reason: cost);
+          expect(tester.getSize(text).height, lessThanOrEqualTo(32), reason: '$cost on one 32 dp line');
+        }
+      });
+
       testWidgets('head unit landscape (the page beside the 80 dp rail): no overflow, one row of five tiles', (tester) async {
         await pumpAt(tester, const Size(1200, 604));
         expect(tester.takeException(), isNull);
@@ -1245,7 +1286,7 @@ void main() {
       testWidgets('blocks run title, card, chips, tiles down the page', (tester) async {
         await pumpAt(tester, const Size(1200, 900));
         final title = tester.getRect(find.byKey(const ValueKey('dashboard.title'))).top;
-        final card = tester.getRect(find.byKey(const ValueKey('tripStats.energy'))).top;
+        final card = tester.getRect(find.byKey(const ValueKey('vehicle.energy'))).top;
         final chip = tester.getRect(find.byKey(const ValueKey('chip.gear'))).top;
         final tile = tester.getRect(find.byKey(const ValueKey('tile.recordings'))).top;
         expect(title, lessThan(card));

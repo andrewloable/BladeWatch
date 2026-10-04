@@ -1561,6 +1561,7 @@
     "sync_database": "데이터베이스 동기화"
   },
   "companion": {
+    "energy": "에너지",
     "looking": "차량을 찾는 중…",
     "looking_hint": "인터넷을 통하면 최대 1분이 걸릴 수 있습니다. 차량 Wi-Fi에서는 더 빠릅니다.",
     "reconnecting": "차량에 다시 연결하는 중…",

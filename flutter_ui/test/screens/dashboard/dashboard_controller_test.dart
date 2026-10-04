@@ -272,8 +272,8 @@ void main() {
 
   group('refresh() — vehicle tile', () {
     // BladeWatch-p7vi: the tile reflects the selected MODEL. It used to read
-    // GetSohNominal, a removed-feature stub that always answers "unset", so the
-    // tile sat on "Tap to set" forever no matter what the user did.
+    // GetSohNominal back when that always answered "unset", so the tile sat on
+    // "Tap to set" forever no matter what the user did.
     test('populates the selected model', () async {
       stubHappyPath();
       final c = buildController();
@@ -299,14 +299,35 @@ void main() {
 
       expect(c.vehicleTile.hasModel, isFalse);
     });
+  });
 
-    test('does not call the removed SOH endpoint at all', () async {
+  // THIS WEEK's "77% / 14.1 kWh" and "30% / 14 L": the pack and tank size ride on every refresh,
+  // and the 2 s drive poll keeps them.
+  group('refresh() — pack and tank size', () {
+    test('the first refresh already carries both sizes, and the drive poll keeps them', () async {
       stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 77}, 'range': {'fuelPercent': 30}});
+      rpc.stubJson('SystemService', 'GetSohNominal', {'nominalKwh': 18.3, 'nominalSource': 'catalogue'});
+      rpc.stubJson('TripsService', 'GetConfig', {'success': true, 'config': {'fuelTankCapacityL': 48}});
       final c = buildController();
 
       await c.refresh();
+      expect(c.energy.batteryLabel, '77% / 14.1 kWh');
+      expect(c.energy.fuelLabel, '30% / 14 L');
 
-      expect(rpc.calls.where((call) => call.method == 'GetSohNominal'), isEmpty);
+      await c.refreshDrive();
+      expect(c.energy.batteryLabel, '77% / 14.1 kWh');
+    });
+
+    test('an unknown size shows the percentage alone', () async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 77}, 'range': {'fuelPercent': 30}});
+      rpc.stubJson('SystemService', 'GetSohNominal', {'nominalSource': 'unset'});
+      final c = buildController(); // GetConfig unstubbed: it fails
+
+      await c.refresh();
+      expect(c.energy.batteryLabel, '77%');
+      expect(c.energy.fuelLabel, '30%');
     });
   });
 

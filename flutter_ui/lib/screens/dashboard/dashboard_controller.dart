@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart' show GetConfigRequest;
 import '../../platform/daemon_channel.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
@@ -78,6 +79,8 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   /// [includeTrips] false leaves the week's trips out: the screen reloads those once a minute
   /// through [refreshTrips], not on every 15 s tick.
   Future<void> refresh({bool includeTrips = true}) async {
+    // First: the GetStatus below turns these into THIS WEEK's "77% / 14.1 kWh".
+    await _refreshCapacities();
     await Future.wait([
       if (includeTrips) _refreshTripStats(),
       _refreshRecordingsAndDaemonState(),
@@ -102,7 +105,7 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
     try {
       final status = await _systemService.getStatus(GetStatusRequest());
       final drive = _driveOf(status);
-      final energy = EnergyState.of(status);
+      final energy = EnergyState.of(status, packKwh: _packKwh, tankL: _tankL);
       if (drive == _drive && energy == _energy) return;
       _drive = drive;
       _energy = energy;
@@ -154,7 +157,7 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
       final status = await _systemService.getStatus(GetStatusRequest());
       isRecording = status.isRecordingNow;
       _drive = _driveOf(status);
-      _energy = EnergyState.of(status);
+      _energy = EnergyState.of(status, packKwh: _packKwh, tankL: _tankL);
     } catch (_) {
       // Leave isRecording at its default; the count fetch below is independent.
     }
@@ -166,6 +169,21 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
     } catch (_) {
       _recordingsMetric = RecordingsMetricState(loading: false, todayCount: 0, isRecording: isRecording);
     }
+  }
+
+  // Pack and tank size, which change only when the owner edits a setting: read on the 15 s refresh,
+  // not the 2 s drive poll. A failed read keeps the last size; 0 means unknown.
+  double _packKwh = 0;
+  double _tankL = 0;
+
+  Future<void> _refreshCapacities() async {
+    try {
+      final r = await _systemService.getSohNominal(GetSohNominalRequest());
+      _packKwh = r.hasNominalKwh() ? r.nominalKwh : 0;
+    } catch (_) {}
+    try {
+      _tankL = (await _tripsService.getConfig(GetConfigRequest())).config.fuelTankCapacityL;
+    } catch (_) {}
   }
 
   Future<void> _refreshDaemonsSummary() async {
@@ -180,9 +198,7 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
 
   Future<void> _refreshVehicleTile() async {
     String? modelId;
-    // BladeWatch-p7vi: GetSohNominal is a removed-feature stub that always
-    // answers "unset", so reading it only ever produced a tile stuck on
-    // "Tap to set". The tile now reflects the selected model instead.
+    // BladeWatch-p7vi: the tile reflects the selected model, not a capacity.
     try {
       final resp = await _systemService.getSelectedModel(GetSelectedModelRequest());
       if (resp.modelId.isNotEmpty) modelId = resp.modelId;

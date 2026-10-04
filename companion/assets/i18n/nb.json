@@ -1561,6 +1561,7 @@
     "sync_database": "Synkroniser database"
   },
   "companion": {
+    "energy": "Energi",
     "looking": "Leter etter bilen din…",
     "looking_hint": "Over internett kan det ta opptil ett minutt. På bilens Wi-Fi går det raskere.",
     "reconnecting": "Kobler til bilen igjen…",

@@ -117,9 +117,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(t('companion.sync_result', {'added': 2, 'removed': 1})), findsOneWidget);
 
+      // Named for what it opens, with the currency and fuel cost it holds said up front (the owner, 2026-10-04).
+      final entry = tester.widget<HudListRow>(find.byKey(const ValueKey('settings.trips')));
+      expect(entry.title, t('trips.trip_analytics'));
+      expect(entry.subtitle, allOf(contains(t('trips.currency')), contains(t('trips.fuel_cost'))));
       await tester.tap(find.byKey(const ValueKey('settings.trips')));
       await tester.pumpAndSettle();
-      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text(t('companion.trips_costs').toUpperCase())), findsOneWidget);
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text(t('trips.trip_analytics').toUpperCase())), findsOneWidget);
+      // The currency comes before the rates that are in it, and the rate says so.
+      expect(tester.getTopLeft(find.byKey(const ValueKey('trips.currency'))).dy,
+          lessThan(tester.getTopLeft(find.byKey(const ValueKey('trips.rate'))).dy));
+      expect(find.textContaining('/kWh'), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const ValueKey('trips.unit.mi')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('trips.unit.mi')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const ValueKey('trips.apply')));

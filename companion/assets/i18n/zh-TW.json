@@ -1561,6 +1561,7 @@
     "sync_database": "同步資料庫"
   },
   "companion": {
+    "energy": "能耗",
     "looking": "正在尋找您的車輛…",
     "looking_hint": "透過網際網路可能需要一分鐘。在車輛的 Wi-Fi 上會更快。",
     "reconnecting": "正在重新連線車輛…",

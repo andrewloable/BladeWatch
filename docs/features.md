@@ -228,14 +228,26 @@ Trip functionality includes:
   fuel leg count fully as electric. Every trip of the period is summed (paging past ListTrips'
   100 per call). Fuel is left out on a car that recorded none; with no rate set the card says so
   instead of showing zeros; amounts in different currencies are never added.
-- Charge and fuel now (BladeWatch-4zr7): the same THIS WEEK card, in-car and companion, also
-  shows the battery percent and electric range and, on a car with a tank, the fuel percent and
-  fuel range, in the car's distance unit. These are current values from the GetStatus the
-  dashboard already makes; the fuel pair is left out when the car reports neither (a BEV).
-  They sit last in the card, under a rule, so the week's trips and costs stay together, and
-  every row shares one column grid. Refresh: charge and fuel every 2 s in the car (on the drive
-  chips' status read) and every 5 s in the companion; the week's trips and costs once a minute
-  in both.
+- Charge and fuel now (BladeWatch-4zr7): the battery and electric range and, on a car with a
+  tank, the fuel and fuel range, in the car's distance unit. These are current values from the
+  GetStatus the dashboard already makes; the fuel pair is left out when the car reports neither
+  (a BEV). Since 2026-10-04 they are the car's, not the week's: in the car a VEHICLE card under
+  THIS WEEK, on the same three columns; in the companion the Vehicle section, a value over its
+  label two to a row, ahead of This week. The companion dropped its SOC row (it is Battery) and
+  its total Range (the two ranges added up). Refresh: charge and fuel every 2 s in the car (on
+  the drive chips' status read) and every 5 s in the companion; the week's trips and costs once
+  a minute in both.
+- What is left, as an amount: battery and fuel read "77% / 14.1 kWh" and "30% / 14 L" (on the
+  in-car VEHICLE card, the companion's Vehicle section and its Vehicle page's Charge and Fuel)
+  once the size is known, and just the percent until then.
+  The amount is percent x size (`energyLeft` in `bladewatch_rpc`, shared by both apps): the
+  pack's nominal kWh from `GetSohNominal` (SDK, or the model picked in the in-car Vehicle
+  dialog), and the tank's litres from Settings -> Trips -> fuel tank capacity, since BYD exposes
+  no tank size. It is an estimate: battery health and BYD's reserve are not counted. The sizes
+  reload with the 15 s refresh in the car and once a minute in the companion. The companion
+  writes the amount with no-break spaces (`Fmt.energy`), so a narrow phone row wraps only after
+  the slash. Its Battery capacity dialog was removed as redundant (2026-10-04): the pack size
+  comes from the selected model.
 
 ### Fixed: blank Energy tile and 0% "Today" efficiency (Flutter)
 
@@ -388,7 +400,12 @@ It has every page the web app had (the web app itself is gone):
 - Recordings, with playback and delete.
 - Vehicle: status, climate and windows.
 - Location, on a map.
-- Trips: routes, scores, range, driving DNA and storage.
+- Trips: what the in-car Trips page shows (2026-10-04): 7/14/30-day periods, the period summary (trips, hours,
+  kWh, distance, efficiency, kWh/100km) with its fuel, electric and total cost, each trip with its cost, then the
+  driver score out of 500, personalized range with BYD's own figures, the period's cost and driving DNA as bars;
+  a trip's detail adds energy used, speeds in the owner's unit and banded score bars. Money is written as the car
+  writes it (`₱49.96`). The trip settings (Trips' Storage tab, and Settings > Trips & costs > Trip Analytics) put
+  the currency first, then the electricity rate (₱/kWh), fuel price (₱/L) and tank size.
 - Surveillance: arm and disarm, detection settings, camera snapshots and safe zones.
 - Notifications: which alert categories this device shows, and a test alert.
 - Settings.
