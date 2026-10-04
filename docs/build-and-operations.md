@@ -57,15 +57,17 @@ melos run test
 `melos bootstrap` writes a `pubspec_overrides.yaml` into each app; it is gitignored and
 regenerated every time. IDE-file generation is off in `melos.yaml`.
 
-**flutter_pear is pinned exactly** (`flutter_pear: 0.4.7`, `flutter_pear_test: 0.4.7`), never
+**flutter_pear is pinned exactly** (`flutter_pear: 0.4.8`, `flutter_pear_test: 0.4.8`), never
 with a caret: before 1.0 its minor versions may break the API. Its per-platform wiring is in
-place and is not optional — `minSdk = 29` and `arm64-v8a`/`x86_64` only on Android (the
-manifest merger fails below 29, and an `armeabi-v7a` build has none of its native libraries,
-so it would install on a 32-bit phone and fail at worklet start). The ABI list holds only
-because `companion/android/gradle.properties` sets `disable-abi-filtering=true`; without it
-the Flutter Gradle plugin silently replaces the app's `abiFilters` with its own list,
-`armeabi-v7a` included. A consequence: `--split-per-abi` fails at configuration (AGP refuses
-`abiFilters` alongside ABI splits), which is the intended outcome, not a bug to work around.
+place and is not optional — `minSdk = 29` on Android (the manifest merger fails below 29), and
+exactly the ABIs flutter_pear ships native code for: `arm64-v8a`, `x86_64`, and since 0.4.8
+`armeabi-v7a` (32-bit Android TVs; BladeWatch 1.4.1.2). `companion/android/app/build.gradle.kts`
+narrows `abiFilters` to `--target-platform`, so `flutter build apk --target-platform android-arm`
+builds an APK for one ABI and nothing else; with no `--target-platform` it builds all three. That
+holds only because `companion/android/gradle.properties` sets `disable-abi-filtering=true`;
+without it the Flutter Gradle plugin silently replaces the app's `abiFilters` with its own list.
+A consequence: `--split-per-abi` fails at configuration (AGP refuses `abiFilters` alongside ABI
+splits) — build once per `--target-platform` instead, as the release workflow does.
 It also needs
 `NSLocalNetworkUsageDescription` in both `ios/Runner/Info.plist` and `macos/Runner/Info.plist`,
 and the App Sandbox off in both macOS entitlements files (it blocks the `bare` subprocess).
@@ -73,7 +75,8 @@ and the App Sandbox off in both macOS entitlements files (it blocks the `bare` s
 a placeholder usage description, which must be replaced with the app's real use.
 
 **The companion's screens (BladeWatch-rdtj.11)** add a few dependencies, each with a reason:
-- `mobile_scanner` scans the pairing QR (Android, iOS, macOS; elsewhere the code's text is pasted).
+- `mobile_scanner` scans the pairing QR on phones (Android, iOS). TVs and desktops pair over Wi-Fi by
+  number instead (BladeWatch 1.4.1.2); the code's text can still be pasted everywhere.
 - `video_player` plays clips (Android, iOS, macOS; elsewhere they download).
 - `flutter_map` and `latlong2` draw the location and trip maps, the same as the in-car UI.
 - `path_provider` finds the private store file.
@@ -545,7 +548,7 @@ The shared RPC package and the companion app, each from its own directory:
 cd packages/bladewatch_rpc && flutter analyze && flutter test   # 165 tests
 cd companion && flutter analyze && flutter test
 cd companion && flutter test integration_test -d macos          # boots the REAL Pear worklet
-cd companion && flutter build apk --debug                       # arm64-v8a + x86_64 only
+cd companion && flutter build apk --debug --target-platform android-arm64   # one ABI; omit for all three
 cd companion && flutter build macos --debug
 ```
 
@@ -672,11 +675,15 @@ has no launcher icon and runs the daemons; the Flutter APK is the only thing the
 driver opens. Installing one without the other gives either a UI with no daemon or
 daemons with no UI.
 
-**The companion ships for Android, macOS, Windows and Linux.** The Android APK
-(`arm64-v8a` and `x86_64`, `--split-per-abi` fails by design, see the Project Layout
-notes) is about 200 MB -- most of it bare-kit (`libbare-kit.so`, ~65 MB per ABI) plus
-flutter_pear's desktop prebuilds, which flutter_pear declares as universal Flutter
-assets and so ship in the Android APK too (upstream flutter_pear-9ng). None of the
+**The companion ships for Android, macOS, Windows and Linux, one file per CPU architecture**
+(BladeWatch 1.4.1.2), because a device only ever runs one and the Pear runtime is most of each
+file. Android: one APK per ABI -- `arm64-v8a` (phones), `armeabi-v7a` (32-bit Android TVs),
+`x86_64` (emulators, Chromebooks) -- about 85 MB each, most of it bare-kit (`libbare-kit.so`);
+the old two-ABI APK was about 200 MB. macOS: `flutter build macos` can only build universal, so
+`tools/thin_macos_app.sh` splits the app into an `arm64` and an `x86_64` copy (79 MB universal,
+41 and 43 MB thinned), dropping the other architecture's slice of every binary and its
+flutter_pear desktop runtime, then re-signing ad hoc. Windows and Linux are x64 only, which is
+all flutter_pear ships for them; iOS is arm64 only. None of the
 three desktop builds is code-signed: macOS needs a right-click-Open or `xattr -cr` to
 bypass Gatekeeper, Windows needs "Run anyway" past SmartScreen, and Linux needs
 `chmod +x` if the archive did not preserve the executable bit -- the release notes

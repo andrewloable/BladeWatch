@@ -2818,7 +2818,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'Digitalize com a aplicação BladeWatch no seu telemóvel ou computador. O código só funciona uma vez.';
+      'Digitalize com a aplicação BladeWatch no seu telemóvel. O código só funciona uma vez.';
 
   @override
   String pairing_expires_in(String time) {
@@ -2863,6 +2863,25 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get pairing_error =>
       'O serviço da câmara não respondeu. Tente novamente.';
+
+  @override
+  String get pairing_wifi_hint =>
+      'Televisor ou computador? Escolha «Emparelhar por Wi-Fi» na app BladeWatch desse dispositivo. A ligação direta tem de estar ativada.';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return 'Emparelhar $name?';
+  }
+
+  @override
+  String get pairing_wifi_body =>
+      'Emparelhe apenas se mostrar este mesmo número.';
+
+  @override
+  String get pairing_wifi_accept => 'Emparelhar';
+
+  @override
+  String get pairing_wifi_refuse => 'Não emparelhar';
 
   @override
   String get daemon_name_pear => 'Acesso remoto (Pear)';
@@ -5757,7 +5776,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get pairing_scan_hint =>
-      'Escaneie com o app BladeWatch no seu celular ou computador. O código funciona uma vez só.';
+      'Escaneie com o app BladeWatch no seu celular. O código funciona uma vez só.';
 
   @override
   String pairing_expires_in(String time) {
@@ -5802,6 +5821,24 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get pairing_error =>
       'O serviço da câmera não respondeu. Tente de novo.';
+
+  @override
+  String get pairing_wifi_hint =>
+      'TV ou computador? Escolha “Parear por Wi-Fi” no app BladeWatch dele. A conexão direta precisa estar ativada.';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return 'Parear $name?';
+  }
+
+  @override
+  String get pairing_wifi_body => 'Pareie só se ele mostrar este mesmo número.';
+
+  @override
+  String get pairing_wifi_accept => 'Parear';
+
+  @override
+  String get pairing_wifi_refuse => 'Não parear';
 
   @override
   String get daemon_name_pear => 'Acesso remoto (Pear)';

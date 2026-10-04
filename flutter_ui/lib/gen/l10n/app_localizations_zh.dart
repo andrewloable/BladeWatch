@@ -2700,7 +2700,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pairing_title => '配对设备';
 
   @override
-  String get pairing_scan_hint => '用手机或电脑上的 BladeWatch 应用扫描。此代码仅可使用一次。';
+  String get pairing_scan_hint => '用手机上的 BladeWatch 应用扫描。此代码仅可使用一次。';
 
   @override
   String pairing_expires_in(String time) {
@@ -2742,6 +2742,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pairing_error => '摄像头服务没有响应。请重试。';
+
+  @override
+  String get pairing_wifi_hint =>
+      '电视或电脑？在其 BladeWatch 应用中选择“通过 Wi-Fi 配对”。需要开启直接连接。';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return '要配对 $name 吗？';
+  }
+
+  @override
+  String get pairing_wifi_body => '仅当对方显示相同的数字时才配对。';
+
+  @override
+  String get pairing_wifi_accept => '配对';
+
+  @override
+  String get pairing_wifi_refuse => '不配对';
 
   @override
   String get daemon_name_pear => '远程访问 (Pear)';
@@ -5516,7 +5534,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get pairing_title => '配对设备';
 
   @override
-  String get pairing_scan_hint => '用手机或电脑上的 BladeWatch 应用扫描。此代码仅可使用一次。';
+  String get pairing_scan_hint => '用手机上的 BladeWatch 应用扫描。此代码仅可使用一次。';
 
   @override
   String pairing_expires_in(String time) {
@@ -5558,6 +5576,24 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get pairing_error => '摄像头服务没有响应。请重试。';
+
+  @override
+  String get pairing_wifi_hint =>
+      '电视或电脑？在其 BladeWatch 应用中选择“通过 Wi-Fi 配对”。需要开启直接连接。';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return '要配对 $name 吗？';
+  }
+
+  @override
+  String get pairing_wifi_body => '仅当对方显示相同的数字时才配对。';
+
+  @override
+  String get pairing_wifi_accept => '配对';
+
+  @override
+  String get pairing_wifi_refuse => '不配对';
 
   @override
   String get daemon_name_pear => '远程访问 (Pear)';
@@ -8333,7 +8369,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get pairing_title => '配對裝置';
 
   @override
-  String get pairing_scan_hint => '使用手機或電腦上的 BladeWatch 應用程式掃描。此代碼僅能使用一次。';
+  String get pairing_scan_hint => '使用手機上的 BladeWatch 應用程式掃描。此代碼僅能使用一次。';
 
   @override
   String pairing_expires_in(String time) {
@@ -8375,6 +8411,24 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get pairing_error => '攝影機服務沒有回應。請再試一次。';
+
+  @override
+  String get pairing_wifi_hint =>
+      '電視或電腦？在其 BladeWatch 應用程式中選擇「透過 Wi-Fi 配對」。需要開啟直接連線。';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return '要配對 $name 嗎？';
+  }
+
+  @override
+  String get pairing_wifi_body => '僅在對方顯示相同數字時才配對。';
+
+  @override
+  String get pairing_wifi_accept => '配對';
+
+  @override
+  String get pairing_wifi_refuse => '不配對';
 
   @override
   String get daemon_name_pear => '遠端存取 (Pear)';

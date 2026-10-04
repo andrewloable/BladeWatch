@@ -11,6 +11,7 @@ import 'font_licence.dart';
 import 'i18n.dart';
 import 'screens/pairing/qr_scan_page.dart';
 import 'screens/recordings/video_capability.dart';
+import 'tv.dart';
 
 /// The BladeWatch companion: reach the car from a phone or desktop, over Pear from anywhere or
 /// directly over the LAN when on the same network (epic BladeWatch-rdtj).
@@ -24,10 +25,14 @@ Future<void> main() async {
   await initializeDateFormatting();
   final store = CarStore(File('${(await getApplicationSupportDirectory()).path}/companion.json'));
   await store.load();
+  final tv = await isAndroidTv();
   runApp(CompanionApp(
     store: store,
     loadTr: (lang) => Tr.load(rootBundle, lang),
-    // mobile_scanner has a camera path on these three only; the others paste the code's text.
-    scan: Platform.isAndroid || Platform.isIOS || Platform.isMacOS ? scanPairingQr : null,
+    // Phones scan the car's QR; TVs and desktops pair by number over Wi-Fi instead, and can still
+    // paste the code's text (the owner, 2026-10-04).
+    scan: (Platform.isAndroid && !tv) || Platform.isIOS ? scanPairingQr : null,
+    wifiPairing: tv || Platform.isMacOS || Platform.isWindows || Platform.isLinux,
+    tv: tv,
   ));
 }

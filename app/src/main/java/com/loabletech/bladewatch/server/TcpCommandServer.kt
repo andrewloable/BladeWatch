@@ -8,6 +8,7 @@ import net.bladewatch.app.monitor.AccMonitor
 import net.bladewatch.app.storage.StorageManager
 import org.json.JSONArray
 import net.bladewatch.app.auth.CompanionPairing
+import net.bladewatch.app.auth.WifiPairing
 import net.bladewatch.app.daemon.PearStatus
 import net.bladewatch.app.daemon.PearTopic
 import org.json.JSONObject
@@ -588,30 +589,39 @@ class TcpCommandServer(private val port: Int) {
             // HttpServer, never this port. Remote revocation would need its own endpoint and its
             // own threat analysis; it is deliberately absent.
             "pairingMint" -> {
-                val deviceId = AuthManager.getState()?.deviceId
-                    ?: throw IllegalStateException("auth not initialised")
-                val identity = LanTls.loadOrCreate(store()) { e ->
-                    CameraDaemon.log(
-                        "ERROR: stored LAN TLS identity unreadable (" + e.message +
-                            "); minting a new one -- paired companions must re-pair"
-                    )
-                }
-                val payload = CompanionPairing.shared.mint(
-                    CompanionPairing.Identity(
-                        deviceId = deviceId,
-                        pearTopic = PearTopic.topicHex(store()),
-                        tlsPort = LanTls.PORT,
-                        tlsFingerprint = identity.fingerprintSha256,
-                        probeKey = LanDiscoveryResponder.probeKey(store()).joinToString("") { "%02x".format(it) },
-                    )
-                )
-                // Pairing is what switches remote access on: the Pear peer is opt-in, and a
-                // companion that is not on the car's Wi-Fi can only redeem its code over Pear.
-                recordDaemonEnabled("PEAR_PEER", true)
+                val payload = mintPairing()
                 response.put("status", "ok")
                 response.put("payload", payload.encode())
                 response.put("expiresAt", payload.expiresAt)
                 response.put("lanEnabled", readLanEnabled())
+            }
+
+            // BladeWatch 1.4.1.2: pairing a device without a camera over the car's Wi-Fi with a
+            // matching number (WifiPairing). In-car only, like the QR: the dialog opens and shuts
+            // the window, reads the request waiting for the owner, and passes on their answer.
+            "pairingWifiWindow" -> {
+                WifiPairing.shared.window(cmd.optBoolean("open", false))
+                response.put("status", "ok")
+                response.put("lanEnabled", readLanEnabled())
+            }
+
+            "pairingWifiPending" -> {
+                val pending = WifiPairing.shared.pending()
+                response.put("status", "ok")
+                response.put(
+                    "request",
+                    if (pending == null) JSONObject.NULL
+                    else JSONObject().put("id", pending.id).put("name", pending.name).put("number", pending.number)
+                )
+            }
+
+            "pairingWifiDecide" -> {
+                if (WifiPairing.shared.decide(cmd.optString("id", ""), cmd.optBoolean("accept", false))) {
+                    response.put("status", "ok")
+                } else {
+                    response.put("status", "error")
+                    response.put("message", "no such request waiting")
+                }
             }
 
             "pairingList" -> {
@@ -788,6 +798,43 @@ class TcpCommandServer(private val port: Int) {
         findPidsByProcessName(processName).isNotEmpty()
 
     companion object {
+        /**
+         * A fresh pairing payload for this car: the QR's, and a Wi-Fi pairing's once the owner has
+         * confirmed it (BladeWatch 1.4.1.2). Pairing is what switches remote access on: the Pear
+         * peer is opt-in, and a companion that is not on the car's Wi-Fi can only redeem its code
+         * over Pear. Creates the LAN identity if none exists yet, so pairing can happen before LAN
+         * access is ever switched on.
+         */
+        @JvmStatic
+        fun mintPairing(): CompanionPairing.Payload {
+            val store = secretStoreForTest ?: SECRET_STORE
+            val deviceId = AuthManager.getState()?.deviceId
+                ?: throw IllegalStateException("auth not initialised")
+            val identity = lanIdentity(store)
+            val payload = CompanionPairing.shared.mint(
+                CompanionPairing.Identity(
+                    deviceId = deviceId,
+                    pearTopic = PearTopic.topicHex(store),
+                    tlsPort = LanTls.PORT,
+                    tlsFingerprint = identity.fingerprintSha256,
+                    probeKey = LanDiscoveryResponder.probeKey(store).joinToString("") { "%02x".format(it) },
+                )
+            )
+            recordDaemonEnabled("PEAR_PEER", true)
+            return payload
+        }
+
+        /** This car's LAN TLS certificate fingerprint: the one Wi-Fi pairing's number is bound to. */
+        @JvmStatic
+        fun lanTlsFingerprint(): String = lanIdentity(secretStoreForTest ?: SECRET_STORE).fingerprintSha256
+
+        private fun lanIdentity(store: SecretConfigStore) = LanTls.loadOrCreate(store) { e ->
+            CameraDaemon.log(
+                "ERROR: stored LAN TLS identity unreadable (" + e.message +
+                    "); minting a new one -- paired companions must re-pair"
+            )
+        }
+
 
         private val SECRET_STORE = SecretConfigStore()
 

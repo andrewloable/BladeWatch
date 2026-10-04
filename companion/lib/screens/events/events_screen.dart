@@ -15,6 +15,7 @@ import '../common/format.dart';
 import '../common/loader.dart';
 import '../recordings/clip_pages.dart';
 import '../recordings/clips.dart';
+import '../../tv.dart';
 
 /// What happened to the car: the alerts it kept for this companion (store and forward), and the
 /// surveillance and proximity clips -- the web events page plus the alert inbox that replaces
@@ -112,7 +113,8 @@ class _AlertsState extends State<_Alerts> {
                         padding: const EdgeInsets.only(bottom: 8),
                         // A row that arrived since the list was last seen is the accent-bordered one (its state is real:
                         // it is in `_shownNew`); the rest are plain. The title is bold either way, as every HUD row's is.
-                        child: HudListRow(
+                        // Most alerts open nothing; on a TV they must still take focus, or the remote skips the list.
+                        child: (clipOf(e) == null ? (Widget row) => tvReadable(context, row) : (Widget row) => row)(HudListRow(
                           key: ValueKey('alert.${e.id}'),
                           leading: Icon(
                             switch (e.severity) {
@@ -132,7 +134,7 @@ class _AlertsState extends State<_Alerts> {
                           selected: _shownNew.contains(e.id.toInt()),
                           trailing: clipOf(e) == null ? null : const Icon(Icons.play_circle_outline, size: 20),
                           onTap: clipOf(e) == null ? null : () => openClip(context, clipOf(e)!),
-                        ),
+                        )),
                       ),
                   ],
                 ),

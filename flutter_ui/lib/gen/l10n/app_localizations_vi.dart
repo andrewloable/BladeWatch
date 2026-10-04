@@ -2797,7 +2797,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'Quét bằng ứng dụng BladeWatch trên điện thoại hoặc máy tính. Mã chỉ dùng được một lần.';
+      'Quét bằng ứng dụng BladeWatch trên điện thoại. Mã chỉ dùng được một lần.';
 
   @override
   String pairing_expires_in(String time) {
@@ -2841,6 +2841,25 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get pairing_error => 'Dịch vụ camera không phản hồi. Hãy thử lại.';
+
+  @override
+  String get pairing_wifi_hint =>
+      'TV hoặc máy tính? Chọn “Ghép nối qua Wi-Fi” trong ứng dụng BladeWatch trên thiết bị đó. Cần bật kết nối trực tiếp.';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return 'Ghép nối $name?';
+  }
+
+  @override
+  String get pairing_wifi_body =>
+      'Chỉ ghép nối nếu thiết bị hiển thị đúng số này.';
+
+  @override
+  String get pairing_wifi_accept => 'Ghép nối';
+
+  @override
+  String get pairing_wifi_refuse => 'Không ghép nối';
 
   @override
   String get daemon_name_pear => 'Truy cập từ xa (Pear)';

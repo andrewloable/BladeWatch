@@ -216,6 +216,13 @@ class MainActivity : FlutterActivity() {
                 "pairing.revoke" -> result.success(jsonToMap(pairingControl.revoke(requireArgs(call).string("id"))))
                 "pairing.setLanAccess" ->
                     result.success(jsonToMap(pairingControl.setLanAccess(requireArgs(call).bool("enabled"))))
+                "pairing.wifiWindow" ->
+                    result.success(jsonToMap(pairingControl.wifiWindow(requireArgs(call).bool("open"))))
+                "pairing.wifiPending" -> result.success(jsonToMap(pairingControl.wifiPending()))
+                "pairing.wifiDecide" -> {
+                    val args = requireArgs(call)
+                    result.success(jsonToMap(pairingControl.wifiDecide(args.string("id"), args.bool("accept"))))
+                }
 
                 "config.get" -> {
                     val args = requireArgs(call)

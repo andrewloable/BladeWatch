@@ -512,10 +512,11 @@ class HttpServer(private val port: Int) {
                     return
                 }
 
-                // The companion's two public auth calls (/auth/pair, /auth/companion). They are
-                // deliberately not rate limited -- see AuthApiHandler.
+                // The companion's public auth calls (/auth/pair, /auth/companion, and on the LAN
+                // listener only /auth/wifi-pair/*). Deliberately not rate limited -- see
+                // AuthApiHandler; Wi-Fi pairing caps its own attempts (WifiPairing).
                 if (path.startsWith("/auth/")) {
-                    if (!AuthApiHandler.handle(method, path, body, out)) {
+                    if (!AuthApiHandler.handle(method, path, body, out, client.localPort == LanTls.PORT)) {
                         HttpResponse.sendError(out, 404, "Not Found")
                     }
                     out.flush()

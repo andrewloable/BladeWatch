@@ -40,6 +40,17 @@ import org.json.JSONObject
  *
  * The probe key is the per-car secret the pairing payload carries (BladeWatch-rdtj.7).
  *
+ * ## Pairing probe (BladeWatch 1.4.1.2) -- a device with no camera looking for a car to pair with
+ *
+ *     probe (UDP to port [PORT], exactly [PROBE_BYTES] bytes):
+ *         "BWPAIRQ1" | nonce(16) | zero padding -- unsigned: the device has no key yet
+ *     reply: "BWPAIRR1" | nonce(16, echoed) | UTF-8 JSON {"port"}, from the car's own address
+ *
+ * Answered ONLY while the owner has the pairing dialog open in the car ([pairingOpen],
+ * [net.bladewatch.app.auth.WifiPairing]); silence otherwise. So the car reveals itself to the
+ * network for the few minutes the owner asks it to, and never otherwise. Routing only -- no device
+ * id, no fingerprint: trust comes from the number the owner compares, not from this reply.
+ *
  * ## What it refuses, and why
  *
  * - **Anything unsigned.** Answering would tell every device on the network that a BladeWatch car is
@@ -69,6 +80,8 @@ class LanDiscoveryResponder(
     private val wallClockMs: () -> Long = System::currentTimeMillis,
     private val monotonicMs: () -> Long = { System.nanoTime() / 1_000_000 },
     private val port: Int = PORT,
+    /** True while the owner has Wi-Fi pairing open in the car: only then is a pairing probe answered. */
+    private val pairingOpen: () -> Boolean = { false },
 ) {
     /** What a reply tells the companion. Only routing data and a public certificate pin. */
     class ReplyInfo(val tlsFingerprintSha256: String, val deviceId: String)
@@ -135,6 +148,7 @@ class LanDiscoveryResponder(
      */
     internal fun answer(probe: ByteArray, from: InetAddress): ByteArray? {
         if (probe.size != PROBE_BYTES) return null
+        if (probe.copyOfRange(0, 8).contentEquals(PAIR_PROBE_MAGIC)) return answerPairing(probe)
         if (!probe.copyOfRange(0, 8).contentEquals(PROBE_MAGIC)) return null
         val key = probeKey()
         val signed = probe.copyOfRange(0, SIGNED_PROBE_BYTES)
@@ -159,6 +173,13 @@ class LanDiscoveryResponder(
         return reply.takeIf { it.size < PROBE_BYTES }
     }
 
+    /** A pairing probe gets the LAN TLS port, and only while pairing is open; its source address is the car. */
+    private fun answerPairing(probe: ByteArray): ByteArray? {
+        if (!pairingOpen()) return null
+        val json = JSONObject().put("port", LanTls.PORT).toString().toByteArray(Charsets.UTF_8)
+        return (PAIR_REPLY_MAGIC + probe.copyOfRange(8, 24) + json).takeIf { it.size < PROBE_BYTES } // never an amplifier
+    }
+
     @Synchronized
     private fun rememberIfNew(nonce: String): Boolean {
         val now = monotonicMs()
@@ -178,6 +199,8 @@ class LanDiscoveryResponder(
 
         val PROBE_MAGIC = "BWPROBE1".toByteArray(Charsets.US_ASCII)
         val REPLY_MAGIC = "BWREPLY1".toByteArray(Charsets.US_ASCII)
+        val PAIR_PROBE_MAGIC = "BWPAIRQ1".toByteArray(Charsets.US_ASCII)
+        val PAIR_REPLY_MAGIC = "BWPAIRR1".toByteArray(Charsets.US_ASCII)
 
         private const val SIGNED_PROBE_BYTES = 8 + 16 + 8
         private val FRESHNESS_WINDOW_MS = TimeUnit.HOURS.toMillis(24)

@@ -2785,7 +2785,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'สแกนด้วยแอป BladeWatch บนโทรศัพท์หรือคอมพิวเตอร์ของคุณ รหัสนี้ใช้ได้ครั้งเดียว';
+      'สแกนด้วยแอป BladeWatch บนโทรศัพท์ของคุณ รหัสนี้ใช้ได้ครั้งเดียว';
 
   @override
   String pairing_expires_in(String time) {
@@ -2829,6 +2829,25 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get pairing_error => 'บริการกล้องไม่ตอบสนอง โปรดลองอีกครั้ง';
+
+  @override
+  String get pairing_wifi_hint =>
+      'ทีวีหรือคอมพิวเตอร์? เลือก “จับคู่ผ่าน Wi-Fi” ในแอป BladeWatch ของอุปกรณ์นั้น ต้องเปิดการเชื่อมต่อโดยตรงไว้';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return 'จับคู่ $name ไหม';
+  }
+
+  @override
+  String get pairing_wifi_body =>
+      'จับคู่เฉพาะเมื่ออุปกรณ์แสดงตัวเลขเดียวกันนี้';
+
+  @override
+  String get pairing_wifi_accept => 'จับคู่';
+
+  @override
+  String get pairing_wifi_refuse => 'ไม่จับคู่';
 
   @override
   String get daemon_name_pear => 'การเข้าถึงระยะไกล (Pear)';

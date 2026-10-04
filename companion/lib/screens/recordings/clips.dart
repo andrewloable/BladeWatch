@@ -18,6 +18,7 @@ import '../../car/media.dart';
 import '../../i18n.dart';
 import '../common/format.dart';
 import 'video_capability.dart';
+import '../../tv.dart';
 
 /// A clip's `/thumb/` image, fetched through the gateway once and kept for the session.
 class ClipThumb extends StatefulWidget {
@@ -124,7 +125,9 @@ class ClipTile extends StatelessWidget {
       selected: selected ?? false,
       trailing: selected != null
           ? Checkbox(key: ValueKey('clip.check.${c.filename}'), value: selected, onChanged: (v) => onSelect?.call(v ?? false))
-          : onDelete == null
+          // Not on a TV: the trash sat in the column the remote moves down, so focus went from
+          // bin to bin and never onto a clip (a Sony BRAVIA, 2026-10-04). Select still deletes.
+          : onDelete == null || isTv(context)
               ? null
               : IconButton(
                   key: ValueKey('clip.delete.${c.filename}'),

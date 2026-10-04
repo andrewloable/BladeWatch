@@ -62,8 +62,8 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 
 // The car apps' four-part version, which pubspec.yaml cannot hold: keep in step with
 // app/build.gradle.kts (the owner, 2026-10-04).
-#define VERSION_AS_NUMBER 1,4,1,1
-#define VERSION_AS_STRING "1.4.1.1"
+#define VERSION_AS_NUMBER 1,4,1,2
+#define VERSION_AS_STRING "1.4.1.2"
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION VERSION_AS_NUMBER

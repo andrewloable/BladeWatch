@@ -1,4 +1,5 @@
-# Build all THREE release APKs, unsigned, and attach them to the GitHub Release.
+# Build all FIVE release APKs, unsigned, and attach them to the GitHub Release: the two car
+# APKs, and the companion once per Android ABI.
 #
 # Two go on the head unit and share one UID:
 #   net.bladewatch.app     — service host: daemons, receivers, BYD integration, no UI
@@ -208,14 +209,20 @@ jobs:
         working-directory: flutter_ui
         run: flutter build apk --release --target-platform android-arm64
 
-      # One APK with arm64-v8a and x86_64 only: flutter_pear ships native code for those
-      # two, and companion/android/gradle.properties (disable-abi-filtering) keeps the
-      # Flutter plugin from adding armeabi-v7a, which would install on a 32-bit phone and
-      # then fail at worklet start. --split-per-abi fails at configuration by design.
-      # Unsigned for the same reason as the other two: no keystore in CI.
-      - name: Build companion APK (net.bladewatch.companionapp)
+      # One APK per ABI (BladeWatch 1.4.1.2), each carrying only its own Pear runtime and Dart
+      # code: arm64-v8a for phones, armeabi-v7a for 32-bit Android TVs (flutter_pear 0.4.8+),
+      # x86_64 for emulators and Chromebooks. companion/android/app/build.gradle.kts narrows
+      # abiFilters to --target-platform; --split-per-abi fails at configuration by design
+      # (companion/android/gradle.properties). Each build overwrites app-release.apk, so it
+      # is copied out straight away. Unsigned for the same reason as the other two.
+      - name: Build companion APKs (net.bladewatch.companionapp)
         working-directory: companion
-        run: flutter build apk --release
+        run: |
+          set -euo pipefail
+          for abi in android-arm64:arm64-v8a android-arm:armeabi-v7a android-x64:x86_64; do
+            flutter build apk --release --target-platform "${abi%%:*}"
+            cp -f build/app/outputs/flutter-apk/app-release.apk "build/companion-${abi##*:}.apk"
+          done
 
       # The Flutter APK's privileged Kotlin layer — IPC client, JWT minting, daemon control,
       # secret/public config, the Live View texture plugin, the LocationListener — is a
@@ -281,30 +288,32 @@ jobs:
           done
           exit 1
 
-      # Collect all three APKs under tag-stamped, self-describing names.
+      # Collect all five APKs under tag-stamped, self-describing names.
       #
       # The service host APK is named bladewatch-<git branch>-arm64-v8a-release.apk
       # by applicationVariants in app/build.gradle.kts. A tag build is a DETACHED
       # HEAD, so `git rev-parse --abbrev-ref HEAD` returns the literal "HEAD" and the
       # file lands as bladewatch-HEAD-...; glob for it rather than guessing, and
       # stamp the tag on the uploaded name instead.
-      - name: Stage all three APKs
+      - name: Stage all five APKs
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           mkdir -p dist
           host=$(ls app/build/outputs/apk/release/*.apk | head -1)
           ui=flutter_ui/build/app/outputs/flutter-apk/app-release.apk
-          companion=companion/build/app/outputs/flutter-apk/app-release.apk
           test -f "$host"      || { echo "::error::service host APK not found"; exit 1; }
           test -f "$ui"        || { echo "::error::in-car UI APK not found"; exit 1; }
-          test -f "$companion" || { echo "::error::companion APK not found"; exit 1; }
           cp -f "$host"      "dist/bladewatch-service-host-${TAG}-arm64-v8a-unsigned.apk"
           cp -f "$ui"        "dist/bladewatch-ui-${TAG}-arm64-v8a-unsigned.apk"
-          cp -f "$companion" "dist/bladewatch-companion-${TAG}-android-unsigned.apk"
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            companion="companion/build/companion-$abi.apk"
+            test -f "$companion" || { echo "::error::companion $abi APK not found"; exit 1; }
+            cp -f "$companion" "dist/bladewatch-companion-${TAG}-android-$abi-unsigned.apk"
+          done
           ls -la dist
 
-      # All three must be UNSIGNED and present. A half-signed head-unit pair is the
+      # All five must be UNSIGNED and present. A half-signed head-unit pair is the
       # dangerous outcome: android:sharedUserId collapses the two packages into one
       # UID only when their certificates are IDENTICAL, and the daemon's loopback
       # IPC on 19876/19877 authorises by peer UID. If one APK arrived carrying a
@@ -312,13 +321,13 @@ jobs:
       # produce a pair that installs but cannot talk to itself. The companion shares no UID,
       # but a CI-signed copy could only have come from a debug key, and a phone that installed
       # that could never take the real release as an update.
-      - name: Verify all three APKs are present and unsigned
+      - name: Verify all five APKs are present and unsigned
         run: |
           set -euo pipefail
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           count=$(ls dist/*.apk | wc -l)
-          if [ "$count" -ne 3 ]; then
-            echo "::error::expected 3 APKs (service host + in-car UI + companion), found $count"
+          if [ "$count" -ne 5 ]; then
+            echo "::error::expected 5 APKs (service host + in-car UI + 3 companion ABIs), found $count"
             exit 1
           fi
           for apk in dist/*.apk; do
@@ -338,10 +347,10 @@ jobs:
       # Tags only. On a workflow_dispatch run the ref is a BRANCH, and
       # action-gh-release requires a tag — without this guard a manual run would do
       # the entire build and then fail on the very last step. Skipping it turns
-      # workflow_dispatch into a useful dry run: all three APKs still get built, verified
+      # workflow_dispatch into a useful dry run: all five APKs still get built, verified
       # and uploaded as a workflow artifact, just not published as a release.
       #
-      # This job attaches only the three Android APKs. build-macos/-windows/-linux each
+      # This job attaches only the five Android APKs. build-macos/-windows/-linux each
       # attach their own file to the SAME release afterwards (action-gh-release is additive
       # across jobs/calls targeting one tag, each job's `files:` glob only matches what that
       # job staged) — softprops/action-gh-release's own docs cover multi-job attachment to one
@@ -366,8 +375,11 @@ jobs:
 
             | File | Package / bundle id | Role |
             |---|---|---|
-            | `bladewatch-companion-*-android-unsigned.apk` | `net.bladewatch.companionapp` | Android phones (arm64 and x86_64). |
-            | `bladewatch-companion-*-macos-unsigned.zip` | `net.bladewatch.companionapp` | macOS (Apple Silicon). Unsigned: see below before opening it. |
+            | `bladewatch-companion-*-android-arm64-v8a-unsigned.apk` | `net.bladewatch.companionapp` | Android phones and tablets (64-bit). |
+            | `bladewatch-companion-*-android-armeabi-v7a-unsigned.apk` | `net.bladewatch.companionapp` | Android TV, and other 32-bit Android devices. |
+            | `bladewatch-companion-*-android-x86_64-unsigned.apk` | `net.bladewatch.companionapp` | Android emulators and x86 Chromebooks. |
+            | `bladewatch-companion-*-macos-arm64-unsigned.zip` | `net.bladewatch.companionapp` | macOS on Apple Silicon. Unsigned: see below before opening it. |
+            | `bladewatch-companion-*-macos-x86_64-unsigned.zip` | `net.bladewatch.companionapp` | macOS on Intel. |
             | `bladewatch-companion-*-windows-unsigned.zip` | `net.bladewatch.companionapp` | Windows (x64). |
             | `bladewatch-companion-*-linux-unsigned.tar.gz` | `net.bladewatch.companionapp` | Linux (x64). |
 
@@ -440,7 +452,7 @@ jobs:
             address. **Onion URLs and QR codes saved from v1.3.x stop working**, and nothing
             migrates them. To reach the car again:
 
-            1. Install the companion APK on your phone.
+            1. Install the companion on your phone (the arm64-v8a APK) or desktop.
             2. On the car's dashboard, tap **Pair a device** and scan the code with the
                companion. The code works once and expires after five minutes. Pairing turns
                remote access on.
@@ -481,12 +493,17 @@ jobs:
       # preserves the .app's resource forks and code-signing-adjacent extended attributes the
       # way Finder/Archive Utility do -- `zip` alone is a known source of a corrupted .app on
       # unzip for exactly this reason.
+      # flutter builds macOS universal, with no per-architecture option; a Mac runs one slice,
+      # so ship each on its own at about half the size (tools/thin_macos_app.sh).
       - name: Package
         working-directory: companion/build/macos/Build/Products/Release
         run: |
           set -euo pipefail
           test -d BladeWatch.app || { echo "::error::BladeWatch.app not found"; exit 1; }
-          ditto -c -k --sequesterRsrc --keepParent BladeWatch.app "bladewatch-companion-${GITHUB_REF_NAME}-macos-unsigned.zip"
+          for arch in arm64 x86_64; do
+            "$GITHUB_WORKSPACE/tools/thin_macos_app.sh" BladeWatch.app "$arch" "thin-$arch"
+            ditto -c -k --sequesterRsrc --keepParent "thin-$arch/BladeWatch.app" "bladewatch-companion-${GITHUB_REF_NAME}-macos-$arch-unsigned.zip"
+          done
 
       # Not "is it signed" (it never is here) but "did the build accidentally embed a signing
       # identity from this runner's default keychain" -- codesign reports adhoc/no-signature
@@ -495,10 +512,12 @@ jobs:
         working-directory: companion/build/macos/Build/Products/Release
         run: |
           set -euo pipefail
-          if codesign -dv --verbose=2 BladeWatch.app 2>&1 | grep -q '^Authority='; then
-            echo "::error::BladeWatch.app is signed with a real identity; this workflow must ship unsigned builds"
-            exit 1
-          fi
+          for app in BladeWatch.app thin-*/BladeWatch.app; do
+            if codesign -dv --verbose=2 "$app" 2>&1 | grep -q '^Authority='; then
+              echo "::error::$app is signed with a real identity; this workflow must ship unsigned builds"
+              exit 1
+            fi
+          done
           echo "unsigned OK (adhoc/none)"
 
       - uses: actions/upload-artifact@v6

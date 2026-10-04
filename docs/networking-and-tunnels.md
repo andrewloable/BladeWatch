@@ -101,6 +101,15 @@ car itself: each time the route comes up it reads `GetStatus.network` and, when 
 type is `wifi` (a cellular address is private too, but on no LAN), keeps the `ip` as
 `PairedCar.lanHint`. Only when that address is silent does the sweep run.
 
+**The sweep goes out in slices of 32, each on its own socket, 100 ms apart (BladeWatch-z7s6).**
+From a Sony BRAVIA (Android TV 12) a 254-probe burst on one socket never reached the car, near the end of the
+/24, in a minute of searching (measured with the pairing probe, 2026-10-04): a probe to an empty address waits in
+the kernel for an ARP lookup that will fail, holding socket send buffer, and once that is full Dart's
+non-blocking send drops the rest without a word. Sliced, the same TV found the car by sweep alone (its
+`lanHint` ignored) 3 times in 3. Staggered rather than one slice after another's timeout, because route
+selection waits for the LAN before it tries Pear: a whole /24 still takes about 1.5 s (7 x 100 ms, then the
+800 ms reply window), where sequential slices would have cost every connection from away about 6 s.
+
 The exact wire format is in `LanDiscoveryResponder`'s class doc. In short: a probe
 is exactly 256 bytes — magic, 16-byte nonce, timestamp, HMAC-SHA256 under the
 per-car probe key (`lanDiscovery.probeKey`, carried by the pairing payload), zero
@@ -117,6 +126,43 @@ pin only, never a secret.
   every probe during the skew. Known ceiling: the cache is in memory, so after a
   daemon restart a probe captured in the last 24 h can be answered once more.
 - **The car answers; it never advertises.** No unsolicited announcements.
+
+### Pairing over Wi-Fi by number (BladeWatch 1.4.1.2)
+
+A device with no camera to scan the QR -- an Android TV, a desktop -- pairs over the car's Wi-Fi
+instead, by comparing a six-digit number on both screens, Bluetooth-style numeric comparison.
+Phones always scan the QR. The protocol is `WifiPairing`'s class doc
+(`app/src/main/java/com/loabletech/bladewatch/auth/WifiPairing.kt`); the companion's half is
+`companion/lib/transport/wifi_pairing.dart`. In short:
+
+1. The owner opens **Pair a device** in the car. That opens the pairing window: the dialog
+   refreshes it every 2 s and it lapses 15 s after the last refresh, so it is shut whenever the
+   dialog is. Needs **Direct connection** (LAN access) on -- the window's two halves below live on
+   the LAN listener.
+2. The device looks for the car with an UNSIGNED pairing probe on udp/18443:
+   `"BWPAIRQ1" | nonce(16) | zero padding`, exactly 256 bytes. The responder answers it ONLY
+   while the window is open, with `"BWPAIRR1" | nonce | {"port":8443}` from its own address --
+   routing only, no device id, no pin. Silence otherwise, so the car is invisible on the network
+   except while the owner asks. Unicast, like the signed probe, swept 32 hosts at a time: from a
+   Sony BRAVIA a 254-probe burst never reached the car, near the end of the /24, in a minute, where slices of 32
+   found it on the first pass (2026-10-04).
+3. Over TLS to 8443, accepting whatever certificate it is shown and remembering its fingerprint,
+   the device sends `start {name, commitment = SHA-256(nonce)}` and gets `{id, carNonce}`; then
+   `reveal {id, deviceNonce}`. Both sides compute the number from the car's certificate
+   fingerprint and both nonces; the car shows it with the device's name, the device shows it too.
+4. The owner taps **Pair** in the car only if the numbers match. The device's `result` poll then
+   receives a freshly minted pairing payload -- exactly the QR's -- once. The device checks the
+   payload names the certificate it talked to, and redeems the code as usual.
+
+**Why the number means something.** A device in the middle presents ITS certificate to the
+victim, so the two numbers are computed from different fingerprints; making them agree means
+choosing a nonce after seeing the other side's, which the commitment rules out on both legs. That
+leaves a one-in-a-million guess per attempt, five attempts per window, one request at a time.
+
+**Exposure.** Nothing works unless someone in the car has the dialog open and LAN access on, and
+nothing pairs without a tap there. The three endpoints answer on the LAN listener only, never over
+Pear (`/auth/wifi-pair/*` in `docs/http-api-reference.md`). State is in memory: a daemon restart
+cancels everything.
 
 ### Listener trust
 

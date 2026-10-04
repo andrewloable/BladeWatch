@@ -77,6 +77,16 @@ class StartupController extends ChangeNotifier with DisposedSafeNotifier {
       _showContinueButton = true;
     }
 
+    // Every waiting row counts from the moment the screen opened, whether or not the channel
+    // answers. They used to be updated only after a successful poll, so with the channel down --
+    // the normal state for the first ~45 s after boot -- every timer said 0s (BladeWatch-y87b).
+    // A ready row keeps the time it became ready.
+    for (final d in CoreDaemon.values) {
+      if (_rows[d]!.status == DaemonRowStatus.waiting) {
+        _rows[d] = DaemonRowState(status: DaemonRowStatus.waiting, elapsed: elapsedSinceOpen);
+      }
+    }
+
     try {
       final statuses = await _daemonChannel.processStatus();
       for (final d in CoreDaemon.values) {

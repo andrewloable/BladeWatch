@@ -1,19 +1,18 @@
-import 'dart:typed_data';
-
 import 'package:bladewatch_rpc/gen/bladewatch/v1/safe_locations.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_theme/hud_theme.dart';
-import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
 import '../../i18n.dart';
 import '../common/loader.dart';
+import '../../tv.dart';
 
-/// The web surveillance page's counterpart: sentry on or off, detection settings, a snapshot of
-/// each camera, and the safe zones where sentry stands down.
+/// The web surveillance page's counterpart: sentry on or off, detection settings, and the safe
+/// zones where sentry stands down. Its per-camera snapshots went in 1.4.1.2: Live shows the cameras
+/// (the owner, 2026-10-04).
 ///
 /// Settings are saved as the WHOLE loaded config with the edits applied: proto3 JSON cannot send
 /// `false`, so the car resets every omitted flag to false -- a partial save switched all four
@@ -40,7 +39,6 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
         zones: await _zones.listZones(ListZonesRequest()),
       ));
   SurveillanceConfig? _edit;
-  final _snapshots = <int, Uint8List>{};
   bool _busy = false;
 
   Future<void> _run(Future<void> Function() action, {String? done}) async {
@@ -48,22 +46,6 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
     await act(context, action, done: done, failed: context.tr('errors.save_failed'));
     await _data.load();
     if (mounted) setState(() => _busy = false);
-  }
-
-  /// All four, one after another: four parallel image fetches over Pear only slow each other.
-  Future<void> _snapshots4() async {
-    for (var q = 0; q < 4; q++) {
-      await _snapshot(q);
-    }
-  }
-
-  Future<void> _snapshot(int quadrant) async {
-    try {
-      final r = await _client.getSnapshot(GetSnapshotRequest(quadrant: quadrant));
-      if (r.imageJpeg.isNotEmpty && mounted) setState(() => _snapshots[quadrant] = Uint8List.fromList(r.imageJpeg));
-    } catch (_) {
-      // Left as "tap to load".
-    }
   }
 
   void _change(void Function(SurveillanceConfig c) edit) => setState(() => edit(_edit!));
@@ -104,14 +86,14 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
           ]),
           Section(title: tr('surveillance.detection_config'), children: [
             Text('${tr('surveillance.sensitivity')} (${c.sensitivity})'),
-            Slider(
+            tvSlider(context, Slider(
               key: const ValueKey('surv.sensitivity'),
               min: 1,
               max: 5,
               divisions: 4,
               value: c.sensitivity.clamp(1, 5).toDouble(),
               onChanged: (x) => _change((c) => c.sensitivity = x.round()),
-            ),
+            )),
             DropdownButtonFormField<String>(
               key: const ValueKey('surv.preset'),
               initialValue: SurveillanceScreen.presets.contains(c.distancePreset) ? c.distancePreset : 'BALANCED',
@@ -126,14 +108,14 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
             // BladeWatch-rdtj.50: the web's AI confidence, 0-1 in steps of 0.05, while AI is on.
             if (c.aiEnabled) ...[
               Text('${tr('companion.ai_confidence')} (${c.aiConfidence.toStringAsFixed(2)})'),
-              Slider(
+              tvSlider(context, Slider(
                 key: const ValueKey('surv.aiConfidence'),
                 min: 0,
                 max: 1,
                 divisions: 20,
                 value: c.aiConfidence.clamp(0, 1).toDouble(),
                 onChanged: (x) => _change((c) => c.aiConfidence = (x * 20).round() / 20),
-              ),
+              )),
             ],
             flag(tr('surveillance.person'), 'person', c.detectPerson, (c, on) => c.detectPerson = on),
             flag(tr('surveillance.car'), 'car', c.detectCar, (c, on) => c.detectCar = on),
@@ -173,41 +155,6 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
                         _edit = null; // re-read what the car applied
                       }, done: tr('toast.saved')),
               child: Text(tr('surveillance.save_config')),
-            ),
-          ]),
-          Section(title: tr('surveillance.live_snapshots'), children: [
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton.icon(
-                key: const ValueKey('surv.refreshAll'),
-                onPressed: _snapshots4,
-                icon: const Icon(Icons.refresh),
-                label: Text(tr('companion.refresh_all')),
-              ),
-            ),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 4 / 3,
-              children: [
-                for (var q = 0; q < 4; q++)
-                  InkWell(
-                    key: ValueKey('surv.snapshot.$q'),
-                    onTap: () => _snapshot(q),
-                    // A 4 dp bordered frame, like every HUD tile; the picture inside is untouched.
-                    child: HudPanel(
-                      color: BwHud.of(context).panel,
-                      borderColor: BwHud.of(context).panelBorder,
-                      clipBehavior: Clip.antiAlias,
-                      child: _snapshots[q] != null
-                          ? SizedBox.expand(child: Image.memory(_snapshots[q]!, fit: BoxFit.cover, gaplessPlayback: true))
-                          : Center(child: Text('${cameras[q]}\n${tr('surveillance.tap_to_load')}', textAlign: TextAlign.center)),
-                    ),
-                  ),
-              ],
             ),
           ]),
           Section(title: tr('surveillance.safe_locations'), children: [

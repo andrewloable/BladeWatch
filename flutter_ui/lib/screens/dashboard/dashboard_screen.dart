@@ -1,6 +1,7 @@
 import 'dart:async' show Timer, unawaited;
 import 'dart:math' as math;
 import '../../platform/pairing_channel.dart';
+import '../pairing/pairing_controller.dart';
 import '../pairing/pairing_dialog.dart';
 
 import 'package:flutter/material.dart';
@@ -76,12 +77,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Timer? _driveTimer;
   Timer? _tripsTimer;
 
+  /// The PAIRED DEVICES card's list (the owner, 2026-10-04): the pairing dialog's own controller,
+  /// used for its device list only -- nothing here mints a code.
+  late final PairingController? _pairing = widget.pairingChannel == null ? null : PairingController(widget.pairingChannel!);
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
     widget.controller.refresh();
-    _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh(includeTrips: false));
+    _pairing?.addListener(_onChanged);
+    _pairing?.refreshDevices();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      widget.controller.refresh(includeTrips: false);
+      _pairing?.refreshDevices();
+    });
     _driveTimer = Timer.periodic(_driveInterval, (_) => widget.controller.refreshDrive());
     _tripsTimer = Timer.periodic(_tripsInterval, (_) => widget.controller.refreshTrips());
   }
@@ -96,6 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _driveTimer?.cancel();
     _tripsTimer?.cancel();
     widget.controller.removeListener(_onChanged);
+    _pairing?.dispose();
     super.dispose();
   }
 
@@ -147,7 +158,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? null
               : FilledButton.icon(
                   key: const ValueKey('dashboard.pair'),
-                  onPressed: () => showPairingDialog(context, widget.pairingChannel!),
+                  onPressed: () async {
+                    await showPairingDialog(context, widget.pairingChannel!);
+                    unawaited(_pairing?.refreshDevices());
+                  },
                   icon: const Icon(Icons.qr_code_2, size: 14),
                   label: Text(l10n.pairing_title.toUpperCase()),
                   style: FilledButton.styleFrom(
@@ -175,6 +189,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onVehicleTap: _openVehicleDialog,
         onLiveTap: () => widget.onNavigate(BwRoutes.liveView),
       ),
+      if (_pairing case final pairing?)
+        Padding(
+          padding: const EdgeInsets.only(top: 20),
+          child: _PairedDevicesCard(
+            pairing: pairing,
+            l10n: l10n,
+            hud: hud,
+            onRemove: (device) async {
+              if (await confirmRemovePairedDevice(context, device)) await pairing.remove(device.id);
+            },
+          ),
+        ),
     ];
 
     return Scaffold(
@@ -479,6 +505,57 @@ class _VehicleCard extends StatelessWidget {
       ],
     );
   }
+}
+
+/// What can reach this car (the owner, 2026-10-04): every paired companion, when it was paired, and
+/// a way to cut one off. Pairing a new one stays the explicit "Pair a device" action above.
+class _PairedDevicesCard extends StatelessWidget {
+  final PairingController pairing;
+  final AppLocalizations l10n;
+  final BwHud hud;
+  final void Function(PairedDevice device) onRemove;
+
+  const _PairedDevicesCard({required this.pairing, required this.l10n, required this.hud, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) => _HeroPanel(
+    hud: hud,
+    icon: Icons.devices_other,
+    title: l10n.pairing_devices_title,
+    children: [
+      if (pairing.devices.isEmpty)
+        Text(l10n.pairing_devices_empty, style: hudText(14, hud.textSecondary, lineHeight: 20))
+      else
+        for (final d in pairing.devices)
+          Padding(
+            key: ValueKey('dashboard.device.${d.id}'),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(d.name, style: hudText(16, hud.textPrimary, lineHeight: 22, weight: FontWeight.w700)),
+                      Text(
+                        MaterialLocalizations.of(context).formatMediumDate(d.pairedAt),
+                        style: hudText(12, hud.statLabel, lineHeight: 16),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(onPressed: () => onRemove(d), child: Text(l10n.pairing_remove)),
+              ],
+            ),
+          ),
+      if (pairing.actionFailed)
+        Text(
+          l10n.pairing_error,
+          key: const ValueKey('dashboard.devicesError'),
+          style: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700),
+        ),
+    ],
+  );
 }
 
 /// A soft coloured blob for a corner of the hero.

@@ -117,6 +117,39 @@ void main() {
       expect(sweeps, 2);
     });
 
+    // BladeWatch-z7s6: one 254-probe burst never reached the car from an Android TV; slices of 32,
+    // each on its own socket, did. Staggered, so the sweep still ends in about 1.5 s.
+    test('the sweep goes out in slices of 32, each on its own socket, and stops once the car answers', () async {
+      final hosts = [for (var i = 1; i <= 70; i++) InternetAddress('192.0.2.$i'), ...here]; // the car last
+      final sent = <(RawDatagramSocket, InternetAddress)>[];
+      LanProber recording() => LanProber(key, port: car.socket.port, send: (socket, data, address, port) {
+            sent.add((socket, address));
+            if (address == InternetAddress.loopbackIPv4) socket.send(data, address, port);
+          });
+      final found = await recording().find(hosts, pinnedFingerprint: 'aa' * 32, stagger: const Duration(milliseconds: 20));
+      expect(found, isNotNull, reason: 'the car, in the last slice, answered');
+      final bySocket = <RawDatagramSocket, int>{};
+      for (final (socket, _) in sent) {
+        bySocket[socket] = (bySocket[socket] ?? 0) + 1;
+      }
+      expect(bySocket.values, [32, 32, 7]);
+      expect({for (final (_, a) in sent) a}, hasLength(71), reason: 'every host, once');
+
+      sent.clear();
+      final early = await recording().find([...here, ...hosts.take(70)], pinnedFingerprint: 'aa' * 32, stagger: const Duration(milliseconds: 500));
+      expect(early, isNotNull);
+      expect(sent, hasLength(32), reason: 'the car answered from the first slice: the rest were never sent');
+    });
+
+    test('a silent sweep of a whole /24 gives up in well under two seconds', () async {
+      car.silent = true;
+      final hosts = [for (var i = 1; i <= 254; i++) InternetAddress('192.0.2.$i')];
+      final p = LanProber(key, port: car.socket.port, send: (socket, data, address, port) {});
+      final watch = Stopwatch()..start();
+      expect(await p.find(hosts, pinnedFingerprint: 'aa' * 32), isNull);
+      expect(watch.elapsed, lessThan(const Duration(seconds: 2)));
+    });
+
     test('a probe has exactly the layout the car verifies', () {
       final nonce = Uint8List.fromList(List.generate(16, (i) => 100 + i));
       final probe = LanProber.buildProbe(key, nonce, 1700000000000);

@@ -1,14 +1,15 @@
+import 'package:bladewatch_companion/tv.dart';
 import 'package:bladewatch_companion/screens/surveillance/surveillance_screen.dart';
 import 'package:bladewatch_companion/screens/common/stats.dart';
 import 'package:bladewatch_companion/screens/trips/trips_screen.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/safe_locations.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
-import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:bladewatch_theme/hud_theme.dart';
 import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support.dart';
@@ -434,16 +435,50 @@ void main() {
       s.rpc.stubJson('SurveillanceService', 'Disable', {'success': true});
       s.rpc.stubJson('SafeLocationsService', 'Toggle', {'success': true});
       s.rpc.stubJson('SafeLocationsService', 'DeleteZone', {'success': true});
-      s.rpc.stubJson('SurveillanceService', 'GetSnapshot', {'imageJpeg': base64Png});
     }
 
-    testWidgets('HUD: a snapshot is in a 4 dp frame, zone delete is magenta, event-seconds choices have no check mark', (tester) async {
+    testWidgets('HUD: zone delete is magenta, event-seconds choices have no check mark; no camera snapshots', (tester) async {
       final s = TestSession();
       stubAll(s);
       await pumpScreen(tester, s, const SurveillanceScreen(), size: const Size(1200, 3400));
-      expect(find.descendant(of: find.byKey(const ValueKey('surv.snapshot.0')), matching: find.byType(HudPanel)), findsOneWidget);
+      // The owner, 2026-10-04: the per-camera snapshots repeated Live; they are gone.
+      expect(find.byKey(const ValueKey('surv.snapshot.0')), findsNothing);
+      expect(s.rpc.calls.where((c) => c.method == 'GetSnapshot'), isEmpty);
       expect(tester.widget<IconButton>(find.byKey(const ValueKey('zone.delete.z1'))).color, BwHud.light.magenta);
       expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('surv.pre.5'))).showCheckmark, isFalse);
+      await unmount(tester);
+    });
+
+    // The owner, 2026-10-04: on the TV, once the remote reached Sensitivity it could not leave -- the
+    // slider took up and down as well as left and right.
+    testWidgets('on a TV a slider takes left and right, and up and down move on', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      s.rpc.stubJson('SurveillanceService', 'GetConfig', {
+        'config': {'sensitivity': 3, 'cameraFront': true},
+      });
+      await pumpScreen(tester, s, const DpadFieldExit(child: TvPane(child: SurveillanceScreen())), size: const Size(1200, 3400));
+      // The slider's own focus node: the one among its Focus widgets that can take focus.
+      FocusNode slider() => tester
+          .widgetList<Focus>(find.descendant(of: find.byKey(const ValueKey('surv.sensitivity')), matching: find.byType(Focus)))
+          .map((f) => f.focusNode)
+          .whereType<FocusNode>()
+          .firstWhere((n) => n.canRequestFocus && !n.skipTraversal);
+      slider().requestFocus();
+      await tester.pump();
+      expect(slider().hasPrimaryFocus, isTrue);
+      expect(find.text('${t('surveillance.sensitivity')} (3)'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(slider().hasPrimaryFocus, isFalse, reason: 'down moved on');
+      expect(find.text('${t('surveillance.sensitivity')} (3)'), findsOneWidget, reason: 'and did not change the setting');
+
+      slider().requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(find.text('${t('surveillance.sensitivity')} (4)'), findsOneWidget, reason: 'right still raises it');
       await unmount(tester);
     });
 
@@ -475,18 +510,6 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('surv.ai')));
       await tester.pump();
       expect(find.byKey(const ValueKey('surv.aiConfidence')), findsNothing, reason: 'only while AI detection is on');
-      await unmount(tester);
-    });
-
-    testWidgets('refresh all loads the four snapshots, one after another', (tester) async {
-      final s = TestSession();
-      stubAll(s);
-      await pumpScreen(tester, s, const SurveillanceScreen(), size: const Size(1200, 3400));
-      await tester.tap(find.byKey(const ValueKey('surv.refreshAll')));
-      await tester.pumpAndSettle();
-      final asked = s.rpc.calls.where((c) => c.method == 'GetSnapshot').map((c) => (c.request as GetSnapshotRequest).quadrant).toList();
-      expect(asked, [0, 1, 2, 3]);
-      expect(find.textContaining(t('surveillance.tap_to_load')), findsNothing, reason: 'all four loaded');
       await unmount(tester);
     });
 
@@ -538,13 +561,6 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('surv.active')));
       await tester.pumpAndSettle();
       expect(s.rpc.calls.where((c) => c.method == 'Enable'), hasLength(1));
-
-      await tester.tap(find.byKey(const ValueKey('surv.snapshot.2')));
-      await tester.pumpAndSettle();
-      expect((s.rpc.calls.lastWhere((c) => c.method == 'GetSnapshot').request as GetSnapshotRequest).quadrant, 2);
-      s.rpc.stubError('SurveillanceService', 'GetSnapshot', const ConnectError('unavailable', 'x'));
-      await tester.tap(find.byKey(const ValueKey('surv.snapshot.0')));
-      await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const ValueKey('surv.zones')));
       await tester.pumpAndSettle();

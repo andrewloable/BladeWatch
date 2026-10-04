@@ -50,6 +50,19 @@ class PairingControlTest {
     }
 
     @Test
+    fun `Wi-Fi pairing opens the window, reads the waiting request and passes on the owner's answer`() {
+        val ipc = FakeIpc { JSONObject().put("status", "ok") }
+        val control = PairingControl(ipc)
+        control.wifiWindow(true)
+        control.wifiPending()
+        control.wifiDecide("req1", false)
+        assertEquals(listOf("pairingWifiWindow", "pairingWifiPending", "pairingWifiDecide"), ipc.sent.map { it.getString("cmd") })
+        assertEquals(true, ipc.sent[0].getBoolean("open"))
+        assertEquals("req1", ipc.sent[2].getString("id"))
+        assertEquals(false, ipc.sent[2].getBoolean("accept"))
+    }
+
+    @Test
     fun `a refusal from the daemon reaches the caller unchanged`() {
         val ipc = FakeIpc { throw IpcException.CommandRejected("no such companion") }
         assertThrows(IpcException.CommandRejected::class.java) { PairingControl(ipc).revoke("gone") }

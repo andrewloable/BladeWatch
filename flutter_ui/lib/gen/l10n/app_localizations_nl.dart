@@ -2804,7 +2804,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get pairing_scan_hint =>
-      'Scan met de BladeWatch-app op je telefoon of computer. De code werkt maar één keer.';
+      'Scan met de BladeWatch-app op je telefoon. De code werkt maar één keer.';
 
   @override
   String pairing_expires_in(String time) {
@@ -2849,6 +2849,25 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get pairing_error =>
       'De cameraservice reageerde niet. Probeer het opnieuw.';
+
+  @override
+  String get pairing_wifi_hint =>
+      'Tv of computer? Kies ‘Koppelen via wifi’ in de BladeWatch-app daarop. Directe verbinding moet aan staan.';
+
+  @override
+  String pairing_wifi_title(String name) {
+    return '$name koppelen?';
+  }
+
+  @override
+  String get pairing_wifi_body =>
+      'Koppel alleen als daar hetzelfde getal staat.';
+
+  @override
+  String get pairing_wifi_accept => 'Koppelen';
+
+  @override
+  String get pairing_wifi_refuse => 'Niet koppelen';
 
   @override
   String get daemon_name_pear => 'Toegang op afstand (Pear)';

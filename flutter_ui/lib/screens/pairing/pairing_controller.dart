@@ -26,9 +26,41 @@ class PairingController extends ChangeNotifier with DisposedSafeNotifier {
   /// The last list / remove / LAN change failed; the dialog says so rather than doing nothing.
   bool actionFailed = false;
 
+  /// A device without a camera asking to pair over Wi-Fi (BladeWatch 1.4.1.2). The dialog shows it
+  /// in place of the QR until the owner answers.
+  WifiPairingRequest? wifiRequest;
+  String? _decided;
+
   PairingController(this._channel, {DateTime Function()? now}) : _now = now ?? DateTime.now;
 
-  Future<void> start() => Future.wait([newCode(), refreshDevices()]);
+  Future<void> start() => Future.wait([newCode(), refreshDevices(), pollWifi()]);
+
+  /// Every couple of seconds while the dialog is open: keeps Wi-Fi pairing open (it lapses by
+  /// itself once the dialog stops asking), picks up a request waiting for the owner, and reloads the
+  /// device list, which a Wi-Fi pairing changes while the dialog is up.
+  Future<void> pollWifi() async {
+    try {
+      lanEnabled = await _channel.wifiWindow(true);
+      final pending = await _channel.wifiPending();
+      wifiRequest = pending?.id == _decided ? null : pending; // a poll that crossed the owner's answer
+      devices = await _channel.list();
+    } catch (_) {
+      wifiRequest = null;
+    }
+    notifyListeners();
+  }
+
+  /// The owner's answer, having compared the number on both screens.
+  Future<void> decideWifi(bool accept) async {
+    final request = wifiRequest;
+    if (request == null) return;
+    _decided = request.id;
+    wifiRequest = null;
+    await _action(() => _channel.wifiDecide(request.id, accept));
+  }
+
+  /// When the dialog closes: nothing pairs over Wi-Fi without it open.
+  Future<void> closeWifi() => _channel.wifiWindow(false).then((_) {}, onError: (Object _) {});
 
   Future<void> newCode() async {
     try {

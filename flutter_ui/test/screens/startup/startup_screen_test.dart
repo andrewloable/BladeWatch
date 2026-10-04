@@ -29,9 +29,10 @@ void main() {
     stubStatuses();
   });
 
-  StartupController buildController({Future<bool> Function()? healthCheck}) {
+  StartupController buildController({Future<bool> Function()? healthCheck, DateTime Function()? clock}) {
     return StartupController(
       daemonChannel: DaemonChannel(fakeChannel),
+      clock: clock ?? DateTime.now,
       healthCheck: healthCheck ?? () async => true,
     );
   }
@@ -167,6 +168,29 @@ void main() {
     for (final leak in ['daemon not up', 'PlatformChannelError', 'ECONNREFUSED', '19876']) {
       expect(find.textContaining(leak), findsNothing, reason: 'leaked "$leak" to the driver');
     }
+
+    await tester.pumpWidget(Container());
+  });
+
+  // BladeWatch-y87b: on the head unit the header and all three rows said "0s" for as long as the
+  // channel was down.
+  testWidgets('with the channel down the header and every row count up', (tester) async {
+    fakeChannel.stubError(
+      'daemon',
+      'processStatus',
+      const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'daemon not up'),
+    );
+    var now = DateTime(2026, 10, 1, 12);
+    final controller = buildController(clock: () => now);
+    await tester.pumpWidget(wrap(StartupScreen(controller: controller, onReadyToNavigate: () {})));
+    await tester.pump();
+    expect(find.text('0s'), findsNWidgets(4));
+
+    now = now.add(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 1)); // the screen's own once-a-second poll
+    await tester.pump();
+    expect(find.text('5s'), findsNWidgets(4), reason: 'the header and the three waiting rows');
+    expect(find.text('WAITING'), findsNWidgets(3));
 
     await tester.pumpWidget(Container());
   });

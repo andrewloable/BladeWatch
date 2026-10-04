@@ -45,41 +45,63 @@ class LanProber {
   static const _replyMagic = 'BWREPLY1';
   static const _probeBytes = 256;
 
-  /// Sends one probe to [candidates] (in order, all at once) and returns the first valid reply,
-  /// or null after [timeout].
-  Future<LanEndpoint?> find(List<InternetAddress> candidates, {required String pinnedFingerprint, Duration timeout = const Duration(milliseconds: 800)}) async {
+  /// Sends one probe to [candidates] (in order) and returns the first valid reply, or null [timeout]
+  /// after the last one went out.
+  ///
+  /// [slice] hosts at a time, each slice on a fresh socket and [stagger] after the last
+  /// (BladeWatch-z7s6). A 254-probe burst on one socket never found the car from a Sony BRAVIA,
+  /// where slices of 32 did on the first pass (2026-10-04): a probe to an empty address waits in
+  /// the kernel for an ARP lookup that will fail, holding socket buffer, and once it is full Dart's
+  /// non-blocking send drops the rest. Staggered rather than sequential, so a whole /24 still takes
+  /// about 1.5 s: route selection waits for this before it tries Pear.
+  Future<LanEndpoint?> find(
+    List<InternetAddress> candidates, {
+    required String pinnedFingerprint,
+    Duration timeout = const Duration(milliseconds: 800),
+    int slice = 32,
+    Duration stagger = const Duration(milliseconds: 100),
+  }) async {
     if (candidates.isEmpty) return null;
-    final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     final nonce = Uint8List.fromList(List.generate(16, (_) => _random.nextInt(256)));
     final probe = buildProbe(_key, nonce, _now().millisecondsSinceEpoch);
     final result = Completer<LanEndpoint?>();
-    final timer = Timer(timeout, () => result.isCompleted ? null : result.complete(null));
-    socket.listen(
-      (event) {
-        if (event != RawSocketEvent.read) return;
-        final datagram = socket.receive();
-        if (datagram == null || result.isCompleted) return;
-        final endpoint = _verifyReply(datagram, nonce, pinnedFingerprint);
-        if (endpoint != null) result.complete(endpoint);
-      },
-      // dart:io reports a failed send (EHOSTUNREACH for a host whose ARP failed, measured on a Mac
-      // against the head unit) LATER, as an error on this stream -- not by throwing from send().
-      // Unhandled, each one was an uncaught async error that killed the route selection
-      // (BladeWatch-gfmk).
-      onError: (Object _) {},
-    );
+    final sockets = <RawDatagramSocket>[];
+    Timer? timer;
     try {
-      for (final address in candidates) {
-        try {
-          _send(socket, probe, address, port);
-        } on SocketException {
-          // A send that fails synchronously: skip that host, keep probing the rest.
+      for (var i = 0; i < candidates.length && !result.isCompleted; i += slice) {
+        if (i > 0) await Future.any([Future<void>.delayed(stagger), result.future]);
+        if (result.isCompleted) break;
+        final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+        sockets.add(socket);
+        socket.listen(
+          (event) {
+            if (event != RawSocketEvent.read) return;
+            final datagram = socket.receive();
+            if (datagram == null || result.isCompleted) return;
+            final endpoint = _verifyReply(datagram, nonce, pinnedFingerprint);
+            if (endpoint != null) result.complete(endpoint);
+          },
+          // dart:io reports a failed send (EHOSTUNREACH for a host whose ARP failed, measured on a Mac
+          // against the head unit) LATER, as an error on this stream -- not by throwing from send().
+          // Unhandled, each one was an uncaught async error that killed the route selection
+          // (BladeWatch-gfmk).
+          onError: (Object _) {},
+        );
+        for (final address in candidates.skip(i).take(slice)) {
+          try {
+            _send(socket, probe, address, port);
+          } on SocketException {
+            // A send that fails synchronously: skip that host, keep probing the rest.
+          }
         }
       }
+      if (!result.isCompleted) timer = Timer(timeout, () => result.isCompleted ? null : result.complete(null));
       return await result.future;
     } finally {
-      timer.cancel();
-      socket.close();
+      timer?.cancel();
+      for (final socket in sockets) {
+        socket.close();
+      }
     }
   }
 
