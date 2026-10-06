@@ -2836,6 +2836,44 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => '中继访问';
+
+  @override
+  String get settings_relay_subtitle => '车辆通过自身 SIM 卡联网时，用移动数据连接车辆。';
+
+  @override
+  String get settings_relay_use_title => '使用我的中继';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      '仅适用于您自己运行的中继，中继和每部手机上使用相同的 12 位密钥。';
+
+  @override
+  String get settings_relay_key_label => '中继密钥';
+
+  @override
+  String get settings_relay_key_invalid => '请输入 12 位中继密钥。';
+
+  @override
+  String get settings_relay_key_needed => '请输入中继密钥以开始使用中继。';
+
+  @override
+  String get settings_relay_save => '保存';
+
+  @override
+  String get settings_relay_change => '更改';
+
+  @override
+  String get settings_relay_remove => '移除密钥';
+
+  @override
+  String get settings_relay_save_failed => '无法保存，请重试。';
+
+  @override
+  String get settings_relay_explainer =>
+      '手机和车辆会尽可能直接连接。只有当两者都处于阻止直接连接的移动网络时才会使用中继，且中继无法读取其转发的内容。';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -5670,6 +5708,44 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => '中继访问';
+
+  @override
+  String get settings_relay_subtitle => '车辆通过自身 SIM 卡联网时，用移动数据连接车辆。';
+
+  @override
+  String get settings_relay_use_title => '使用我的中继';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      '仅适用于您自己运行的中继，中继和每部手机上使用相同的 12 位密钥。';
+
+  @override
+  String get settings_relay_key_label => '中继密钥';
+
+  @override
+  String get settings_relay_key_invalid => '请输入 12 位中继密钥。';
+
+  @override
+  String get settings_relay_key_needed => '请输入中继密钥以开始使用中继。';
+
+  @override
+  String get settings_relay_save => '保存';
+
+  @override
+  String get settings_relay_change => '更改';
+
+  @override
+  String get settings_relay_remove => '移除密钥';
+
+  @override
+  String get settings_relay_save_failed => '无法保存，请重试。';
+
+  @override
+  String get settings_relay_explainer =>
+      '手机和车辆会尽可能直接连接。只有当两者都处于阻止直接连接的移动网络时才会使用中继，且中继无法读取其转发的内容。';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -8505,4 +8581,42 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => '中繼存取';
+
+  @override
+  String get settings_relay_subtitle => '車輛透過自身 SIM 卡連網時，以行動數據連線到車輛。';
+
+  @override
+  String get settings_relay_use_title => '使用我的中繼';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      '僅適用於您自行運作的中繼，中繼與每支手機須使用相同的 12 位數金鑰。';
+
+  @override
+  String get settings_relay_key_label => '中繼金鑰';
+
+  @override
+  String get settings_relay_key_invalid => '請輸入 12 位數的中繼金鑰。';
+
+  @override
+  String get settings_relay_key_needed => '請輸入中繼金鑰以開始使用中繼。';
+
+  @override
+  String get settings_relay_save => '儲存';
+
+  @override
+  String get settings_relay_change => '變更';
+
+  @override
+  String get settings_relay_remove => '移除金鑰';
+
+  @override
+  String get settings_relay_save_failed => '無法儲存，請再試一次。';
+
+  @override
+  String get settings_relay_explainer =>
+      '手機與車輛會盡可能直接連線。只有當兩者都位於阻擋直接連線的行動網路時才會使用中繼，且中繼無法讀取其轉送的內容。';
 }

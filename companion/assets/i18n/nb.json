@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Dato og klokkeslett",
     "trips_costs": "Turer og kostnader",
     "trip_storage_confirm": "Nye turer lagres på {place}.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Relétilgang",
+    "relay_use": "Bruk mitt relé",
+    "relay_use_hint": "Nå bilen via mobildata mens den er tilkoblet via SIM-kortet. Krever et eget relé med den samme 12-sifrede nøkkelen som bilen.",
+    "relay_key": "Relénøkkel",
+    "relay_key_invalid": "Skriv inn den 12-sifrede relénøkkelen.",
+    "relay_key_needed": "Skriv inn relénøkkelen du satte i bilen.",
+    "relay_change": "Endre",
+    "relay_remove": "Fjern nøkkel",
+    "relay_explainer": "Telefonen og bilen kobler seg direkte til hverandre når de kan. Reléet brukes bare når begge er på mobilnett som hindrer det, og det kan ikke lese det det videresender."
   }
 }

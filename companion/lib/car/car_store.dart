@@ -97,6 +97,19 @@ class CarStore {
   /// web's per-subscription mutes).
   Set<String> mutedCategories = {};
 
+  /// The owner's own relay (BladeWatch-a7mu), for reaching a car on its SIM from mobile data.
+  /// Off by default. [relayKey] is the bare 12 digits, the same key the car and the relay hold;
+  /// it stays when the switch is turned off, so turning it back on needs no retyping.
+  bool relayEnabled = false;
+  String? relayKey;
+
+  /// The key Pear should use right now, or null for no relay. Never a malformed key: Pear would
+  /// refuse it on every search, and the car could not be reached over Pear at all.
+  String? get relayKeyInUse {
+    final key = relayKey;
+    return relayEnabled && key != null && RegExp(r'^[0-9]{12}$').hasMatch(key) ? key : null;
+  }
+
   Future<void> load() async {
     try {
       final j = jsonDecode(await file.readAsString()) as Map<String, Object?>;
@@ -104,6 +117,12 @@ class CarStore {
       car = c is Map<String, Object?> ? PairedCar.fromJson(c) : null;
       language = j['language'] as String?;
       mutedCategories = {...?(j['muted'] as List?)?.cast<String>()};
+      // Read leniently: a bad relay entry must never make the whole file count as damaged, which
+      // would start this device unpaired.
+      final relay = j['relay'];
+      final key = relay is Map ? relay['key'] : null;
+      relayEnabled = relay is Map && relay['enabled'] == true;
+      relayKey = key is String ? key : null;
     } catch (_) {
       // First launch (no file), or an unreadable one: start unpaired rather than crash. But keep
       // a file that exists and would not load beside it first: the next save would otherwise
@@ -129,6 +148,7 @@ class CarStore {
       'car': car?.toJson(),
       'language': language,
       'muted': mutedCategories.toList()..sort(),
+      'relay': {'enabled': relayEnabled, 'key': relayKey},
     }));
     await tmp.rename(file.path);
   }

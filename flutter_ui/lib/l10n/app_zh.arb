@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "概览",
   "dashboard_hud_telemetry": "遥测",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "中继访问",
+  "settings_relay_subtitle": "车辆通过自身 SIM 卡联网时，用移动数据连接车辆。",
+  "settings_relay_use_title": "使用我的中继",
+  "settings_relay_use_subtitle": "仅适用于您自己运行的中继，中继和每部手机上使用相同的 12 位密钥。",
+  "settings_relay_key_label": "中继密钥",
+  "settings_relay_key_invalid": "请输入 12 位中继密钥。",
+  "settings_relay_key_needed": "请输入中继密钥以开始使用中继。",
+  "settings_relay_save": "保存",
+  "settings_relay_change": "更改",
+  "settings_relay_remove": "移除密钥",
+  "settings_relay_save_failed": "无法保存，请重试。",
+  "settings_relay_explainer": "手机和车辆会尽可能直接连接。只有当两者都处于阻止直接连接的移动网络时才会使用中继，且中继无法读取其转发的内容。"
 }

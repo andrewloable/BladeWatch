@@ -4,8 +4,10 @@ import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../i18n.dart';
+import '../screens/settings/relay_access.dart';
 import '../transport/transport_selector.dart';
 import 'car_session.dart';
+import 'car_store.dart';
 
 /// Makes the [CarSession] reachable as `context.session`, rebuilding dependents when its
 /// connection state changes.
@@ -23,12 +25,16 @@ extension SessionContext on BuildContext {
 /// answering (its daemon stopped or is restarting; stale data would otherwise pass for live), or
 /// the car removed this device (only pairing again helps).
 class CarPage extends StatelessWidget {
-  const CarPage({super.key, required this.child, this.onPairAgain});
+  const CarPage({super.key, required this.child, this.onPairAgain, this.store});
 
   final Widget child;
 
   /// Offered when the car refused this device.
   final VoidCallback? onPairAgain;
+
+  /// When given, the looking and unreachable states offer Relay access (BladeWatch-a7mu): those
+  /// are exactly when it is needed, and the car's own Settings page is not reachable then.
+  final CarStore? store;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +50,15 @@ class CarPage extends StatelessWidget {
         action: onPairAgain == null ? null : FilledButton(onPressed: onPairAgain, child: Text(tr('companion.pair_again'))),
       );
     }
+    final store = this.store;
+    final relay = store == null
+        ? null
+        : TextButton(
+            key: const ValueKey('car.relayAccess'),
+            // A saved change applies at the next search: start that search now.
+            onPressed: () => showRelayAccess(context, store, onChanged: () async => session.retry()),
+            child: Text(tr('companion.relay_access')),
+          );
     return switch (session.phase) {
       TransportPhase.lan || TransportPhase.pear when !session.answering => _State(
           key: const ValueKey('car.silent'),
@@ -59,6 +74,7 @@ class CarPage extends StatelessWidget {
           busy: true,
           title: tr(session.everConnected ? 'companion.reconnecting' : 'companion.looking'),
           body: tr('companion.looking_hint'),
+          action: relay,
         ),
       TransportPhase.failed => _State(
           key: const ValueKey('car.unreachable'),
@@ -66,7 +82,15 @@ class CarPage extends StatelessWidget {
           icon: Icons.cloud_off,
           title: tr('companion.unreachable'),
           body: tr('companion.unreachable_hint'),
-          action: OutlinedButton(onPressed: session.retry, child: Text(tr('common.retry'))),
+          action: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(onPressed: session.retry, child: Text(tr('common.retry'))),
+              ?relay,
+            ],
+          ),
         ),
     };
   }

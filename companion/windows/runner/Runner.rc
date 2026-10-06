@@ -62,8 +62,8 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 
 // The car apps' four-part version, which pubspec.yaml cannot hold: keep in step with
 // app/build.gradle.kts (the owner, 2026-10-04).
-#define VERSION_AS_NUMBER 1,4,1,2
-#define VERSION_AS_STRING "1.4.1.2"
+#define VERSION_AS_NUMBER 1,4,1,3
+#define VERSION_AS_STRING "1.4.1.3"
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION VERSION_AS_NUMBER
@@ -83,12 +83,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "net.bladewatch" "\0"
-            VALUE "FileDescription", "bladewatch_companion" "\0"
+            VALUE "FileDescription", "BladeWatch companion: reach your car from this computer" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "bladewatch_companion" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 net.bladewatch. All rights reserved." "\0"
             VALUE "OriginalFilename", "bladewatch_companion.exe" "\0"
-            VALUE "ProductName", "bladewatch_companion" "\0"
+            VALUE "ProductName", "BladeWatch" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

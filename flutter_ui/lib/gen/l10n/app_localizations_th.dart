@@ -2927,4 +2927,44 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'การเข้าถึงผ่านรีเลย์';
+
+  @override
+  String get settings_relay_subtitle =>
+      'เข้าถึงรถผ่านอินเทอร์เน็ตมือถือขณะที่รถออนไลน์ผ่านซิมของตัวเอง';
+
+  @override
+  String get settings_relay_use_title => 'ใช้รีเลย์ของฉัน';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'สำหรับรีเลย์ที่คุณดูแลเองเท่านั้น โดยใช้คีย์ 12 หลักเดียวกันบนรีเลย์และโทรศัพท์ทุกเครื่อง';
+
+  @override
+  String get settings_relay_key_label => 'คีย์รีเลย์';
+
+  @override
+  String get settings_relay_key_invalid => 'ป้อนคีย์รีเลย์ 12 หลัก';
+
+  @override
+  String get settings_relay_key_needed =>
+      'ป้อนคีย์รีเลย์ของคุณเพื่อเริ่มใช้รีเลย์';
+
+  @override
+  String get settings_relay_save => 'บันทึก';
+
+  @override
+  String get settings_relay_change => 'เปลี่ยน';
+
+  @override
+  String get settings_relay_remove => 'ลบคีย์';
+
+  @override
+  String get settings_relay_save_failed => 'บันทึกไม่สำเร็จ ลองอีกครั้ง';
+
+  @override
+  String get settings_relay_explainer =>
+      'โทรศัพท์และรถจะเชื่อมต่อกันโดยตรงทุกครั้งที่ทำได้ รีเลย์จะถูกใช้เฉพาะเมื่อทั้งสองอยู่บนเครือข่ายมือถือที่ปิดกั้นการเชื่อมต่อโดยตรง และรีเลย์อ่านข้อมูลที่ส่งต่อไม่ได้';
 }

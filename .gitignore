@@ -5,6 +5,7 @@
 /build
 /.gstack
 /node_modules
+/relay/node_modules
 /app/build
 /app/.cxx
 /app/src/main/cpp/opencv

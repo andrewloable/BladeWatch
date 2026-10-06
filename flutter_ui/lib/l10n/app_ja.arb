@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "概要",
   "dashboard_hud_telemetry": "テレメトリ",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "リレー接続",
+  "settings_relay_subtitle": "車が SIM でオンラインのとき、モバイルデータから車に接続します。",
+  "settings_relay_use_title": "自分のリレーを使う",
+  "settings_relay_use_subtitle": "ご自身で運用するリレー専用です。リレーとすべての電話に同じ 12 桁のキーを設定してください。",
+  "settings_relay_key_label": "リレーキー",
+  "settings_relay_key_invalid": "12 桁のリレーキーを入力してください。",
+  "settings_relay_key_needed": "リレーを使うには、リレーキーを入力してください。",
+  "settings_relay_save": "保存",
+  "settings_relay_change": "変更",
+  "settings_relay_remove": "キーを削除",
+  "settings_relay_save_failed": "保存できませんでした。もう一度お試しください。",
+  "settings_relay_explainer": "電話と車は、可能な限り直接接続します。リレーは、両方がそれを妨げるモバイルネットワーク上にある場合にのみ使われ、転送する内容を読むことはできません。"
 }

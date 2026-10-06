@@ -1,0 +1,22 @@
+{
+  "name": "bladewatch-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Optional owner-run Pear blind relay for BladeWatch: bridges a car on its SIM and a phone on mobile data when hole punching cannot.",
+  "license": "MIT",
+  "main": "relay.js",
+  "scripts": {
+    "start": "node relay.js",
+    "check": "node check.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "comment": "Exact pins, matching what the car's pear-end bundles (blind-relay 1.6.1, hyperdht 6.32.0, sodium-universal 5.0.1 in flutter_pear 0.4.8). Move them together with the bundle, never alone.",
+  "dependencies": {
+    "blind-relay": "1.6.1",
+    "hyperdht": "6.32.0",
+    "sodium-universal": "5.0.1"
+  }
+}

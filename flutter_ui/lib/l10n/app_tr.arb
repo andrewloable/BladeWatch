@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "Genel Bakış",
   "dashboard_hud_telemetry": "Telemetri",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "Röle erişimi",
+  "settings_relay_subtitle": "Araç SIM kartıyla çevrimiçiyken ona mobil veriyle ulaşın.",
+  "settings_relay_use_title": "Kendi rölemi kullan",
+  "settings_relay_use_subtitle": "Yalnızca kendi işlettiğiniz bir röle için; röle ve her telefonda aynı 12 haneli anahtar kullanılır.",
+  "settings_relay_key_label": "Röle anahtarı",
+  "settings_relay_key_invalid": "12 haneli röle anahtarını girin.",
+  "settings_relay_key_needed": "Röleyi kullanmaya başlamak için röle anahtarınızı girin.",
+  "settings_relay_save": "Kaydet",
+  "settings_relay_change": "Değiştir",
+  "settings_relay_remove": "Anahtarı kaldır",
+  "settings_relay_save_failed": "Kaydedilemedi. Tekrar deneyin.",
+  "settings_relay_explainer": "Telefon ve araç mümkün olduğunda doğrudan bağlanır. Röle yalnızca ikisi de bunu engelleyen mobil ağlardayken kullanılır ve ilettiği içeriği okuyamaz."
 }

@@ -494,6 +494,15 @@ Pear in 3.2 s and the download resumed byte-exact. The seed is a secret: whoever
 car's Pear peer. It cannot read companion traffic (the companions' TLS is pinned end to end),
 but it can stand in the car's place on the DHT.
 
+**The owner's relay, when set (BladeWatch-a7mu).** Before it joins the topic, and again on every
+30 s sweep, `PearDaemon` reads `pear_relay` from the secret store (`PearRelay.desiredKey`) and, if
+the setting changed, sends pear-end `relay.set` with the 12-digit relay key, or with null to stop.
+No restart is involved: the in-car app writes the setting and the next sweep applies it. A car that
+never had a relay sends nothing, so its worklet runs exactly as before. The log says only
+`relay on (relay <first 8 hex of the relay's public key>...)` or `relay off`, never the key. How
+the key becomes key pairs, and why the companion needs it too: `docs/networking-and-tunnels.md`,
+"Owner-run relay".
+
 The topic is `PearTopic`: SHA-256 over a domain tag and a random 32-byte seed kept in the
 600 secret store (`pear.topicSeed`), created on first use. It is deliberately independent
 of the auth device secret, so rotating that secret revokes sessions without also making

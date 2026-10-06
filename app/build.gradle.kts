@@ -324,8 +324,8 @@ android {
         // execution limits) that could break the existing daemons; not touched by this bump.
         minSdk = 29
         targetSdk = 25
-        versionCode = 14102
-        versionName = "1.4.1.2"
+        versionCode = 14103
+        versionName = "1.4.1.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -1077,6 +1077,20 @@ tasks.named("preBuild") { dependsOn("validateFlutterAndroidOnly") }
 // Found the hard way: mutating the manifest to re-add the launcher entry left the suite GREEN,
 // because the test simply did not execute. A guard that cannot fail is worse than no guard, since
 // it is believed.
+// Every file that writes the release version out by hand (pub only allows three parts, so the
+// four-part 1.4.1.3 is spelled out per platform). VersionConsistencyTest checks them against this
+// file's versionName/versionCode.
+val VERSION_FILES = listOf(
+    "flutter_ui/pubspec.yaml",
+    "flutter_ui/android/app/build.gradle.kts",
+    "companion/pubspec.yaml",
+    "companion/android/app/build.gradle.kts",
+    "companion/ios/Runner/Info.plist",
+    "companion/macos/Runner/Info.plist",
+    "companion/windows/runner/Runner.rc",
+    "docs/build-and-operations.md",
+)
+
 tasks.withType<Test>().configureEach {
     inputs.file("src/main/AndroidManifest.xml")
         .withPropertyName("appManifest")
@@ -1114,6 +1128,16 @@ tasks.withType<Test>().configureEach {
         if (f.isFile) {
             inputs.file(f)
                 .withPropertyName("scanned-" + rel.replace('/', '-').replace('.', '-'))
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+        }
+    }
+    // VersionConsistencyTest (BladeWatch-a7mu.9) reads every file that writes the release version
+    // out by hand; without these it would go UP-TO-DATE when one of them drifts.
+    VERSION_FILES.forEach { rel ->
+        val f = rootProject.file(rel)
+        if (f.isFile) {
+            inputs.file(f)
+                .withPropertyName("version-" + rel.replace('/', '-').replace('.', '-'))
                 .withPathSensitivity(PathSensitivity.RELATIVE)
         }
     }

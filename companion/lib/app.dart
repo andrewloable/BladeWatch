@@ -24,7 +24,7 @@ class CompanionApp extends StatefulWidget {
     super.key,
     required this.store,
     required this.loadTr,
-    this.openSession = CarSession.open,
+    this.openSession,
     this.scan,
     this.pairing,
     this.wifiPairing = false,
@@ -33,7 +33,9 @@ class CompanionApp extends StatefulWidget {
 
   final CarStore store;
   final Future<Tr> Function(String lang) loadTr;
-  final Future<CarSession> Function(PairedCar car) openSession;
+  /// Opens a session for a paired car. Null means the real [CarSession.open], given this store's
+  /// relay key (BladeWatch-a7mu).
+  final Future<CarSession> Function(PairedCar car)? openSession;
   final Future<String?> Function(BuildContext context)? scan;
 
   /// Test seam; by default pairing opens sessions with [openSession].
@@ -54,7 +56,9 @@ class CompanionAppState extends State<CompanionApp> {
   CarSession? _session;
   AlertsController? _alerts;
   late final AppLifecycleListener _lifecycle;
-  late final _pairing = widget.pairing ?? PairingController(openSession: widget.openSession);
+  late final Future<CarSession> Function(PairedCar car) _openSession =
+      widget.openSession ?? (car) => CarSession.open(car, relayKey: () => store.relayKeyInUse);
+  late final _pairing = widget.pairing ?? PairingController(openSession: _openSession);
 
   CarStore get store => widget.store;
 
@@ -84,7 +88,7 @@ class CompanionAppState extends State<CompanionApp> {
   }
 
   Future<void> _open(PairedCar car) async {
-    final session = await widget.openSession(car);
+    final session = await _openSession(car);
     // BladeWatch-rdtj.38: remember where the car sits on its Wi-Fi, for the next search.
     session.addListener(() {
       final ip = session.carLanAddress;
@@ -200,7 +204,7 @@ class _HomeShellState extends State<HomeShell> {
         final i = all.indexWhere((d) => d.id == id);
         if (i >= 0) _go(i);
       },
-      child: CarPage(onPairAgain: widget.onUnpair, child: current.build(context)),
+      child: CarPage(onPairAgain: widget.onUnpair, store: widget.store, child: current.build(context)),
     );
     final wide = MediaQuery.sizeOf(context).width >= HomeShell.wideMinWidth;
     // The title bar lines up with the page below it (same padding, same width cap).

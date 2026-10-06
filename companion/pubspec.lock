@@ -229,26 +229,26 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_pear
-      sha256: b5aea8855771d53181b71d973ed87faf94b7f51f6d66c4ec681ec570c789932e
+      sha256: d8435c83e00a583e68cdda503b3adedfc71e1bf3b5f40831d3d1c243f9ea1dfd
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.8"
+    version: "0.4.9"
   flutter_pear_bare:
     dependency: transitive
     description:
       name: flutter_pear_bare
-      sha256: "0c020a0e36804ca75f121a8b6a8c9ba1aac62e38ba371a912ee16c5718c81a17"
+      sha256: b885771a6b619af57ef4cc3e4923c3275fd19fc99ebdba8cd9a6db569263db06
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.8"
+    version: "0.4.9"
   flutter_pear_test:
     dependency: "direct dev"
     description:
       name: flutter_pear_test
-      sha256: "38b764d56b6e8de5af7a4b1e649d54d80c5592e379f5b7bcd1a9035fbb5ab23b"
+      sha256: a2eb1bb8b047f05049b1dba3dddfd56314ec9f01a620d4a4ed9ffda74b365a97
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.8"
+    version: "0.4.9"
   flutter_test:
     dependency: "direct dev"
     description: flutter

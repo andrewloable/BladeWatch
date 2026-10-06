@@ -118,7 +118,7 @@ Core daemon roles:
 - Camera daemon: camera, recording, streaming, HTTP API, WebSocket, telemetry, storage, notifications, trips.
 - Sentry daemon: surveillance mode orchestration.
 - ACC sentry daemon: ACC-aware sentry behavior.
-- Pear peer (`pear_daemon`): remote access for the companion app. Opt-in; pairing switches it on. It replaced the Tor onion service in v1.4.0.0 (BladeWatch-rdtj.12).
+- Pear peer (`pear_daemon`): remote access for the companion app. Opt-in; pairing switches it on. It replaced the Tor onion service in v1.4.0.0 (BladeWatch-rdtj.12). Since v1.4.1.3 it can also use the owner's own relay (`pear_relay` in the secret store, BladeWatch-a7mu) when a direct connection is impossible.
 
 ### Native Libraries
 
@@ -220,6 +220,7 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 - Daemons expose local TCP/HTTP IPC rather than relying on Activity-bound Android services.
 - The in-car UI is Flutter and the companion is Flutter too; both talk to the daemon over ConnectRPC and share the RPC package `packages/bladewatch_rpc`.
 - Optional remote access is layered over the local web server through the Pear peer instead of exposing internet-facing server code directly: the companion's TLS runs end to end over the Pear stream into `127.0.0.1:8444`, which is `REMOTE` listener trust, so the JWT layer stays mandatory.
+- The optional owner-run relay (`relay/`, v1.4.1.3) only forwards that already-encrypted stream when the car and phone cannot connect directly (both behind randomizing carrier NATs). It admits only peers holding the owner's 12-digit relay key and cannot read what it forwards. BladeWatch ships no relay and no key.
 - Surveillance and camera paths prioritize long-running stability over tight coupling with Android UI lifecycle.
 - **BladeWatch is server-free by design, permanently** (decided BladeWatch-tren.3). The project operates no backend of its own; nothing leaves the car unless the owner points it somewhere (e.g. the Pear peer, which finds the car on the public Hyperswarm DHT and needs no account, token, or registration). This is a permanent product decision, not a temporary resource constraint, and the following stay permanently out of scope as a result: push notifications while the car is offline, multi-user access to one car, an account flow (the companion pairs device-to-device by QR, with no server), community-authored automations, hazard-sharing between cars, diagnostic log upload with a short code, and car APK distribution from a server.
 

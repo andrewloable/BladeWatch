@@ -2937,4 +2937,45 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'रिले एक्सेस';
+
+  @override
+  String get settings_relay_subtitle =>
+      'जब कार अपने सिम से ऑनलाइन हो, तब मोबाइल डेटा से कार तक पहुँचें।';
+
+  @override
+  String get settings_relay_use_title => 'मेरा रिले इस्तेमाल करें';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'सिर्फ़ उस रिले के लिए जिसे आप खुद चलाते हैं, रिले और हर फ़ोन पर एक ही 12-अंकों की कुंजी के साथ।';
+
+  @override
+  String get settings_relay_key_label => 'रिले कुंजी';
+
+  @override
+  String get settings_relay_key_invalid => '12-अंकों की रिले कुंजी दर्ज करें।';
+
+  @override
+  String get settings_relay_key_needed =>
+      'रिले इस्तेमाल करने के लिए अपनी रिले कुंजी दर्ज करें।';
+
+  @override
+  String get settings_relay_save => 'सहेजें';
+
+  @override
+  String get settings_relay_change => 'बदलें';
+
+  @override
+  String get settings_relay_remove => 'कुंजी हटाएँ';
+
+  @override
+  String get settings_relay_save_failed =>
+      'सहेजा नहीं जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get settings_relay_explainer =>
+      'जब भी संभव हो, आपका फ़ोन और कार सीधे जुड़ते हैं। रिले का इस्तेमाल सिर्फ़ तब होता है जब दोनों ऐसे मोबाइल नेटवर्क पर हों जो इसे रोकते हैं, और रिले आगे भेजा गया डेटा पढ़ नहीं सकता।';
 }

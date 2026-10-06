@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "日付と時刻",
     "trips_costs": "走行とコスト",
     "trip_storage_confirm": "新しい走行は{place}に保存されます。",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "リレー接続",
+    "relay_use": "自分のリレーを使う",
+    "relay_use_hint": "車が SIM でオンラインのとき、モバイルデータから車に接続します。車と同じ 12 桁のキーを設定した、ご自身のリレーが必要です。",
+    "relay_key": "リレーキー",
+    "relay_key_invalid": "12 桁のリレーキーを入力してください。",
+    "relay_key_needed": "車に設定したリレーキーを入力してください。",
+    "relay_change": "変更",
+    "relay_remove": "キーを削除",
+    "relay_explainer": "電話と車は、可能な限り直接接続します。リレーは、両方がそれを妨げるモバイルネットワーク上にある場合にのみ使われ、転送する内容を読むことはできません。"
   }
 }

@@ -2930,4 +2930,45 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Relétilgang';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Nå bilen via mobildata mens den er tilkoblet via SIM-kortet.';
+
+  @override
+  String get settings_relay_use_title => 'Bruk mitt relé';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Bare for et relé du drifter selv, med den samme 12-sifrede nøkkelen på reléet og på hver telefon.';
+
+  @override
+  String get settings_relay_key_label => 'Relénøkkel';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Skriv inn den 12-sifrede relénøkkelen.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Skriv inn relénøkkelen din for å begynne å bruke reléet.';
+
+  @override
+  String get settings_relay_save => 'Lagre';
+
+  @override
+  String get settings_relay_change => 'Endre';
+
+  @override
+  String get settings_relay_remove => 'Fjern nøkkel';
+
+  @override
+  String get settings_relay_save_failed => 'Kunne ikke lagre. Prøv igjen.';
+
+  @override
+  String get settings_relay_explainer =>
+      'Telefonen og bilen kobler seg direkte til hverandre når de kan. Reléet brukes bare når begge er på mobilnett som hindrer det, og det kan ikke lese det det videresender.';
 }

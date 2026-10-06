@@ -20,7 +20,8 @@ v1.4.0.0 replaced the Tor onion service and the browser web app with it.
 - [Data Flow and Storage](data-flow-and-storage.md) explains where data comes from, how it moves between components, and where it is persisted.
 - [Daemons and Processes](daemons-and-processes.md) documents Android components, app-process daemons, watchdogs, foreground services, and local IPC ports.
 - [IPC, Authentication & Secrets](ipc-auth-and-secrets.md) explains the app/daemon UID split, the IPC token bootstrap, the secret-fetch and JWT flows, the **required `/data/local/tmp` file permissions**, and the failure modes that surface as "Camera unavailable".
-- [Networking and Tunnels](networking-and-tunnels.md) covers the HTTP server and its listeners, WebSocket streaming, auth, LAN mode, the Pear peer, and remote access behavior (plus what the Tor onion service was, for history).
+- [Networking and Tunnels](networking-and-tunnels.md) covers the HTTP server and its listeners, WebSocket streaming, auth, LAN mode, the Pear peer, the optional owner-run relay, and remote access behavior (plus what the Tor onion service was, for history).
+- [Relay setup](../relay/README.md) is the owner's guide to running the optional relay on a Linux server, from the `bladewatch-relay-<tag>.tar.gz` release asset.
 - [HTTP API Reference](http-api-reference.md) lists the HTTP routes and the ConnectRPC services the two apps call.
 - [BYD Integrations](byd-integrations.md) explains local BYD hardware APIs, compile-time stubs, telemetry collection, and local vehicle controls.
 - [BYD Head Unit → CAN Bus Access](byd-can.md) documents whether the head unit can reach the vehicle CAN bus directly: the SPI/MCU bridge, BYD's closed HAL, and the signature-permission gate that confines BladeWatch to decoded signals only.
@@ -36,6 +37,9 @@ v1.4.0.0 replaced the Tor onion service and the browser web app with it.
   controllers, theme tokens, ARB catalogs, and the generated ConnectRPC client.
 - `flutter_ui/android/app/src/main/kotlin/` contains that APK's small Kotlin
   layer — the privileged-operation MethodChannels and the Live View texture plugin.
+- `relay/` contains the optional owner-run Pear relay (Node.js): the server, its
+  check script, tests, systemd unit and setup guide. It is also the reference for how
+  the 12-digit relay key becomes key pairs.
 - `app/src/main/java/com/loabletech/bladewatch/` contains the service host:
   daemons, local servers, BYD integrations, telemetry, storage, and the startup
   bootstrap.

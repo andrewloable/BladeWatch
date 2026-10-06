@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "สถานะ",
   "dashboard_hud_telemetry": "เทเลเมทรี",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "การเข้าถึงผ่านรีเลย์",
+  "settings_relay_subtitle": "เข้าถึงรถผ่านอินเทอร์เน็ตมือถือขณะที่รถออนไลน์ผ่านซิมของตัวเอง",
+  "settings_relay_use_title": "ใช้รีเลย์ของฉัน",
+  "settings_relay_use_subtitle": "สำหรับรีเลย์ที่คุณดูแลเองเท่านั้น โดยใช้คีย์ 12 หลักเดียวกันบนรีเลย์และโทรศัพท์ทุกเครื่อง",
+  "settings_relay_key_label": "คีย์รีเลย์",
+  "settings_relay_key_invalid": "ป้อนคีย์รีเลย์ 12 หลัก",
+  "settings_relay_key_needed": "ป้อนคีย์รีเลย์ของคุณเพื่อเริ่มใช้รีเลย์",
+  "settings_relay_save": "บันทึก",
+  "settings_relay_change": "เปลี่ยน",
+  "settings_relay_remove": "ลบคีย์",
+  "settings_relay_save_failed": "บันทึกไม่สำเร็จ ลองอีกครั้ง",
+  "settings_relay_explainer": "โทรศัพท์และรถจะเชื่อมต่อกันโดยตรงทุกครั้งที่ทำได้ รีเลย์จะถูกใช้เฉพาะเมื่อทั้งสองอยู่บนเครือข่ายมือถือที่ปิดกั้นการเชื่อมต่อโดยตรง และรีเลย์อ่านข้อมูลที่ส่งต่อไม่ได้"
 }

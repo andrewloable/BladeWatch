@@ -383,6 +383,12 @@ jobs:
             | `bladewatch-companion-*-windows-unsigned.zip` | `net.bladewatch.companionapp` | Windows (x64). |
             | `bladewatch-companion-*-linux-unsigned.tar.gz` | `net.bladewatch.companionapp` | Linux (x64). |
 
+            ## Your own relay (optional), for a server
+
+            | File | For |
+            |---|---|
+            | `bladewatch-relay-*.tar.gz` | A Linux server with a public IPv4 address. Lets a phone on mobile data reach a car that is online through its own SIM. Set up from the `README.md` inside; BladeWatch works without it. |
+
             Reaches the car over Pear from anywhere, or directly on the car's Wi-Fi. Never
             install it on the car. iOS is not built by CI (it needs Apple signing this
             workflow deliberately has no secrets for); build it from source if you need it.
@@ -618,4 +624,58 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: companion/build/linux/x64/release/*.tar.gz
+          fail_on_unmatched_files: true
+
+  # The owner-run Pear relay (BladeWatch-a7mu), as a download next to the apps: an owner sets it up
+  # on a Linux server from relay/README.md. Plain JavaScript, so one archive serves every server:
+  # `npm ci` on the server installs the exact pinned libraries (package-lock.json) with that
+  # server's own native prebuilds, which is why node_modules is deliberately NOT in the archive.
+  # The relay's tests run first: they pin the key derivation that cars and companions must match.
+  build-relay:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # setup-node@v5 is the lowest major that runs on Node 24 (v4 declares node20); see the
+      # action-version note at the top of this file.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Relay tests (key derivation, member-only firewall, relayed connections)
+        working-directory: relay
+        run: |
+          npm ci
+          npm test
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          FILES="relay.js check.js package.json package-lock.json bladewatch-relay.service README.md"
+          mkdir -p dist stage/bladewatch-relay
+          for f in $FILES; do cp -f "relay/$f" stage/bladewatch-relay/; done
+          ARCHIVE="dist/bladewatch-relay-${GITHUB_REF_NAME}.tar.gz"
+          tar -czf "$ARCHIVE" -C stage bladewatch-relay
+          # Exactly these six files: no node_modules, no test folder, nothing stray.
+          expected=$(for f in $FILES; do echo "bladewatch-relay/$f"; done | sort)
+          actual=$(tar -tzf "$ARCHIVE" | grep -v '/$' | sort)
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::relay archive contents differ from the expected six files"
+            diff <(echo "$expected") <(echo "$actual") || true
+            exit 1
+          fi
+          tar -tzvf "$ARCHIVE"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: relay-${{ github.ref_name }}
+          path: dist/*.tar.gz
+          retention-days: 30
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*.tar.gz
           fail_on_unmatched_files: true

@@ -2857,4 +2857,42 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'リレー接続';
+
+  @override
+  String get settings_relay_subtitle => '車が SIM でオンラインのとき、モバイルデータから車に接続します。';
+
+  @override
+  String get settings_relay_use_title => '自分のリレーを使う';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'ご自身で運用するリレー専用です。リレーとすべての電話に同じ 12 桁のキーを設定してください。';
+
+  @override
+  String get settings_relay_key_label => 'リレーキー';
+
+  @override
+  String get settings_relay_key_invalid => '12 桁のリレーキーを入力してください。';
+
+  @override
+  String get settings_relay_key_needed => 'リレーを使うには、リレーキーを入力してください。';
+
+  @override
+  String get settings_relay_save => '保存';
+
+  @override
+  String get settings_relay_change => '変更';
+
+  @override
+  String get settings_relay_remove => 'キーを削除';
+
+  @override
+  String get settings_relay_save_failed => '保存できませんでした。もう一度お試しください。';
+
+  @override
+  String get settings_relay_explainer =>
+      '電話と車は、可能な限り直接接続します。リレーは、両方がそれを妨げるモバイルネットワーク上にある場合にのみ使われ、転送する内容を読むことはできません。';
 }

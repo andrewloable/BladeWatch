@@ -2962,4 +2962,46 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Relay-Zugang';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Erreichen Sie das Auto über mobile Daten, während es über seine SIM online ist.';
+
+  @override
+  String get settings_relay_use_title => 'Mein Relay verwenden';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Nur für ein Relay, das Sie selbst betreiben, mit demselben 12-stelligen Schlüssel auf dem Relay und auf jedem Telefon.';
+
+  @override
+  String get settings_relay_key_label => 'Relay-Schlüssel';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Geben Sie den 12-stelligen Relay-Schlüssel ein.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Geben Sie Ihren Relay-Schlüssel ein, um das Relay zu nutzen.';
+
+  @override
+  String get settings_relay_save => 'Speichern';
+
+  @override
+  String get settings_relay_change => 'Ändern';
+
+  @override
+  String get settings_relay_remove => 'Schlüssel entfernen';
+
+  @override
+  String get settings_relay_save_failed =>
+      'Speichern fehlgeschlagen. Bitte erneut versuchen.';
+
+  @override
+  String get settings_relay_explainer =>
+      'Telefon und Auto verbinden sich direkt, wann immer es möglich ist. Das Relay wird nur genutzt, wenn beide in Mobilfunknetzen sind, die das verhindern, und es kann nicht lesen, was es weiterleitet.';
 }

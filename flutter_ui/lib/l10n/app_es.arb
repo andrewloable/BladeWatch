@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "Resumen",
   "dashboard_hud_telemetry": "Telemetría",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "Acceso por relé",
+  "settings_relay_subtitle": "Acceda al coche con datos móviles mientras está conectado mediante su SIM.",
+  "settings_relay_use_title": "Usar mi relé",
+  "settings_relay_use_subtitle": "Solo para un relé que usted mismo gestiona, con la misma clave de 12 dígitos en el relé y en cada teléfono.",
+  "settings_relay_key_label": "Clave del relé",
+  "settings_relay_key_invalid": "Introduzca la clave del relé de 12 dígitos.",
+  "settings_relay_key_needed": "Introduzca su clave del relé para empezar a usarlo.",
+  "settings_relay_save": "Guardar",
+  "settings_relay_change": "Cambiar",
+  "settings_relay_remove": "Quitar clave",
+  "settings_relay_save_failed": "No se pudo guardar. Inténtelo de nuevo.",
+  "settings_relay_explainer": "El teléfono y el coche se conectan directamente siempre que pueden. El relé solo se usa cuando ambos están en redes móviles que lo impiden, y no puede leer lo que reenvía."
 }

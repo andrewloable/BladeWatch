@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Date et heure",
     "trips_costs": "Trajets et coûts",
     "trip_storage_confirm": "Les nouveaux trajets seront enregistrés sur {place}.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Accès par relais",
+    "relay_use": "Utiliser mon relais",
+    "relay_use_hint": "Joignez la voiture en données mobiles lorsqu'elle est connectée via sa carte SIM. Nécessite votre propre relais, avec la même clé à 12 chiffres que la voiture.",
+    "relay_key": "Clé du relais",
+    "relay_key_invalid": "Saisissez la clé du relais à 12 chiffres.",
+    "relay_key_needed": "Saisissez la clé du relais définie dans la voiture.",
+    "relay_change": "Modifier",
+    "relay_remove": "Supprimer la clé",
+    "relay_explainer": "Le téléphone et la voiture se connectent directement dès que possible. Le relais n'est utilisé que lorsque les deux sont sur des réseaux mobiles qui l'empêchent, et il ne peut pas lire ce qu'il transmet."
   }
 }

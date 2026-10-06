@@ -16,6 +16,7 @@ import 'package:bladewatch_ui/screens/settings/settings_appearance_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_daemons_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_overlay_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_privacy_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_relay_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_appearance_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_screen.dart';
@@ -158,6 +159,23 @@ void main() {
     expect(find.byType(SettingsDaemonsScreen), findsOneWidget);
   });
 
+  testWidgets('selecting Relay access reads the pear_relay SECRET section, never public config', (tester) async {
+    channel.stub('config', 'get', null); // nothing stored yet
+    await pump(tester);
+    channel.calls.clear();
+    await tester.tap(find.byKey(const ValueKey('settings.section.relay')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsRelayScreen), findsOneWidget);
+    expect(find.text('RELAY ACCESS'), findsOneWidget);
+    final reads = channel.calls.where((c) => c.group == 'config' && c.method == 'get').map((c) => c.args).toList();
+    expect(reads, containsAll([
+      {'section': 'pear_relay', 'key': 'enabled'},
+      {'section': 'pear_relay', 'key': 'key'},
+    ]));
+    expect(channel.calls.where((c) => c.group == 'publicConfig'), isEmpty);
+  });
+
   testWidgets('selecting Privacy shows the privacy screen and the reset button opens its dialog', (tester) async {
     await pump(tester);
     await tester.tap(find.byKey(const ValueKey('settings.section.privacy')));
@@ -239,7 +257,7 @@ void main() {
         reason: '$section should show a drill-down chevron',
       );
     }
-    for (final section in const ['appearance', 'overlay', 'daemons', 'privacy']) {
+    for (final section in const ['appearance', 'overlay', 'daemons', 'relay', 'privacy']) {
       expect(
         find.descendant(
           of: find.byKey(ValueKey('settings.section.$section')),
@@ -336,7 +354,8 @@ void main() {
     testWidgets('the sub-rail is HUD rows and the selected one carries the accent border', (tester) async {
       await pump(tester);
 
-      expect(find.byType(HudListRow), findsNWidgets(7));
+      // Eight sections since Relay access (BladeWatch-a7mu).
+      expect(find.byType(HudListRow), findsNWidgets(8));
       Color borderOf(String section) => tester
           .widget<HudPanel>(find.descendant(of: find.byKey(ValueKey('settings.section.$section')), matching: find.byType(HudPanel)).first)
           .borderColor;

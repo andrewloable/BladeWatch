@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "日期和时间",
     "trips_costs": "行程与费用",
     "trip_storage_confirm": "新的行程将保存到{place}。",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "中继访问",
+    "relay_use": "使用我的中继",
+    "relay_use_hint": "车辆通过自身 SIM 卡联网时，用移动数据连接车辆。需要您自己运行的中继，并使用与车辆相同的 12 位密钥。",
+    "relay_key": "中继密钥",
+    "relay_key_invalid": "请输入 12 位中继密钥。",
+    "relay_key_needed": "请输入您在车辆中设置的中继密钥。",
+    "relay_change": "更改",
+    "relay_remove": "移除密钥",
+    "relay_explainer": "手机和车辆会尽可能直接连接。只有当两者都处于阻止直接连接的移动网络时才会使用中继，且中继无法读取其转发的内容。"
   }
 }

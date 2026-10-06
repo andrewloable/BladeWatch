@@ -1,0 +1,28 @@
+# systemd unit for the BladeWatch relay. Install steps: relay/README.md.
+[Unit]
+Description=BladeWatch Pear relay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=bladewatch-relay
+Group=bladewatch-relay
+WorkingDirectory=/opt/bladewatch-relay
+ExecStart=/usr/bin/node relay.js
+Restart=always
+RestartSec=5
+
+# The relay only reads its key file and talks UDP. Everything else is locked away.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+# AF_NETLINK: Node lists the host's network interfaces through it.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

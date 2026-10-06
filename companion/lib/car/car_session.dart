@@ -265,11 +265,18 @@ class CarSession extends ChangeNotifier {
 
   /// Opens the real link: gateway, selector and login for [car]. The two network edges are
   /// injectable for tests; by default the LAN is probed and Pear is started on first need.
+  ///
+  /// [relayKey] reads the owner's relay key (BladeWatch-a7mu) -- the bare 12 digits, or null for no
+  /// relay. It is read again before every Pear join, and every search for the car is a fresh join,
+  /// so a key changed in Settings applies at the next search. [setRelayKey] is the test seam for
+  /// `Pear.setRelayKey`.
   static Future<CarSession> open(
     PairedCar car, {
     Future<PearSwarm> Function(PearKey topic)? joinTopic,
     Future<LanEndpoint?> Function()? findOnLan,
     Stream<void>? networkChanges,
+    String? Function()? relayKey,
+    Future<void> Function(String? key)? setRelayKey,
   }) async {
     final gateway = await LocalGateway.start();
     Pear? pear;
@@ -278,6 +285,17 @@ class CarSession extends ChangeNotifier {
     // 20 minutes, and every later dialer tried it first. The car joins with acceptUnannounced, so
     // it uses this connection without ever finding an announcement (BladeWatch-lw0o).
     final join = joinTopic ?? (topic) async => (pear ??= await Pear.start()).join(topic, announce: false);
+    // The car offers its relay in the handshake when it needs one, but the relay only lets in
+    // peers holding the same key, so this side needs it too. Sent only when it changes; a phone
+    // that never had a relay never sends it.
+    final setRelay = setRelayKey ?? (key) async => (pear ??= await Pear.start()).setRelayKey(key);
+    String? relayApplied;
+    Future<void> useRelay() async {
+      final want = relayKey?.call();
+      if (want == relayApplied) return;
+      await setRelay(want);
+      relayApplied = want;
+    }
     final selector = TransportSelector(
       gateway: gateway,
       pinnedFingerprint: car.tlsFingerprint,
@@ -299,6 +317,7 @@ class CarSession extends ChangeNotifier {
           final previous = swarm;
           swarm = null;
           if (previous != null) await previous.leave().catchError((Object _) {});
+          await useRelay();
           final s = swarm = await join(PearKey.fromHex(car.pearTopic));
           return await findCarOverPear(pearLinks(s), car.tlsFingerprint, onClosed: onClosed);
         } catch (_) {

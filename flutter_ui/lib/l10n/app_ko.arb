@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "개요",
   "dashboard_hud_telemetry": "텔레메트리",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "릴레이 접속",
+  "settings_relay_subtitle": "차량이 SIM으로 온라인일 때 모바일 데이터로 차량에 연결합니다.",
+  "settings_relay_use_title": "내 릴레이 사용",
+  "settings_relay_use_subtitle": "직접 운영하는 릴레이 전용이며, 릴레이와 모든 휴대폰에 같은 12자리 키를 사용해야 합니다.",
+  "settings_relay_key_label": "릴레이 키",
+  "settings_relay_key_invalid": "12자리 릴레이 키를 입력하세요.",
+  "settings_relay_key_needed": "릴레이를 사용하려면 릴레이 키를 입력하세요.",
+  "settings_relay_save": "저장",
+  "settings_relay_change": "변경",
+  "settings_relay_remove": "키 삭제",
+  "settings_relay_save_failed": "저장하지 못했습니다. 다시 시도하세요.",
+  "settings_relay_explainer": "휴대폰과 차량은 가능하면 항상 직접 연결됩니다. 릴레이는 둘 다 직접 연결을 막는 모바일 네트워크에 있을 때만 사용되며, 전달하는 내용을 읽을 수 없습니다."
 }

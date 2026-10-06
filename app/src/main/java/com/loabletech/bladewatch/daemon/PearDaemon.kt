@@ -76,10 +76,19 @@ object PearDaemon {
     internal fun joinParams(topic: String): JSONObject =
         JSONObject().put("topic", topic).put("acceptUnannounced", true)
 
+    /**
+     * BladeWatch-a7mu: the relay.set params to send when the owner's relay key goes from [applied] to
+     * [desired] (each the bare 12 digits, or null for no relay), or null when nothing changed. A car
+     * that never had a relay sends nothing at all, so its worklet runs exactly as before.
+     */
+    internal fun relayRequest(applied: String?, desired: String?): JSONObject? =
+        if (desired == applied) null else PearRelay.relaySetParams(desired)
+
     // pear-end request ids; any number works, these just have to be unique while in flight.
     private const val ID_ATTACH_INFO = 1
     private const val ID_SWARM_JOIN = 2
     private const val ID_DHT_STATUS = 3
+    private const val ID_RELAY_SET = 4
     private const val FIRST_WRITE_ID = 100 // connection.write requests count up from here
 
     private const val SWEEP_INTERVAL_MS = 30_000L
@@ -155,11 +164,14 @@ object PearDaemon {
         private val writesInFlight = HashMap<Int, String>() // connection.write id -> peer
         private val pump = PearStreamPump(send = ::sendToPeer)
         private val status = PearStatus(File(PearStatus.PATH))
+        private val secrets = SecretConfigStore()
+        private var relayKey: String? = null // what pear-end was last told; never logged
 
         fun start(topic: String) {
             status.write() // replaces whatever a previous run left: not joined yet
             armRead()
             request(ID_ATTACH_INFO, "attach.info", JSONObject())
+            applyRelay() // before the join, so the first companion can already be relayed
             request(ID_SWARM_JOIN, "swarm.join", joinParams(topic))
             scheduleSweep()
         }
@@ -207,8 +219,22 @@ object PearDaemon {
             handler.postDelayed({
                 pump.sweepIdle()
                 request(ID_DHT_STATUS, "dht.status", JSONObject())
+                applyRelay() // the in-car app may have changed the relay setting since
                 scheduleSweep()
             }, SWEEP_INTERVAL_MS)
+        }
+
+        /** Tells pear-end about a change in the owner's relay setting (BladeWatch-a7mu). */
+        private fun applyRelay() {
+            val desired = try {
+                PearRelay.desiredKey(secrets)
+            } catch (e: Exception) {
+                log.warn("relay setting unreadable, keeping the current one: ${e.javaClass.simpleName}")
+                return
+            }
+            val params = relayRequest(relayKey, desired) ?: return
+            relayKey = desired
+            request(ID_RELAY_SET, "relay.set", params)
         }
 
         private fun armRead() {
@@ -243,6 +269,17 @@ object PearDaemon {
                     status.joined = true
                     status.write()
                     request(ID_DHT_STATUS, "dht.status", JSONObject())
+                }
+                ID_RELAY_SET -> {
+                    // Only the relay's public key prefix: it is not secret, and it is what an owner
+                    // compares with the relay's own log. The relay key itself is never logged.
+                    val ok = frame.optJSONObject("ok")
+                    val relay = ok?.optString("relayPublicKey").orEmpty()
+                    when {
+                        ok == null -> log.warn("relay.set failed: ${frame.optJSONObject("err")?.optString("code")}")
+                        relay.isEmpty() -> log.info("relay off")
+                        else -> log.info("relay on (relay ${relay.take(8)}...)")
+                    }
                 }
                 ID_DHT_STATUS -> {
                     // An error means this pear-end has no dht.status (older than flutter_pear 0.4.4):

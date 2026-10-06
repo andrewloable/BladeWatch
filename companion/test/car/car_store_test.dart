@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bladewatch_companion/car/car_store.dart';
@@ -71,5 +72,53 @@ void main() {
     expect(PairedCar.fromJson({...car.toJson()..remove('inboxCursor')}).inboxCursor, Int64.ZERO);
     expect(car.toJson().containsKey('lanHint'), isFalse, reason: 'no hint until the car has been reached on Wi-Fi');
     expect(PairedCar.fromJson(car.toJson()).lanHint, isNull);
+  });
+
+  group('relay access (BladeWatch-a7mu)', () {
+    test('round-trips the switch and the key', () async {
+      final store = testStore(car: testCar())
+        ..relayEnabled = true
+        ..relayKey = '482109375562';
+      await store.save();
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.relayEnabled, isTrue);
+      expect(again.relayKey, '482109375562');
+      expect(again.relayKeyInUse, '482109375562');
+    });
+
+    test('a file from before the relay loads as off, still paired', () async {
+      final store = testStore(car: testCar());
+      await store.save();
+      final raw = jsonDecode(await store.file.readAsString()) as Map<String, Object?>..remove('relay');
+      await store.file.writeAsString(jsonEncode(raw));
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.car, isNotNull);
+      expect(again.relayEnabled, isFalse);
+      expect(again.relayKeyInUse, isNull);
+    });
+
+    test('a bad relay entry never un-pairs this device', () async {
+      final store = testStore(car: testCar());
+      await store.save();
+      final raw = jsonDecode(await store.file.readAsString()) as Map<String, Object?>;
+      raw['relay'] = {'enabled': 'yes', 'key': 482109375562};
+      await store.file.writeAsString(jsonEncode(raw));
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.car, isNotNull, reason: 'the pairing is kept');
+      expect(again.relayEnabled, isFalse);
+      expect(again.relayKey, isNull);
+    });
+
+    test('the key in use needs the switch on and a well-formed key', () {
+      final store = testStore()..relayKey = '482109375562';
+      expect(store.relayKeyInUse, isNull, reason: 'switched off keeps the key but uses none');
+      store.relayEnabled = true;
+      expect(store.relayKeyInUse, '482109375562');
+      store.relayKey = '4821';
+      expect(store.relayKeyInUse, isNull, reason: 'Pear would refuse it on every search');
+    });
   });
 }

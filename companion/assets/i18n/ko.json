@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "날짜와 시간",
     "trips_costs": "주행 및 비용",
     "trip_storage_confirm": "새 주행은 {place}에 저장됩니다.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "릴레이 접속",
+    "relay_use": "내 릴레이 사용",
+    "relay_use_hint": "차량이 SIM으로 온라인일 때 모바일 데이터로 차량에 연결합니다. 차량과 같은 12자리 키를 쓰는 직접 운영하는 릴레이가 필요합니다.",
+    "relay_key": "릴레이 키",
+    "relay_key_invalid": "12자리 릴레이 키를 입력하세요.",
+    "relay_key_needed": "차량에 설정한 릴레이 키를 입력하세요.",
+    "relay_change": "변경",
+    "relay_remove": "키 삭제",
+    "relay_explainer": "휴대폰과 차량은 가능하면 항상 직접 연결됩니다. 릴레이는 둘 다 직접 연결을 막는 모바일 네트워크에 있을 때만 사용되며, 전달하는 내용을 읽을 수 없습니다."
   }
 }

@@ -8,7 +8,7 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
-**Contents:** [What's new](#whats-new-in-v1412) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
+**Contents:** [What's new](#whats-new-in-v1413) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
 
@@ -21,7 +21,40 @@ They share one Android UID, which is what lets the UI talk to the daemons over l
 
 A third app, the **companion** (`net.bladewatch.companionapp`), goes on your phone or computer, never on the car. It is optional, and it is how you reach the car remotely: see [Install the companion app](#install-the-companion-app).
 
-## What's new in v1.4.1.2
+## What's new in v1.4.1.3
+
+Reach the car from mobile data while it is online through its own SIM, through a relay you run.
+
+- **Your own relay, for the one case peer-to-peer cannot connect.** A car on its built-in SIM and a
+  phone on mobile data both sit behind carrier NAT, and nothing could connect them. Now you can run
+  a small relay on any Linux server with a public IPv4 address, such as a cheap cloud VPS: download
+  [bladewatch-relay-v1.4.1.3.tar.gz](https://github.com/andrewloable/BladeWatch/releases/download/v1.4.1.3/bladewatch-relay-v1.4.1.3.tar.gz)
+  from this release and set it up from [`relay/README.md`](relay/README.md), then turn on
+  **Settings > Relay access > Use my relay** in the car and in each companion, with the same
+  **Relay key**. Everything that connects
+  directly today stays direct; the relay is only used when nothing else works.
+- **The relay is yours alone.** Its key is 12 digits, like `4821-0937-5562`, and the relay refuses
+  anyone without it, other BladeWatch owners included. It forwards encrypted data and cannot see
+  your video or your car's data. BladeWatch ships no relay and no key: without one, nothing
+  changes.
+- **The relay key can be entered from the "can't reach the car" page** in the companion, because
+  that is exactly when it is needed and the car's own settings are out of reach.
+- **The Linux companion shows the full version** in About (it showed three parts).
+- **One version everywhere:** 1.4.1.3.
+
+Known, not fixed:
+
+- Without a relay, **a phone on mobile data still cannot reach a car on its built-in SIM.** Put the
+  phone on Wi-Fi, or set up a relay. See [Remote Access](#remote-access-pear).
+- On the head unit, the VEHICLE card pushes the dashboard's tile row down far enough that it takes
+  a short scroll to reach.
+
+**Upgrading from v1.4.1.2:** the app IDs are unchanged, so both car APKs and the companion update
+in place, and paired devices stay paired. Relay access is off until you turn it on. On Android,
+take the companion APK for your device (`arm64-v8a` for a phone). BYD resets its Auto-Start
+restriction on every install, so allow both BladeWatch entries again afterwards.
+
+### v1.4.1.2
 
 The companion comes to the TV, and devices without a camera pair without a QR.
 
@@ -300,6 +333,7 @@ and ask me instead of guessing.
 - **Diagnostics** — Network, storage, camera, and battery health checks.
 - **Live Streaming** — Low-latency H.264 streaming over WebSocket in the car, with multiple view modes (all cameras, front, rear, left, right); the companion shows the same view as ten stills a second.
 - **Companion app** — Phone and desktop app (`companion/`) that reaches the car directly on its Wi-Fi or from anywhere over Pear, with the car's alerts collected from its store-and-forward inbox (no push service).
+- **Your own relay (optional, v1.4.1.3)** — A small server you run, from the release's `bladewatch-relay-<tag>.tar.gz`, that bridges a car on its SIM and a phone on mobile data. Only devices with your 12-digit relay key can use it; see [Your own relay](#your-own-relay-optional-v1413).
 - **ADB Shell Runner** — Built-in terminal for running commands, checking processes, and viewing logs.
 - **17 Languages** — Fully localized UI.
 
@@ -328,9 +362,26 @@ through the internet. It is off unless you turn it on.
 **Limits:** the car and the phone must be able to reach each other through their networks.
 Some mobile carriers put phones behind a NAT that peer-to-peer connections cannot cross; from
 such a network the companion may not reach the car until you switch to another connection.
-**If the car is online through its built-in SIM, the phone cannot reach it over mobile data**:
-both are then behind carrier NATs, and BladeWatch runs no relay to bridge them. Put the phone
-on Wi-Fi instead. Over a mobile connection, live video is smoothest at Medium quality or lower.
+**If the car is online through its built-in SIM, the phone cannot reach it directly over mobile
+data**: both are then behind carrier NATs. Put the phone on Wi-Fi, or run your own relay (below).
+Over a mobile connection, live video is smoothest at Medium quality or lower.
+
+### Your own relay (optional, v1.4.1.3)
+A relay is a small server you run yourself that bridges the car on its SIM and a phone on mobile
+data, the one case peer-to-peer cannot connect. It needs a Linux server with a public IPv4 address,
+such as a small cloud VPS. It forwards encrypted data only and cannot see your video or your car's
+data. Everything that connects directly today stays direct.
+
+It is yours alone. You create a **relay key** of 12 digits, like `4821-0937-5562`, and enter the
+same key on the relay, in the car and in each companion: Settings > **Relay access** > turn on
+**Use my relay** > **Relay key**. The relay refuses anyone without the key, other BladeWatch
+owners included. BladeWatch ships no relay and no key; without one, nothing changes.
+
+**Setup:** download `bladewatch-relay-<tag>.tar.gz` from the
+[release](https://github.com/andrewloable/BladeWatch/releases) -- for this version,
+[bladewatch-relay-v1.4.1.3.tar.gz](https://github.com/andrewloable/BladeWatch/releases/download/v1.4.1.3/bladewatch-relay-v1.4.1.3.tar.gz) --
+and follow [`relay/README.md`](relay/README.md) (also inside the archive): install, create the key,
+open UDP ports 49737-49742, check it, then turn it on in both apps.
 
 ## Install the Companion App
 
@@ -461,7 +512,8 @@ The in-car UI was native Android until it was rewritten in Flutter. The Angular 
 - [Flutter](https://docs.flutter.dev/get-started/install) 3.44+ — for the in-car UI and the companion (releases are built with 3.44.4)
 - For the companion's desktop and iOS builds, that platform's own toolchain: Xcode for macOS and iOS, Visual Studio with the "Desktop development with C++" workload for Windows, and `clang cmake ninja-build pkg-config libgtk-3-dev` for Linux. Each is built on its own OS.
 - [`buf`](https://buf.build) — optional, only needed to regenerate the protobuf / ConnectRPC stubs
-- No Node.js or npm: the build has no web part any more.
+- No Node.js or npm for the apps: the build has no web part any more. Node.js 20+ is needed only
+  to test or run the optional relay (`relay/`).
 
 ### Build
 
@@ -490,6 +542,7 @@ Tests and coverage gates:
 cd flutter_ui && flutter analyze && flutter test             # in-car UI
 cd companion && flutter analyze && flutter test              # companion
 cd packages/bladewatch_rpc && flutter analyze && flutter test
+cd relay && npm ci && npm test                               # optional relay (Node.js)
 cd flutter_ui/android && ./gradlew koverVerify checkFlutterCoverage checkRpcCoverage checkCompanionCoverage
 ```
 
@@ -563,7 +616,7 @@ tools/thin_macos_app.sh companion/build/macos/Build/Products/Release/BladeWatch.
 ```
 
 ### Documentation
-In-depth documentation lives in [`docs/`](docs/) — architecture, daemons and processes, IPC/auth/secrets, networking and remote access, the HTTP and ConnectRPC API reference, BYD integrations, the surveillance pipeline, and storage.
+In-depth documentation lives in [`docs/`](docs/) — architecture, daemons and processes, IPC/auth/secrets, networking and remote access, the HTTP and ConnectRPC API reference, BYD integrations, the surveillance pipeline, and storage. The optional relay's setup guide is [`relay/README.md`](relay/README.md).
 
 ## Privacy
 

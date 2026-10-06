@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Date and time",
     "trips_costs": "Trips & costs",
     "trip_storage_confirm": "New trips will be saved to {place}.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Relay access",
+    "relay_use": "Use my relay",
+    "relay_use_hint": "Reach the car from mobile data while it is online through its SIM. Needs a relay you run yourself, with the same 12-digit key as the car.",
+    "relay_key": "Relay key",
+    "relay_key_invalid": "Enter the 12-digit relay key.",
+    "relay_key_needed": "Enter the relay key you set in the car.",
+    "relay_change": "Change",
+    "relay_remove": "Remove key",
+    "relay_explainer": "Your phone and the car connect directly whenever they can. The relay is used only when both are on mobile networks that block that, and it cannot read what it forwards."
   }
 }

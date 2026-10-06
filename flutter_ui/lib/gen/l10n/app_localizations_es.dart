@@ -2969,4 +2969,46 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Acceso por relé';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Acceda al coche con datos móviles mientras está conectado mediante su SIM.';
+
+  @override
+  String get settings_relay_use_title => 'Usar mi relé';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Solo para un relé que usted mismo gestiona, con la misma clave de 12 dígitos en el relé y en cada teléfono.';
+
+  @override
+  String get settings_relay_key_label => 'Clave del relé';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Introduzca la clave del relé de 12 dígitos.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Introduzca su clave del relé para empezar a usarlo.';
+
+  @override
+  String get settings_relay_save => 'Guardar';
+
+  @override
+  String get settings_relay_change => 'Cambiar';
+
+  @override
+  String get settings_relay_remove => 'Quitar clave';
+
+  @override
+  String get settings_relay_save_failed =>
+      'No se pudo guardar. Inténtelo de nuevo.';
+
+  @override
+  String get settings_relay_explainer =>
+      'El teléfono y el coche se conectan directamente siempre que pueden. El relé solo se usa cuando ambos están en redes móviles que lo impiden, y no puede leer lo que reenvía.';
 }

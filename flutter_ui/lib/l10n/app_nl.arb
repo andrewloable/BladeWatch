@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "Overzicht",
   "dashboard_hud_telemetry": "Telemetrie",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "Relaytoegang",
+  "settings_relay_subtitle": "Bereik de auto via mobiele data terwijl hij online is via zijn simkaart.",
+  "settings_relay_use_title": "Mijn relay gebruiken",
+  "settings_relay_use_subtitle": "Alleen voor een relay die je zelf beheert, met dezelfde sleutel van 12 cijfers op de relay en op elke telefoon.",
+  "settings_relay_key_label": "Relaysleutel",
+  "settings_relay_key_invalid": "Voer de relaysleutel van 12 cijfers in.",
+  "settings_relay_key_needed": "Voer je relaysleutel in om de relay te gaan gebruiken.",
+  "settings_relay_save": "Opslaan",
+  "settings_relay_change": "Wijzigen",
+  "settings_relay_remove": "Sleutel verwijderen",
+  "settings_relay_save_failed": "Opslaan mislukt. Probeer het opnieuw.",
+  "settings_relay_explainer": "Je telefoon en de auto maken waar mogelijk rechtstreeks verbinding. De relay wordt alleen gebruikt als beide op mobiele netwerken zitten die dat blokkeren, en hij kan niet lezen wat hij doorstuurt."
 }
