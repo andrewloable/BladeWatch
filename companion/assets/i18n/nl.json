@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Datum en tijd",
     "trips_costs": "Ritten en kosten",
     "trip_storage_confirm": "Nieuwe ritten worden opgeslagen op {place}.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Relaytoegang",
+    "relay_use": "Mijn relay gebruiken",
+    "relay_use_hint": "Bereik de auto via mobiele data terwijl hij online is via zijn simkaart. Vereist een eigen relay met dezelfde sleutel van 12 cijfers als de auto.",
+    "relay_key": "Relaysleutel",
+    "relay_key_invalid": "Voer de relaysleutel van 12 cijfers in.",
+    "relay_key_needed": "Voer de relaysleutel in die je in de auto hebt ingesteld.",
+    "relay_change": "Wijzigen",
+    "relay_remove": "Sleutel verwijderen",
+    "relay_explainer": "Je telefoon en de auto maken waar mogelijk rechtstreeks verbinding. De relay wordt alleen gebruikt als beide op mobiele netwerken zitten die dat blokkeren, en hij kan niet lezen wat hij doorstuurt."
   }
 }

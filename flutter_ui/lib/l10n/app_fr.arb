@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "Aperçu",
   "dashboard_hud_telemetry": "Télémétrie",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "Accès par relais",
+  "settings_relay_subtitle": "Joignez la voiture en données mobiles lorsqu'elle est connectée via sa carte SIM.",
+  "settings_relay_use_title": "Utiliser mon relais",
+  "settings_relay_use_subtitle": "Uniquement pour un relais que vous gérez vous-même, avec la même clé à 12 chiffres sur le relais et sur chaque téléphone.",
+  "settings_relay_key_label": "Clé du relais",
+  "settings_relay_key_invalid": "Saisissez la clé du relais à 12 chiffres.",
+  "settings_relay_key_needed": "Saisissez votre clé du relais pour commencer à l'utiliser.",
+  "settings_relay_save": "Enregistrer",
+  "settings_relay_change": "Modifier",
+  "settings_relay_remove": "Supprimer la clé",
+  "settings_relay_save_failed": "Échec de l'enregistrement. Réessayez.",
+  "settings_relay_explainer": "Le téléphone et la voiture se connectent directement dès que possible. Le relais n'est utilisé que lorsque les deux sont sur des réseaux mobiles qui l'empêchent, et il ne peut pas lire ce qu'il transmet."
 }

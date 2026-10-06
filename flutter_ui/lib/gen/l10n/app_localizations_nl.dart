@@ -2948,4 +2948,46 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Relaytoegang';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Bereik de auto via mobiele data terwijl hij online is via zijn simkaart.';
+
+  @override
+  String get settings_relay_use_title => 'Mijn relay gebruiken';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Alleen voor een relay die je zelf beheert, met dezelfde sleutel van 12 cijfers op de relay en op elke telefoon.';
+
+  @override
+  String get settings_relay_key_label => 'Relaysleutel';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Voer de relaysleutel van 12 cijfers in.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Voer je relaysleutel in om de relay te gaan gebruiken.';
+
+  @override
+  String get settings_relay_save => 'Opslaan';
+
+  @override
+  String get settings_relay_change => 'Wijzigen';
+
+  @override
+  String get settings_relay_remove => 'Sleutel verwijderen';
+
+  @override
+  String get settings_relay_save_failed =>
+      'Opslaan mislukt. Probeer het opnieuw.';
+
+  @override
+  String get settings_relay_explainer =>
+      'Je telefoon en de auto maken waar mogelijk rechtstreeks verbinding. De relay wordt alleen gebruikt als beide op mobiele netwerken zitten die dat blokkeren, en hij kan niet lezen wat hij doorstuurt.';
 }

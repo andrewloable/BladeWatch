@@ -592,6 +592,24 @@ void main() {
     });
   });
 
+  // BladeWatch-a7mu.9: Linux reads the version from pubspec (three parts) and the build number.
+  testWidgets('About shows the four-part version where the platform only knows three', (tester) async {
+    final s = TestSession();
+    stubStatus(s); // the car says 1.4.0.0
+    await pumpScreen(tester, s, AboutScreen(appVersion: () async => '1.4.1', buildNumber: () async => '14103'));
+    expect(find.text('1.4.1.3'), findsOneWidget);
+    expect(find.text('1.4.1'), findsNothing);
+  });
+
+  test('displayVersion rebuilds the fourth part from the build number, and only then', () {
+    expect(AboutScreen.displayVersion('1.4.1', '14103'), '1.4.1.3');
+    expect(AboutScreen.displayVersion('1.4.0', '14000'), '1.4.0.0');
+    expect(AboutScreen.displayVersion('1.4.1.3', '14103'), '1.4.1.3', reason: 'already four parts');
+    expect(AboutScreen.displayVersion('1.4.1', ''), '1.4.1', reason: 'no build number');
+    expect(AboutScreen.displayVersion('1.4.1', '17'), '1.4.1', reason: 'a build number from another scheme');
+    expect(AboutScreen.displayVersion('1.4.1', '14200'), '1.4.1', reason: 'does not match the version');
+  });
+
   testWidgets('About shows both versions and the licences', (tester) async {
     final s = TestSession();
     stubStatus(s);

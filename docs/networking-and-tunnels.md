@@ -419,23 +419,69 @@ works: the car accepts it either way. The car itself still leaves one dead recor
 From a phone hotspot behind a randomizing NAT (HyperDHT `randomized=true`), hole punching to the
 car is probabilistic and slow: 7 of 20 cold starts never formed a Pear connection, and the 13
 that did took a median of 44 s. The companion reports this as "can't reach the car" and keeps
-retrying by itself. The fix would be a relay for when hole punching fails (hyperdht's
-`relayThrough`: a public blind relay, or an always-on peer the owner runs); the owner accepted
-the limitation for now, to be revisited if it bites in daily use.
+retrying by itself. The owner's own relay (below) covers this case too, once both sides have the
+relay key: Hyperswarm falls back to it after a failed punch.
 
-**Car on its built-in SIM: the phone must be on Wi-Fi (owner decision 2026-10-03, no relays).**
-A carrier's CGNAT puts the car behind a randomizing NAT too. When BOTH ends randomize, hyperdht
-does not even try to punch: it aborts with `HOLEPUNCH_DOUBLE_RANDOMIZED_NATS`
-(`hyperdht/lib/connect.js`), so a phone on mobile data never reaches a car on cellular. Observed
-2026-10-03 from iOS and Android companions on mobile data: no connection at all. With the car
-still on its SIM, a phone on home Wi-Fi connected. That home network is Starlink, CGNAT but
-consistent (`randomized=false`), so it was the probabilistic case above, not a guaranteed one.
-A relay is the only fix, and the owner declined one. A relay at home would not work anyway:
-there is no port forward behind Starlink's CGNAT, and hyperdht exchanges IPv4 addresses only
-(`addresses6: null` in `hyperdht/lib/server.js`), so Starlink's public IPv6 does not help.
-pear-end already bundles the relay client (`blind-relay`) and
-Hyperswarm already accepts `relayThrough`, so if this is ever revisited, the work is an
-always-on peer with a public IPv4 address and UDP open, plus a pear-end flag passing its key.
+**Car on its built-in SIM, phone on mobile data: no direct path.** A carrier's CGNAT puts the car
+behind a randomizing NAT too. When BOTH ends randomize, hyperdht does not even try to punch: it
+aborts with `HOLEPUNCH_DOUBLE_RANDOMIZED_NATS` (`hyperdht/lib/connect.js`), so a phone on mobile
+data never reaches a car on cellular. Observed 2026-10-03 from iOS and Android companions on mobile
+data: no connection at all. With the car still on its SIM, a phone on home Wi-Fi connected. That
+home network is Starlink, CGNAT but consistent (`randomized=false`), so it was the probabilistic
+case above, not a guaranteed one. A relay is the only fix. One at home would not work: there is no
+port forward behind Starlink's CGNAT, and hyperdht exchanges IPv4 addresses only (`addresses6:
+null` in `hyperdht/lib/server.js`), so Starlink's public IPv6 does not help. On 2026-10-03 the
+owner declined running a relay; on 2026-10-06 they reversed that, on condition that it is
+optional and serves only its owner. That is the next section.
+
+### Owner-run relay (BladeWatch-a7mu)
+
+> **Status (v1.4.1.3):** built and tested: the relay server in [`relay/`](../relay/), pear-end's
+> `relay.set` (flutter_pear 0.4.9), `PearDaemon`, and "Relay access" in both apps. The run on real
+> hardware -- car on its SIM, phone on mobile data, through a real relay -- is still to do
+> (BladeWatch-a7mu.8); this note goes once it has passed.
+
+An owner who needs the SIM-and-mobile-data case runs a **blind relay** (holepunchto/blind-relay)
+on a server with a public IPv4 address. It forwards the Noise-encrypted Hyperswarm stream and
+cannot read it. Setup: [`relay/README.md`](../relay/README.md). BladeWatch ships no relay, no relay
+address and no default key: an owner without a relay connects exactly as before.
+
+**One key, three places.** The owner creates a relay key of 12 digits (`node relay.js --new-key`)
+and enters it on the relay, in the in-car app and in every companion, under Settings > **Relay
+access** > **Use my relay**. Twelve digits, not six: anyone can scan the DHT for the relay each
+candidate key derives, and a million candidates is a short scan that would find every owner's relay
+at once.
+
+**What the key becomes.** Every side derives two Ed25519 key pairs from it:
+
+1. salt = BLAKE2b, 16-byte output, of `flutter_pear relay v1 salt`;
+2. root = Argon2id13 of the 12 digits with that salt, opslimit 2, memlimit 64 MiB, 32 bytes;
+3. seed(role) = BLAKE2b-256 of `flutter_pear relay v1 <role>` followed by root;
+4. key pair(role) = `DHT.keyPair(seed)`, for `server` and `member`.
+
+The relay listens under the server key pair, so a member knows which relay to dial. Its firewall
+accepts only the member public key. Argon2id makes each guess cost real time and 64 MiB even for
+someone who sees the relay's public key on the DHT. The reference implementation and its test
+vector are in `relay/relay.js` and `relay/test/relay.test.js`; flutter_pear's pear-end must
+reproduce the vector.
+
+**Why the companion needs the key too.** hyperdht opens relay connections with the DHT's
+`defaultKeyPair`, not with Hyperswarm's identity: both `connect.js` and `server.js` call
+`dht.connect(relayPublicKey)` with no key pair. So each side sets its DHT `defaultKeyPair` to the
+member key pair, through pear-end's `relay.set` call (flutter_pear 0.4.9, `Pear.setRelayKey` in
+Dart). Hyperswarm itself still connects and listens with `swarm.keyPair`, so the car's permanent
+Pear identity is unchanged. If only the car has the key, the car offers the relay and the relay
+turns the phone away: the connection fails as it did before.
+
+**When it is used.** Hyperswarm's own policy decides: only while the peer's own NAT randomizes,
+or after a punch failed for a reason relaying fixes. A car on its SIM randomizes, so it offers the
+relay in every handshake; hyperdht hands that to the dialing companion, which follows it.
+Connections that work directly today stay direct.
+
+**What the relay sees.** IP addresses of the car and phones, connection times and volumes. Not
+content: the stream is end-to-end encrypted between car and companion. The relay never logs the
+key, and logs how many pairings it has matched every 10 minutes, so an owner can spot use that is
+not theirs and change the key.
 
 ### The companion's side (`companion/lib/transport/`)
 

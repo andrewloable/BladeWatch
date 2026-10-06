@@ -1,6 +1,8 @@
 package net.bladewatch.app.daemon
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -25,5 +27,19 @@ class PearDaemonJoinTest {
         val args = PearDaemon.workletArgs.toList()
         assertEquals(PearDaemon.STORAGE_DIR, args.first())
         assertEquals(listOf(PearDaemon.STORAGE_DIR, "--persistent-identity"), args)
+    }
+
+    /**
+     * BladeWatch-a7mu: pear-end hears about the owner's relay only when the setting changes, and a
+     * car that never had one sends nothing, so its worklet runs exactly as before.
+     */
+    @Test
+    fun `relay set is sent only when the owner's relay setting changes`() {
+        val key = "482109375562"
+        assertNull(PearDaemon.relayRequest(null, null))
+        assertEquals(key, PearDaemon.relayRequest(null, key)!!.getString("key"))
+        assertNull(PearDaemon.relayRequest(key, key))
+        assertEquals("111122223333", PearDaemon.relayRequest(key, "111122223333")!!.getString("key"))
+        assertEquals(JSONObject.NULL, PearDaemon.relayRequest(key, null)!!.get("key"))
     }
 }

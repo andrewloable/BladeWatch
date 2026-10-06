@@ -1,0 +1,10 @@
+log_level: warning
+behavior:
+    auto_gc_behavior:
+        archive_level: 0
+listener:
+    host: 127.0.0.1
+    port: 59845
+cfg_dir: /Volumes/mandark-1Tb/projects/loabletech/BladeWatch/.beads/dolt/.doltcfg
+user_session_vars: []
+jwks: []

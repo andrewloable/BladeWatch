@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "Обзор",
   "dashboard_hud_telemetry": "Телеметрия",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "Доступ через ретранслятор",
+  "settings_relay_subtitle": "Подключайтесь к автомобилю через мобильные данные, когда он в сети через свою SIM-карту.",
+  "settings_relay_use_title": "Использовать мой ретранслятор",
+  "settings_relay_use_subtitle": "Только для ретранслятора, который вы держите сами, с одним и тем же 12-значным ключом на ретрансляторе и на каждом телефоне.",
+  "settings_relay_key_label": "Ключ ретранслятора",
+  "settings_relay_key_invalid": "Введите 12-значный ключ ретранслятора.",
+  "settings_relay_key_needed": "Введите ключ ретранслятора, чтобы начать им пользоваться.",
+  "settings_relay_save": "Сохранить",
+  "settings_relay_change": "Изменить",
+  "settings_relay_remove": "Удалить ключ",
+  "settings_relay_save_failed": "Не удалось сохранить. Повторите попытку.",
+  "settings_relay_explainer": "Телефон и автомобиль подключаются напрямую, когда это возможно. Ретранслятор используется, только если оба находятся в мобильных сетях, которые этому мешают, и он не может прочитать то, что передаёт."
 }

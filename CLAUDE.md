@@ -251,10 +251,13 @@ Native dependencies (OpenH264, opencv-mobile) are auto-downloaded by Gradle befo
 
 ### Release builds in CI
 
-`.github/workflows/release.yml` builds **three** APKs on a `v*` tag and attaches them
-to the GitHub Release: the two car APKs and the companion (Android only; CI builds no
-other companion platform). It needs **no secrets**: all three come out unsigned, and the
-workflow fails if any is signed or if the count is not exactly three. Sign the car pair
+`.github/workflows/release.yml` builds everything a `v*` tag on main releases and attaches it
+to the GitHub Release: **five APKs** (the two car APKs and the companion for arm64-v8a,
+armeabi-v7a and x86_64), the companion for macOS (arm64 and x86_64 zips), Windows and Linux, and
+**the owner-run relay** as `bladewatch-relay-<tag>.tar.gz` (job `build-relay`: the relay's tests,
+then exactly its six files, no node_modules; relay/README.md installs from that link). It needs
+**no secrets**: every app comes out unsigned, and the workflow fails if any APK is signed or if
+the APK count is not exactly five. Sign the car pair
 afterwards with the same key — `android:sharedUserId` only collapses them into one
 UID when the certificates are identical. The companion needs no matching key, but every
 release of it must use the same key, or phones cannot update it.
@@ -325,6 +328,7 @@ Camera frame → GPU downscale → native motion pipeline → per-quadrant state
 - GPU pipeline: [GpuSurveillancePipeline.kt](app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.kt), [PanoramicCameraGpu.kt](app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.kt)
 - BYD local: [BydDataCollector.kt](app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt)
 - Config: [UnifiedConfigManager.kt](app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt), [SecretConfigStore.kt](app/src/main/java/com/loabletech/bladewatch/config/SecretConfigStore.kt)
+- Owner-run Pear relay (optional, epic BladeWatch-a7mu): [relay/relay.js](relay/relay.js) is the server AND the reference for how the 12-digit relay key becomes key pairs; setup guide [relay/README.md](relay/README.md); design in `docs/networking-and-tunnels.md` "Owner-run relay". Never ship a relay key, address or default relay.
 
 ## BYD SDK Stub Pattern
 
@@ -372,7 +376,7 @@ directory belongs here, never under `flutter_ui/`. It never runs on the head uni
   TV with `adb shell input keyevent 19/20/21/22/23/4`. Mind the TV's screensaver: keys sent while it is
   up drive Google TV's own settings panel, not the app.
 
-- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.8`) — never a caret; before 1.0 its
+- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.9`) — never a caret; before 1.0 its
   minor versions may break the API.
 - Android ships arm64-v8a, armeabi-v7a (Android TV, since flutter_pear 0.4.8) and x86_64, and
   releases ship **one APK per ABI**: `abiFilters` follows `--target-platform`
@@ -393,7 +397,7 @@ desktop client is the companion above.
 
 ## Testing
 
-**Service host (Kotlin/Java)** — 141 JVM test files (1006 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
+**Service host (Kotlin/Java)** — 143 JVM test files (1019 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
 
 ```bash
 # NOTE: `:app:test` is an aggregate lifecycle task and does NOT accept --tests
@@ -401,7 +405,7 @@ desktop client is the companion above.
 ./gradlew :app:testDebugUnitTest --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
 
-**In-car UI (Dart)** — 105 test files under `flutter_ui/test/`, 1545 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
+**In-car UI (Dart)** — 107 test files under `flutter_ui/test/`, 1569 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
 
 ```bash
 cd flutter_ui && flutter analyze && flutter test
@@ -417,7 +421,9 @@ companion shares one copy: 22 test files, 187 tests, gated at **100%**. Its test
 cd packages/bladewatch_rpc && flutter analyze && flutter test
 ```
 
-**Companion (Dart)** — see "Platform Scope"; 29 test files, 309 tests, gated at 98% (measured 98.35% at 1.4.1.2).
+**Companion (Dart)** — see "Platform Scope"; 30 test files, 328 tests, gated at 98% (measured 98.32% at 1.4.1.3). `integration_test/relay_key_test.dart` checks the relay-key derivation on the REAL worklet: `flutter test integration_test/relay_key_test.dart -d macos` (or an arm64 Android target).
+
+**Relay (Node.js)** — `cd relay && npm ci && npm test`: 8 tests on a local hyperdht testnet, including the key-derivation test vector that flutter_pear's pear-end must reproduce.
 
 **In-car UI (Kotlin)** — the Flutter APK's privileged layer (IPC client, JWT
 minting, daemon control, secret/public config, the Live View texture plugin) has

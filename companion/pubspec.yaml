@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.4.1+14102
+version: 1.4.1+14103
 
 environment:
   # Same floor as flutter_ui and bladewatch_rpc: the release workflow pins Flutter 3.44.4,
@@ -36,7 +36,7 @@ dependencies:
   # The Pear P2P transport (BladeWatch-rdtj epic). Pinned EXACTLY, never a caret:
   # flutter_pear is pre-1.0 and its README says minor versions may break the API
   # without notice. Bump deliberately, and re-check its Android minSdk floor.
-  flutter_pear: 0.4.8
+  flutter_pear: 0.4.9
 
   # The same Connect client + generated messages the in-car UI uses -- one copy,
   # shared through this melos workspace (BladeWatch-rdtj.10).
@@ -71,7 +71,7 @@ dev_dependencies:
 
   # In-memory fakes for the whole flutter_pear API, so P2P logic is unit-testable
   # with no radio and no peer. Pinned to the same exact version as flutter_pear.
-  flutter_pear_test: 0.4.8
+  flutter_pear_test: 0.4.9
 
   # A fake video platform for the player's recovery tests (BladeWatch-tayl).
   video_player_platform_interface: ^6.9.0

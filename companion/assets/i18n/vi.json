@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Ngày và giờ",
     "trips_costs": "Chuyến đi và chi phí",
     "trip_storage_confirm": "Chuyến đi mới sẽ được lưu vào {place}.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Truy cập qua relay",
+    "relay_use": "Dùng relay của tôi",
+    "relay_use_hint": "Kết nối với xe bằng dữ liệu di động khi xe đang trực tuyến qua SIM của xe. Cần relay của riêng bạn, với cùng khóa 12 chữ số như trên xe.",
+    "relay_key": "Khóa relay",
+    "relay_key_invalid": "Nhập khóa relay gồm 12 chữ số.",
+    "relay_key_needed": "Nhập khóa relay bạn đã đặt trên xe.",
+    "relay_change": "Đổi",
+    "relay_remove": "Xóa khóa",
+    "relay_explainer": "Điện thoại và xe kết nối trực tiếp bất cứ khi nào có thể. Relay chỉ được dùng khi cả hai ở trên mạng di động chặn kết nối trực tiếp, và relay không đọc được dữ liệu nó chuyển tiếp."
   }
 }

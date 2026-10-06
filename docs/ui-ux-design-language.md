@@ -584,7 +584,9 @@ upper-cased.
   title bar with a back arrow instead of the M3 app bar.
 - *Settings* ([settings_screen.dart](../flutter_ui/lib/screens/settings/settings_screen.dart)): the 264 dp sub-rail is
   one `HudListRow` per section (accent border on the soft fill when selected, a chevron only on the two drill-downs),
-  and the pane opens with a `HudTitleBar` plus the section's one-line description. Group cards are the theme's `Card`;
+  and the pane opens with a `HudTitleBar` plus the section's one-line description. Relay access (v1.4.1.3) is the
+  same shape: a theme `Card` with a `SwitchListTile`, then a numeric key field that groups as 4-4-4 and, once saved,
+  only the masked last group with Change and Remove key; errors use the colour scheme's error colour. Group cards are the theme's `Card`;
   the Appearance theme and drive-side options are 4 dp tiles (accent border on the soft accent fill when selected; the
   theme preview swatches keep their literal light/dark previews, since they show what the theme looks like). The
   Services rows use a `HudStatusDot` that is real state (up = cyan, starting = amber, stopped = grey; the Pear peer

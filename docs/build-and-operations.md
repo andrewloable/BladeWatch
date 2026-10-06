@@ -57,7 +57,7 @@ melos run test
 `melos bootstrap` writes a `pubspec_overrides.yaml` into each app; it is gitignored and
 regenerated every time. IDE-file generation is off in `melos.yaml`.
 
-**flutter_pear is pinned exactly** (`flutter_pear: 0.4.8`, `flutter_pear_test: 0.4.8`), never
+**flutter_pear is pinned exactly** (`flutter_pear: 0.4.9`, `flutter_pear_test: 0.4.9`), never
 with a caret: before 1.0 its minor versions may break the API. Its per-platform wiring is in
 place and is not optional — `minSdk = 29` on Android (the manifest merger fails below 29), and
 exactly the ABIs flutter_pear ships native code for: `arm64-v8a`, `x86_64`, and since 0.4.8
@@ -148,7 +148,7 @@ Important build settings:
 - NDK: `26.1.10909125`.
 - Java and Kotlin target: `11`.
 - `applicationId` / `namespace`: `net.bladewatch.app` (the source package is `com.loabletech.bladewatch`).
-- Version: `versionName = "1.4.0.0"`, `versionCode = 14000`.
+- Version: `versionName = "1.4.1.3"`, `versionCode = 14103`.
 - ABI split: `arm64-v8a` only, no universal APK. The debug output is `app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk`, with any `/` in the branch name turned into `-`.
 - Native build: CMake `3.22.1`, `-std=c++17`.
 
@@ -728,8 +728,8 @@ one, so a phone would have to uninstall the companion, which loses its pairing. 
 to the debug key, Flutter's template default, and a debug-signed release on a phone can
 never take the real one as an update.
 
-The workflow enforces that all three APKs come out unsigned, and fails if any is
-signed or if the count is not exactly three. A half-signed pair is the dangerous
+The workflow enforces that all five APKs come out unsigned, and fails if any is
+signed or if the count is not exactly five. A half-signed pair is the dangerous
 outcome: signing the other half later with a real key can never match a debug
 certificate baked in during the build.
 
@@ -761,11 +761,22 @@ story: the next run hung in the Kover gate too, its last log line the task
 first run's hang was also a Flutter tool process. The suspected cause, not confirmed, is
 state left behind by the earlier builds: `flutter build apk` leaves its Gradle daemon
 running, `flutter_ui/android` and `companion/android` each set `-Xmx8G`, and the release
-job now builds three APKs. The job therefore stops the idle Gradle, Kotlin and Flutter
+job now builds five APKs. The job therefore stops the idle Gradle, Kotlin and Flutter
 helper processes before the gate, prints `free -m` and the process table, and runs the
 gate under a 10-minute timeout with one retry. If a run still hangs, that output shows
 what was holding the runner. Before putting the Dart gates back, find the stuck test (a
 per-test `--timeout` and `-r expanded` will name it).
+
+**The relay is a release asset too (BladeWatch-a7mu.10).** Job `build-relay` (needs `build`,
+Node 24 via `actions/setup-node@v5`) runs `npm ci && npm test` in `relay/` -- the key-derivation
+vector, the member-only firewall and real relayed connections on a local testnet -- then packs
+exactly `relay.js`, `check.js`, `package.json`, `package-lock.json`, `bladewatch-relay.service`
+and `README.md` under `bladewatch-relay/` as `bladewatch-relay-<tag>.tar.gz`, fails if the
+archive holds anything else (node_modules stays out: `npm ci` on the server fetches that
+server's own native prebuilds), and attaches it. `relay/README.md` installs from
+`https://github.com/andrewloable/BladeWatch/releases/download/<tag>/bladewatch-relay-<tag>.tar.gz`.
+The relay's library pins (hyperdht, blind-relay, sodium-universal) follow the car's pear-end
+bundle: move them with it, never alone.
 
 ### Recommended checks after code changes
 

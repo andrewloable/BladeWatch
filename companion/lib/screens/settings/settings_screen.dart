@@ -17,6 +17,7 @@ import '../common/format.dart';
 import '../common/hud_style.dart';
 import '../common/loader.dart';
 import '../trips/trips_screen.dart' show TripSettingsForm;
+import 'relay_access.dart';
 
 /// Settings: this app's own (language, the paired car) and the car's (capture, quality,
 /// storage, language, overlay) -- the web settings page's counterpart. Sentry detection settings
@@ -186,6 +187,9 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
         onChanged: (l) => widget.onLanguage(l == null || l.isEmpty ? null : l),
       ),
       if (store.car != null) ...[const SizedBox(height: 8), InfoRow(tr('dashboard.device_id'), store.car!.deviceId)],
+      const SizedBox(height: 8),
+      // Here the phone already reaches the car, so a change waits for the next search.
+      RelayAccessPanel(key: const ValueKey('settings.relay'), store: store, onChanged: () async {}),
       const SizedBox(height: 8),
       OutlinedButton(
         key: const ValueKey('settings.unpair'),

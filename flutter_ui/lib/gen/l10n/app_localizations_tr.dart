@@ -2942,4 +2942,44 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Röle erişimi';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Araç SIM kartıyla çevrimiçiyken ona mobil veriyle ulaşın.';
+
+  @override
+  String get settings_relay_use_title => 'Kendi rölemi kullan';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Yalnızca kendi işlettiğiniz bir röle için; röle ve her telefonda aynı 12 haneli anahtar kullanılır.';
+
+  @override
+  String get settings_relay_key_label => 'Röle anahtarı';
+
+  @override
+  String get settings_relay_key_invalid => '12 haneli röle anahtarını girin.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Röleyi kullanmaya başlamak için röle anahtarınızı girin.';
+
+  @override
+  String get settings_relay_save => 'Kaydet';
+
+  @override
+  String get settings_relay_change => 'Değiştir';
+
+  @override
+  String get settings_relay_remove => 'Anahtarı kaldır';
+
+  @override
+  String get settings_relay_save_failed => 'Kaydedilemedi. Tekrar deneyin.';
+
+  @override
+  String get settings_relay_explainer =>
+      'Telefon ve araç mümkün olduğunda doğrudan bağlanır. Röle yalnızca ikisi de bunu engelleyen mobil ağlardayken kullanılır ve ilettiği içeriği okuyamaz.';
 }

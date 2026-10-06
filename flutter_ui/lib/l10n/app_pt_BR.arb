@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "Visão geral",
   "dashboard_hud_telemetry": "Telemetria",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "Acesso por relay",
+  "settings_relay_subtitle": "Acesse o carro pelos dados móveis enquanto ele estiver online pelo chip.",
+  "settings_relay_use_title": "Usar meu relay",
+  "settings_relay_use_subtitle": "Somente para um relay que você mesmo mantém, com a mesma chave de 12 dígitos no relay e em cada celular.",
+  "settings_relay_key_label": "Chave do relay",
+  "settings_relay_key_invalid": "Digite a chave do relay de 12 dígitos.",
+  "settings_relay_key_needed": "Digite sua chave do relay para começar a usá-lo.",
+  "settings_relay_save": "Salvar",
+  "settings_relay_change": "Alterar",
+  "settings_relay_remove": "Remover chave",
+  "settings_relay_save_failed": "Não foi possível salvar. Tente novamente.",
+  "settings_relay_explainer": "O celular e o carro se conectam diretamente sempre que possível. O relay só é usado quando os dois estão em redes móveis que impedem isso, e ele não consegue ler o que encaminha."
 }

@@ -1128,5 +1128,17 @@
   "dashboard_hud_overview": "Panoramica",
   "dashboard_hud_telemetry": "Telemetria",
   "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
-  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "settings_section_relay": "Accesso tramite relay",
+  "settings_relay_subtitle": "Raggiungi l'auto con i dati mobili mentre è online tramite la sua SIM.",
+  "settings_relay_use_title": "Usa il mio relay",
+  "settings_relay_use_subtitle": "Solo per un relay gestito da te, con la stessa chiave di 12 cifre sul relay e su ogni telefono.",
+  "settings_relay_key_label": "Chiave del relay",
+  "settings_relay_key_invalid": "Inserisci la chiave del relay di 12 cifre.",
+  "settings_relay_key_needed": "Inserisci la chiave del relay per iniziare a usarlo.",
+  "settings_relay_save": "Salva",
+  "settings_relay_change": "Modifica",
+  "settings_relay_remove": "Rimuovi chiave",
+  "settings_relay_save_failed": "Salvataggio non riuscito. Riprova.",
+  "settings_relay_explainer": "Il telefono e l'auto si collegano direttamente ogni volta che possono. Il relay viene usato solo quando entrambi sono su reti mobili che lo impediscono, e non può leggere ciò che inoltra."
 }

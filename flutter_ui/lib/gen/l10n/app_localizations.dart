@@ -5191,6 +5191,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SECURE_LINK: OFFLINE'**
   String get dashboard_hud_link_offline;
+
+  /// Settings hub section for the optional owner-run Pear relay (BladeWatch-a7mu).
+  ///
+  /// In en, this message translates to:
+  /// **'Relay access'**
+  String get settings_section_relay;
+
+  /// One-line description under the Relay access pane title.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach the car from mobile data while it is online through its SIM.'**
+  String get settings_relay_subtitle;
+
+  /// Switch that turns relay access on. relay/README.md and Readme.md name it exactly; keep it in sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my relay'**
+  String get settings_relay_use_title;
+
+  /// Explains that the relay is the owner's own server and that every device needs the same key.
+  ///
+  /// In en, this message translates to:
+  /// **'Only for a relay you run yourself, with the same 12-digit key on the relay and on every phone.'**
+  String get settings_relay_use_subtitle;
+
+  /// Label of the relay key field and of the saved, masked key. relay/README.md names it exactly.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay key'**
+  String get settings_relay_key_label;
+
+  /// Error when the typed relay key is not 12 digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 12-digit relay key.'**
+  String get settings_relay_key_invalid;
+
+  /// Shown above the key field while relay access is on but no key is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your relay key to start using the relay.'**
+  String get settings_relay_key_needed;
+
+  /// Button that stores the typed relay key.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get settings_relay_save;
+
+  /// Button that reopens the key field to replace the saved relay key.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get settings_relay_change;
+
+  /// Button that deletes the saved relay key and turns relay access off.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove key'**
+  String get settings_relay_remove;
+
+  /// Error when the daemon did not take a relay setting write; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Try again.'**
+  String get settings_relay_save_failed;
+
+  /// Footnote under the Relay access card: direct first, relay only when blocked, relay cannot read the data.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone and the car connect directly whenever they can. The relay is used only when both are on mobile networks that block that, and it cannot read what it forwards.'**
+  String get settings_relay_explainer;
 }
 
 class _AppLocalizationsDelegate

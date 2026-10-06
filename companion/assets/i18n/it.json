@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Data e ora",
     "trips_costs": "Viaggi e costi",
     "trip_storage_confirm": "I nuovi viaggi verranno salvati su {place}.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Accesso tramite relay",
+    "relay_use": "Usa il mio relay",
+    "relay_use_hint": "Raggiungi l'auto con i dati mobili mentre è online tramite la sua SIM. Serve un relay tuo, con la stessa chiave di 12 cifre dell'auto.",
+    "relay_key": "Chiave del relay",
+    "relay_key_invalid": "Inserisci la chiave del relay di 12 cifre.",
+    "relay_key_needed": "Inserisci la chiave del relay impostata nell'auto.",
+    "relay_change": "Modifica",
+    "relay_remove": "Rimuovi chiave",
+    "relay_explainer": "Il telefono e l'auto si collegano direttamente ogni volta che possono. Il relay viene usato solo quando entrambi sono su reti mobili che lo impediscono, e non può leggere ciò che inoltra."
   }
 }

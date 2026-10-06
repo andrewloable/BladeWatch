@@ -409,10 +409,12 @@ nothing to select below its title bar, such as a trip's summary, up and down scr
 
 **The companion app (v1.4.0.0, BladeWatch-rdtj.11).** The phone and desktop app that
 replaced the web UI. It reaches the car directly on its Wi-Fi when both are on one network,
-otherwise over Pear. Pear cannot connect a phone on mobile data to a car on its built-in SIM,
-because both then sit behind randomizing carrier NATs, which hole punching cannot cross, and
-BladeWatch runs no relay. Put the phone on
-Wi-Fi in that case (see "Known limitation: hard NATs" in `docs/networking-and-tunnels.md`).
+otherwise over Pear. Pear cannot connect a phone on mobile data to a car on its built-in SIM
+directly, because both then sit behind randomizing carrier NATs, which hole punching cannot cross.
+Put the phone on Wi-Fi in that case, or run your own relay (v1.4.1.3, BladeWatch-a7mu): a server you set up from [`relay/README.md`](../relay/README.md), turned on with
+the same 12-digit key under Settings > **Relay access** in the car and in each companion. Nobody
+without the key can use it. Details: "Known limitation: hard NATs" and "Owner-run relay" in
+`docs/networking-and-tunnels.md`.
 It has every page the web app had (the web app itself is gone):
 
 - Dashboard.

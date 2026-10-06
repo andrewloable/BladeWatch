@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "日期與時間",
     "trips_costs": "行程與費用",
     "trip_storage_confirm": "新的行程將儲存到{place}。",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "中繼存取",
+    "relay_use": "使用我的中繼",
+    "relay_use_hint": "車輛透過自身 SIM 卡連網時，以行動數據連線到車輛。需要您自行運作的中繼，並使用與車輛相同的 12 位數金鑰。",
+    "relay_key": "中繼金鑰",
+    "relay_key_invalid": "請輸入 12 位數的中繼金鑰。",
+    "relay_key_needed": "請輸入您在車輛中設定的中繼金鑰。",
+    "relay_change": "變更",
+    "relay_remove": "移除金鑰",
+    "relay_explainer": "手機與車輛會盡可能直接連線。只有當兩者都位於阻擋直接連線的行動網路時才會使用中繼，且中繼無法讀取其轉送的內容。"
   }
 }

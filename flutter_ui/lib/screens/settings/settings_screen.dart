@@ -31,6 +31,8 @@ import 'settings_privacy_controller.dart';
 import 'settings_privacy_screen.dart';
 import 'settings_recording_controller.dart';
 import 'settings_recording_screen.dart';
+import 'settings_relay_controller.dart';
+import 'settings_relay_screen.dart';
 import 'settings_trips_screen.dart';
 
 /// Everything [SettingsScreen]'s sub-rail sections need to build their own
@@ -111,7 +113,7 @@ class SettingsHubDependencies {
 const String _statusOverlaySection = 'statusOverlay';
 const String _developerOptionsSection = 'developerOptions';
 
-enum _Section { appearance, recording, surveillance, trips, overlay, daemons, privacy }
+enum _Section { appearance, recording, surveillance, trips, overlay, daemons, relay, privacy }
 
 /// Ground truth: `SettingsFragment.kt`'s landscape two-pane sub-rail — see
 /// the class doc for why this port doesn't also build the portrait
@@ -211,6 +213,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final c = SettingsDaemonsController(daemonChannel: deps.daemonChannel, setDaemonEnabled: deps.setDaemonEnabled);
         controller = c;
         content = SettingsDaemonsScreen(controller: c);
+      case _Section.relay:
+        // The owner relay (BladeWatch-a7mu) lives in the SECRET store, which pear_daemon
+        // reads on its own sweep -- nothing to restart from here.
+        final c = SettingsRelayController(
+          read: (key) => deps.configChannel.get(SettingsRelayController.section, key),
+          write: (key, value) => deps.configChannel.put(SettingsRelayController.section, key, value),
+          delete: (key) => deps.configChannel.delete(SettingsRelayController.section, key),
+        );
+        controller = c;
+        content = SettingsRelayScreen(controller: c);
       case _Section.privacy:
         final c = SettingsPrivacyController(
           storageService: deps.storageService,
@@ -242,6 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _Section.trips => l10n.settings_section_trips,
     _Section.overlay => l10n.settings_section_overlay,
     _Section.daemons => l10n.settings_section_daemons,
+    _Section.relay => l10n.settings_section_relay,
     _Section.privacy => l10n.settings_section_privacy,
   };
 
@@ -261,6 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _Section.trips => l10n.settings_section_trips_subtitle,
     _Section.overlay => l10n.settings_overlay_subtitle,
     _Section.daemons => l10n.settings_section_daemons_subtitle,
+    _Section.relay => l10n.settings_relay_subtitle,
     _Section.privacy => null,
   };
 
@@ -271,6 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _Section.trips => Icons.route,
     _Section.overlay => Icons.layers,
     _Section.daemons => Icons.miscellaneous_services,
+    _Section.relay => Icons.alt_route,
     _Section.privacy => Icons.privacy_tip,
   };
 

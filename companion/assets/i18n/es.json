@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Fecha y hora",
     "trips_costs": "Viajes y costes",
     "trip_storage_confirm": "Los nuevos viajes se guardarán en {place}.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Acceso por relé",
+    "relay_use": "Usar mi relé",
+    "relay_use_hint": "Acceda al coche con datos móviles mientras está conectado mediante su SIM. Requiere un relé propio con la misma clave de 12 dígitos que el coche.",
+    "relay_key": "Clave del relé",
+    "relay_key_invalid": "Introduzca la clave del relé de 12 dígitos.",
+    "relay_key_needed": "Introduzca la clave del relé que configuró en el coche.",
+    "relay_change": "Cambiar",
+    "relay_remove": "Quitar clave",
+    "relay_explainer": "El teléfono y el coche se conectan directamente siempre que pueden. El relé solo se usa cuando ambos están en redes móviles que lo impiden, y no puede leer lo que reenvía."
   }
 }

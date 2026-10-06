@@ -2977,4 +2977,46 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Accès par relais';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Joignez la voiture en données mobiles lorsqu\'elle est connectée via sa carte SIM.';
+
+  @override
+  String get settings_relay_use_title => 'Utiliser mon relais';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Uniquement pour un relais que vous gérez vous-même, avec la même clé à 12 chiffres sur le relais et sur chaque téléphone.';
+
+  @override
+  String get settings_relay_key_label => 'Clé du relais';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Saisissez la clé du relais à 12 chiffres.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Saisissez votre clé du relais pour commencer à l\'utiliser.';
+
+  @override
+  String get settings_relay_save => 'Enregistrer';
+
+  @override
+  String get settings_relay_change => 'Modifier';
+
+  @override
+  String get settings_relay_remove => 'Supprimer la clé';
+
+  @override
+  String get settings_relay_save_failed =>
+      'Échec de l\'enregistrement. Réessayez.';
+
+  @override
+  String get settings_relay_explainer =>
+      'Le téléphone et la voiture se connectent directement dès que possible. Le relais n\'est utilisé que lorsque les deux sont sur des réseaux mobiles qui l\'empêchent, et il ne peut pas lire ce qu\'il transmet.';
 }

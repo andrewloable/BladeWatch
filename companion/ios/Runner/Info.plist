@@ -20,7 +20,7 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<!-- The car apps' four-part version, which pubspec.yaml cannot hold: keep in step with app/build.gradle.kts. -->
-	<string>1.4.1.2</string>
+	<string>1.4.1.3</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>

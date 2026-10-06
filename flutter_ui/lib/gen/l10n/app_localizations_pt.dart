@@ -2961,6 +2961,48 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Acesso por relé';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Aceda ao carro com dados móveis enquanto estiver ligado através do SIM.';
+
+  @override
+  String get settings_relay_use_title => 'Usar o meu relé';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Apenas para um relé gerido por si, com a mesma chave de 12 dígitos no relé e em cada telemóvel.';
+
+  @override
+  String get settings_relay_key_label => 'Chave do relé';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Introduza a chave do relé de 12 dígitos.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Introduza a sua chave do relé para começar a usá-lo.';
+
+  @override
+  String get settings_relay_save => 'Guardar';
+
+  @override
+  String get settings_relay_change => 'Alterar';
+
+  @override
+  String get settings_relay_remove => 'Remover chave';
+
+  @override
+  String get settings_relay_save_failed =>
+      'Não foi possível guardar. Tente novamente.';
+
+  @override
+  String get settings_relay_explainer =>
+      'O telemóvel e o carro ligam-se diretamente sempre que possível. O relé só é usado quando ambos estão em redes móveis que o impedem, e não consegue ler o que reencaminha.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -5919,4 +5961,46 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Acesso por relay';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Acesse o carro pelos dados móveis enquanto ele estiver online pelo chip.';
+
+  @override
+  String get settings_relay_use_title => 'Usar meu relay';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Somente para um relay que você mesmo mantém, com a mesma chave de 12 dígitos no relay e em cada celular.';
+
+  @override
+  String get settings_relay_key_label => 'Chave do relay';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Digite a chave do relay de 12 dígitos.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Digite sua chave do relay para começar a usá-lo.';
+
+  @override
+  String get settings_relay_save => 'Salvar';
+
+  @override
+  String get settings_relay_change => 'Alterar';
+
+  @override
+  String get settings_relay_remove => 'Remover chave';
+
+  @override
+  String get settings_relay_save_failed =>
+      'Não foi possível salvar. Tente novamente.';
+
+  @override
+  String get settings_relay_explainer =>
+      'O celular e o carro se conectam diretamente sempre que possível. O relay só é usado quando os dois estão em redes móveis que impedem isso, e ele não consegue ler o que encaminha.';
 }

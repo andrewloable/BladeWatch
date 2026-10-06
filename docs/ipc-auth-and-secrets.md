@@ -310,6 +310,16 @@ private key, the topic seed or the probe key, nor plant a companion. Older secti
 | `companions.*` | paired companions (id, name, pairing time) | `byd_cam_daemon`, on redemption (`CompanionPairing`) |
 | `companions.<id>` | one paired companion app: `{name, pairedAt}` (JSON). The id is 16 random bytes (hex); its token is derived, not stored -- see below | `byd_cam_daemon`, when a pairing code is redeemed |
 
+**`pear_relay` is the exception, on purpose (BladeWatch-a7mu).** It sits next to `pear` in the
+same 600 store but is NOT daemon-only, because the in-car app writes it: Settings > Relay access
+puts `pear_relay.enabled` (the string `"true"`/`"false"`, as `ConfigChannel` only sends strings)
+and `pear_relay.key` (the owner's 12-digit relay key, bare digits) with ordinary
+`secret_put`/`secret_delete`. `pear_daemon` reads it at boot and on every 30 s sweep
+(`PearRelay.desiredKey`) and hands the key to pear-end in one `relay.set` frame. The key is never
+logged, never written to `PearStatus` or public config, and the in-car app shows only its last
+four digits once saved. `DaemonOnlySecretSectionTest` pins both halves: `pear_relay` is
+writable over IPC, `pear` next to it is not.
+
 None is ever rotated silently: a new seed is a new topic, a new certificate a new pin,
 and a new probe key makes every paired companion's probes go unanswered. A malformed seed or probe key fails loudly
 instead; an unreadable TLS identity is replaced, and logged as an error, because the

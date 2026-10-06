@@ -2939,4 +2939,44 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Truy cập qua relay';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Kết nối với xe bằng dữ liệu di động khi xe đang trực tuyến qua SIM của xe.';
+
+  @override
+  String get settings_relay_use_title => 'Dùng relay của tôi';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Chỉ dành cho relay do bạn tự vận hành, với cùng một khóa 12 chữ số trên relay và trên mọi điện thoại.';
+
+  @override
+  String get settings_relay_key_label => 'Khóa relay';
+
+  @override
+  String get settings_relay_key_invalid => 'Nhập khóa relay gồm 12 chữ số.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Nhập khóa relay của bạn để bắt đầu dùng relay.';
+
+  @override
+  String get settings_relay_save => 'Lưu';
+
+  @override
+  String get settings_relay_change => 'Đổi';
+
+  @override
+  String get settings_relay_remove => 'Xóa khóa';
+
+  @override
+  String get settings_relay_save_failed => 'Không lưu được. Hãy thử lại.';
+
+  @override
+  String get settings_relay_explainer =>
+      'Điện thoại và xe kết nối trực tiếp bất cứ khi nào có thể. Relay chỉ được dùng khi cả hai ở trên mạng di động chặn kết nối trực tiếp, và relay không đọc được dữ liệu nó chuyển tiếp.';
 }

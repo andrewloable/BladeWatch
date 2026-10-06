@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.Files
 import net.bladewatch.app.auth.CompanionPairing
 import net.bladewatch.app.config.SecretConfigStore
+import net.bladewatch.app.daemon.PearRelay
 import net.bladewatch.app.daemon.PearTopic
 import org.json.JSONObject
 import org.junit.After
@@ -56,6 +57,19 @@ class DaemonOnlySecretSectionTest {
         }
         // Nothing was read out, written or deleted.
         sections.forEach { assertEquals("secret-$it", store.getString(it, "k")) }
+    }
+
+    /**
+     * BladeWatch-a7mu: the owner's relay setting is written by the in-car app, so it must stay
+     * reachable over IPC -- unlike the Pear topic seed beside it.
+     */
+    @Test
+    fun `the relay setting is writable over IPC, the Pear identity next to it is not`() {
+        assertEquals(false, server.isDaemonOnlySecretSection(PearRelay.SECTION))
+        assertEquals("ok", command("secret_put", PearRelay.SECTION, "value" to "482109375562").getString("status"))
+        assertEquals("482109375562", command("secret_get", PearRelay.SECTION).getString("value"))
+        assertEquals("ok", command("secret_delete", PearRelay.SECTION).getString("status"))
+        assertEquals("error", command("secret_get", PearTopic.SECTION).getString("status"))
     }
 
     @Test

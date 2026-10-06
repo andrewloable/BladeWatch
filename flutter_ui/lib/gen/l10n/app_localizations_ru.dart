@@ -2970,4 +2970,46 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
+
+  @override
+  String get settings_section_relay => 'Доступ через ретранслятор';
+
+  @override
+  String get settings_relay_subtitle =>
+      'Подключайтесь к автомобилю через мобильные данные, когда он в сети через свою SIM-карту.';
+
+  @override
+  String get settings_relay_use_title => 'Использовать мой ретранслятор';
+
+  @override
+  String get settings_relay_use_subtitle =>
+      'Только для ретранслятора, который вы держите сами, с одним и тем же 12-значным ключом на ретрансляторе и на каждом телефоне.';
+
+  @override
+  String get settings_relay_key_label => 'Ключ ретранслятора';
+
+  @override
+  String get settings_relay_key_invalid =>
+      'Введите 12-значный ключ ретранслятора.';
+
+  @override
+  String get settings_relay_key_needed =>
+      'Введите ключ ретранслятора, чтобы начать им пользоваться.';
+
+  @override
+  String get settings_relay_save => 'Сохранить';
+
+  @override
+  String get settings_relay_change => 'Изменить';
+
+  @override
+  String get settings_relay_remove => 'Удалить ключ';
+
+  @override
+  String get settings_relay_save_failed =>
+      'Не удалось сохранить. Повторите попытку.';
+
+  @override
+  String get settings_relay_explainer =>
+      'Телефон и автомобиль подключаются напрямую, когда это возможно. Ретранслятор используется, только если оба находятся в мобильных сетях, которые этому мешают, и он не может прочитать то, что передаёт.';
 }

@@ -411,8 +411,9 @@ The current release auth model uses a JWT HMAC secret stored through the secret/
 
 The companion app keeps one file, `companion.json`, in its private application-support
 directory. It holds the paired car (device id, Pear topic, TLS pin, probe key, and this
-device's companion id and token), the alert cursor, the chosen language and the muted alert
-categories. It is replaced atomically, and on macOS and Linux it is mode 600, set before the
+device's companion id and token), the alert cursor, the chosen language, the muted alert
+categories, and the owner's relay setting (`relay`: on/off and the 12-digit relay key,
+BladeWatch-a7mu) -- kept like the token, shown in the app only as its last four digits. It is replaced atomically, and on macOS and Linux it is mode 600, set before the
 token is written. The token logs in as this device until the car un-pairs it, so Android
 backup is off for the app (`allowBackup="false"`).
 
@@ -609,7 +610,9 @@ Pear peer (`pear_daemon`):
 
 The topic the car announces on is not a file of its own: it is derived from the `pear`
 section's `topicSeed` in `bladewatch_secrets.json` (`PearTopic`), and is secret like every
-other entry there.
+other entry there. The owner's relay setting sits beside it in the `pear_relay` section
+(`enabled`, `key`; BladeWatch-a7mu), written by the in-car app over the secret IPC and read by
+`pear_daemon` on every sweep -- see `docs/ipc-auth-and-secrets.md`.
 
 **`/data/local/tmp/pear` is permanent.** Its `swarm-identity.seed` is the car's Pear identity,
 kept across restarts (BladeWatch-rdtj.24); deleting it strands every paired companion, with no

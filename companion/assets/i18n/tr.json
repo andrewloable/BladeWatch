@@ -1741,6 +1741,15 @@
     "overlay_field_TIMESTAMP": "Tarih ve saat",
     "trips_costs": "Yolculuklar ve maliyetler",
     "trip_storage_confirm": "Yeni yolculuklar {place} konumuna kaydedilecek.",
-    "sync_result": "+{added} / −{removed}"
+    "sync_result": "+{added} / −{removed}",
+    "relay_access": "Röle erişimi",
+    "relay_use": "Kendi rölemi kullan",
+    "relay_use_hint": "Araç SIM kartıyla çevrimiçiyken ona mobil veriyle ulaşın. Araçtakiyle aynı 12 haneli anahtarı kullanan kendi rölenizi gerektirir.",
+    "relay_key": "Röle anahtarı",
+    "relay_key_invalid": "12 haneli röle anahtarını girin.",
+    "relay_key_needed": "Araçta ayarladığınız röle anahtarını girin.",
+    "relay_change": "Değiştir",
+    "relay_remove": "Anahtarı kaldır",
+    "relay_explainer": "Telefon ve araç mümkün olduğunda doğrudan bağlanır. Röle yalnızca ikisi de bunu engelleyen mobil ağlardayken kullanılır ve ilettiği içeriği okuyamaz."
   }
 }

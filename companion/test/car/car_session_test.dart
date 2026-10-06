@@ -275,6 +275,64 @@ void main() {
       session.dispose();
     });
 
+    // BladeWatch-a7mu: the owner's relay key reaches Pear before a join, and only when it changed.
+    test('open: the relay key is applied before Pear joins, and again only when it changes', () async {
+      final events = <String>[];
+      String? key = '482109375562';
+      final session = await CarSession.open(
+        testCar(),
+        findOnLan: () async => null,
+        joinTopic: (_) async {
+          events.add('join');
+          throw StateError('no Pear here');
+        },
+        relayKey: () => key,
+        setRelayKey: (k) async => events.add('relay $k'),
+        networkChanges: const Stream.empty(),
+      );
+      int joins() => events.where((e) => e == 'join').length;
+      Future<void> searched(int atLeast) async {
+        while (joins() < atLeast || session.phase != TransportPhase.failed) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      }
+
+      await searched(1);
+      expect(events.first, 'relay 482109375562', reason: 'set before the first join');
+      session.retry();
+      await searched(2);
+      expect(events.where((e) => e == 'relay 482109375562'), hasLength(1), reason: 'not resent unchanged');
+
+      key = null;
+      final before = joins();
+      session.retry();
+      await searched(before + 1);
+      final off = events.indexOf('relay null');
+      expect(off, greaterThan(0), reason: 'turning it off reaches Pear');
+      expect(events.indexOf('join', off), greaterThan(off), reason: 'before the next join');
+      session.dispose();
+    });
+
+    test('open: a phone that never had a relay never sends one', () async {
+      final events = <String>[];
+      final session = await CarSession.open(
+        testCar(),
+        findOnLan: () async => null,
+        joinTopic: (_) async {
+          events.add('join');
+          throw StateError('no Pear here');
+        },
+        relayKey: () => null,
+        setRelayKey: (k) async => events.add('relay $k'),
+        networkChanges: const Stream.empty(),
+      );
+      while (events.isEmpty || session.phase != TransportPhase.failed) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(events.where((e) => e.startsWith('relay')), isEmpty);
+      session.dispose();
+    });
+
     test('withExtraHeaders adds the action token and keeps what the client set', () async {
       Map<String, String>? sent;
       final send = withExtraHeaders((uri, headers, body) async {
