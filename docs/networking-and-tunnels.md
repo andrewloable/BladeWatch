@@ -436,10 +436,10 @@ optional and serves only its owner. That is the next section.
 
 ### Owner-run relay (BladeWatch-a7mu)
 
-> **Status (v1.4.1.3):** built and tested: the relay server in [`relay/`](../relay/), pear-end's
-> `relay.set` (flutter_pear 0.4.9), `PearDaemon`, and "Relay access" in both apps. The run on real
-> hardware -- car on its SIM, phone on mobile data, through a real relay -- is still to do
-> (BladeWatch-a7mu.8); this note goes once it has passed.
+> **Status (v1.4.1.3):** built, tested and verified on real hardware: the relay server in
+> [`relay/`](../relay/), pear-end's `relay.set` (flutter_pear 0.4.9), `PearDaemon`, and "Relay
+> access" in both apps. With a relay set up from `relay/README.md` and its key entered in both
+> apps, the companion on mobile data connected to a car that was online only through its own SIM.
 
 An owner who needs the SIM-and-mobile-data case runs a **blind relay** (holepunchto/blind-relay)
 on a server with a public IPv4 address. It forwards the Noise-encrypted Hyperswarm stream and
