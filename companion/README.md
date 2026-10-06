@@ -23,3 +23,7 @@ flutter build apk --release --target-platform android-arm64   # one APK per ABI;
 flutter test integration_test/car_e2e_test.dart -d macos --dart-define=BW_PAIRING=<qr text>
 flutter test integration_test/relay_key_test.dart -d macos    # the relay key on the real worklet
 ```
+
+- **iOS** is never built by CI (it needs Apple signing). To sideload it with SideStore, build the
+  unsigned app and zip its `.ipa` for AirDrop: the commands and the iPhone steps are under
+  "iOS" in "Install the Companion App" in the repo's `Readme.md`.

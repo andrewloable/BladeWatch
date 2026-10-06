@@ -690,7 +690,9 @@ bypass Gatekeeper, Windows needs "Run anyway" past SmartScreen, and Linux needs
 body spells out all three. iOS is NOT built by CI: it needs Apple signing a
 secret-free workflow cannot do, and unlike the other four an unsigned `.ipa` cannot
 be installed at all, so there is no unsigned-artifact fallback the way there is for
-the rest. Do not claim iOS in the release notes until that changes.
+the rest. Do not claim iOS in the release notes until that changes. The owner builds it locally and
+sideloads it with SideStore: the build, the zipped `.ipa` for AirDrop and the iPhone steps are in
+`Readme.md`, "Install the Companion App" > iOS.
 
 **bare-kit is cached.** Its `prebuilds.zip` is 418 MB, and two builds unpack it:
 `fetchBareKit` (the service host, for `pear_daemon`) and flutter_pear_bare (the

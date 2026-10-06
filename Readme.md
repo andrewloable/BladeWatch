@@ -398,7 +398,7 @@ download carries only what your device runs; iOS is built from source.
 | Mac with an Intel processor | `bladewatch-companion-<version>-macos-x86_64-unsigned.zip` | macOS 12 or later |
 | Windows | `bladewatch-companion-<version>-windows-unsigned.zip` | 64-bit Windows |
 | Linux | `bladewatch-companion-<version>-linux-unsigned.tar.gz` | 64-bit Linux with GTK 3 |
-| iOS | not published: build from source | iOS 15 or later, a Mac with Xcode |
+| iOS | not published: build from source, or sideload it with SideStore (see [iOS](#ios)) | iOS 15 or later, a Mac with Xcode |
 
 Like the car APKs, none of these are signed, because the release build holds no keys.
 
@@ -457,20 +457,31 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
   Signing & Capabilities, and run it on your connected iPhone (Developer Mode on). A free
   Apple ID signs apps that stop opening after 7 days until you run them again; a paid Apple
   Developer account lasts a year.
-- **With a sideloading tool** such as SideStore: build an unsigned app, wrap it as an `.ipa`, and
-  import that in the tool, which signs it with your Apple ID and keeps it refreshed:
+- **With a sideloading tool** such as SideStore: build an unsigned app, wrap it as an `.ipa`, zip
+  that `.ipa`, and send the zip to the iPhone. SideStore signs the app with your Apple ID and keeps
+  it refreshed. On a Mac with Xcode:
 
   ```bash
   cd companion
   flutter build ios --release --no-codesign
+  V=$(plutil -extract CFBundleShortVersionString raw ios/Runner/Info.plist)   # 1.4.1.3
   rm -rf build/ipa && mkdir -p build/ipa/Payload
   cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
-  (cd build/ipa && zip -qry BladeWatch.ipa Payload)
-  # build/ipa/BladeWatch.ipa: AirDrop or copy it to the iPhone, then open SideStore > My Apps > +
+  (cd build/ipa && zip -qry "BladeWatch-$V.ipa" Payload && zip -q "BladeWatch-$V-sidestore.zip" "BladeWatch-$V.ipa" && rm -rf Payload "BladeWatch-$V.ipa")
+  # build/ipa/BladeWatch-<version>-sidestore.zip is the file to send to the iPhone
   ```
 
-  To update, build and import again: SideStore replaces the app and keeps its data, so it stays
-  paired.
+  Send the **zip**, not the bare `.ipa`: it reaches the iPhone as an ordinary file that SideStore
+  can then open. On the iPhone, with Developer Mode on (Settings > Privacy & Security):
+
+  1. AirDrop `BladeWatch-<version>-sidestore.zip` from the Mac to the iPhone and save it to Files.
+  2. In Files, tap the zip to unzip it. That leaves `BladeWatch-<version>.ipa`.
+  3. Open SideStore > My Apps > **+** and pick that `.ipa` (or share it to SideStore from Files).
+     SideStore signs it with your Apple ID and installs it.
+
+  To update, build and send the new zip the same way: SideStore replaces the app and keeps its
+  data, so it stays paired. The 7-day limit of a free Apple ID applies here too; SideStore
+  refreshes the app for you.
 
 ### Pair it with the car
 
