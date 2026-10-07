@@ -2978,4 +2978,74 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'जब भी संभव हो, आपका फ़ोन और कार सीधे जुड़ते हैं। रिले का इस्तेमाल सिर्फ़ तब होता है जब दोनों ऐसे मोबाइल नेटवर्क पर हों जो इसे रोकते हैं, और रिले आगे भेजा गया डेटा पढ़ नहीं सकता।';
+
+  @override
+  String get settings_section_security => 'सुरक्षा';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'सेटिंग्स और निगरानी खोलने के लिए पिन आवश्यक करें.';
+
+  @override
+  String get settings_lock_switch_label => 'सेटिंग्स पिन';
+
+  @override
+  String get settings_lock_change_pin => 'पिन बदलें';
+
+  @override
+  String get settings_lock_enter_title => 'पिन दर्ज करें';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'अपना 6-अंकीय सेटिंग्स पिन दर्ज करें';
+
+  @override
+  String get settings_lock_new_pin_title => 'नया पिन सेट करें';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'अपना नया पिन फिर से दर्ज करें';
+
+  @override
+  String get settings_lock_mismatch => 'पिन मेल नहीं खाए. फिर से कोशिश करें.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'गलत पिन. $count प्रयास शेष हैं.',
+      one: 'गलत पिन. $count प्रयास शेष है.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'बहुत अधिक प्रयास. $time में फिर से कोशिश करें.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'अभी BladeWatch सेवा से संपर्क नहीं हो पा रहा है.';
+
+  @override
+  String get settings_lock_disable_confirm_title => 'सेटिंग्स पिन बंद करें?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'जब तक आप इसे फिर से चालू नहीं करते, सेटिंग्स बिना पिन के खुलेंगी.';
+
+  @override
+  String get settings_lock_turn_off => 'बंद करें';
+
+  @override
+  String get settings_lock_explainer =>
+      'यह पिन हर जोड़े गए कंपैनियन के साथ साझा किया जाता है. फ़िंगरप्रिंट या फेस अनलॉक वाला कंपैनियन भूल जाने पर इसे रीसेट कर सकता है.';
+
+  @override
+  String get settings_lock_backspace => 'आख़िरी अंक मिटाएं';
+
+  @override
+  String get settings_lock_save_failed =>
+      'सहेजा नहीं जा सका. फिर से कोशिश करें.';
 }

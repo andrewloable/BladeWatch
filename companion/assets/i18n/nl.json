@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Voer de relaysleutel in die je in de auto hebt ingesteld.",
     "relay_change": "Wijzigen",
     "relay_remove": "Sleutel verwijderen",
-    "relay_explainer": "Je telefoon en de auto maken waar mogelijk rechtstreeks verbinding. De relay wordt alleen gebruikt als beide op mobiele netwerken zitten die dat blokkeren, en hij kan niet lezen wat hij doorstuurt."
+    "relay_explainer": "Je telefoon en de auto maken waar mogelijk rechtstreeks verbinding. De relay wordt alleen gebruikt als beide op mobiele netwerken zitten die dat blokkeren, en hij kan niet lezen wat hij doorstuurt.",
+    "settings_lock_title": "Instellingenslot",
+    "settings_lock_switch": "Instellingen-pincode",
+    "settings_lock_change_pin": "Pincode wijzigen",
+    "settings_lock_enter_title": "Pincode invoeren",
+    "settings_lock_new_pin_title": "Nieuwe pincode instellen",
+    "settings_lock_confirm_pin_title": "Bevestig je nieuwe pincode",
+    "settings_lock_mismatch": "Pincodes komen niet overeen. Probeer het opnieuw.",
+    "settings_lock_wrong_pin": "Onjuiste pincode. Resterende pogingen: {count}.",
+    "settings_lock_locked_out": "Te veel pogingen. Probeer het over {time} opnieuw.",
+    "settings_lock_unreachable": "Kan je auto momenteel niet bereiken.",
+    "settings_lock_disable_confirm_title": "Instellingen-pincode uitschakelen?",
+    "settings_lock_disable_confirm_body": "Instellingen openen zonder pincode totdat je deze weer inschakelt.",
+    "settings_lock_explainer": "Deze pincode is van de auto — hij wordt gedeeld met de auto-app en elke andere gekoppelde companion.",
+    "settings_lock_backspace": "Laatste cijfer verwijderen",
+    "settings_lock_biometric_switch": "Biometrie gebruiken in plaats van pincode",
+    "settings_lock_biometric_reason": "BladeWatch-instellingen ontgrendelen",
+    "settings_lock_biometric_retry": "Biometrie opnieuw proberen"
   }
 }

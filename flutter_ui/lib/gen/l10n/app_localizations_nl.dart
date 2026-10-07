@@ -2990,4 +2990,76 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'Je telefoon en de auto maken waar mogelijk rechtstreeks verbinding. De relay wordt alleen gebruikt als beide op mobiele netwerken zitten die dat blokkeren, en hij kan niet lezen wat hij doorstuurt.';
+
+  @override
+  String get settings_section_security => 'Beveiliging';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Vereis een pincode om Instellingen en Bewaking te openen.';
+
+  @override
+  String get settings_lock_switch_label => 'Instellingen-pincode';
+
+  @override
+  String get settings_lock_change_pin => 'Pincode wijzigen';
+
+  @override
+  String get settings_lock_enter_title => 'Pincode invoeren';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Voer je 6-cijferige instellingen-pincode in';
+
+  @override
+  String get settings_lock_new_pin_title => 'Nieuwe pincode instellen';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Bevestig je nieuwe pincode';
+
+  @override
+  String get settings_lock_mismatch =>
+      'Pincodes komen niet overeen. Probeer het opnieuw.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Onjuiste pincode. Nog $count pogingen over.',
+      one: 'Onjuiste pincode. Nog $count poging over.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Te veel pogingen. Probeer het over $time opnieuw.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Kan de BladeWatch-service momenteel niet bereiken.';
+
+  @override
+  String get settings_lock_disable_confirm_title =>
+      'Instellingen-pincode uitschakelen?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Instellingen openen zonder pincode totdat je deze weer inschakelt.';
+
+  @override
+  String get settings_lock_turn_off => 'Uitschakelen';
+
+  @override
+  String get settings_lock_explainer =>
+      'Deze pincode wordt gedeeld met elke gekoppelde companion. Een companion met vingerafdruk- of gezichtsherkenning kan hem resetten als je hem vergeet.';
+
+  @override
+  String get settings_lock_backspace => 'Laatste cijfer verwijderen';
+
+  @override
+  String get settings_lock_save_failed =>
+      'Opslaan is mislukt. Probeer het opnieuw.';
 }

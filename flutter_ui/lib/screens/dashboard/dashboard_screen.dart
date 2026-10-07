@@ -1,8 +1,5 @@
 import 'dart:async' show Timer, unawaited;
 import 'dart:math' as math;
-import '../../platform/pairing_channel.dart';
-import '../pairing/pairing_controller.dart';
-import '../pairing/pairing_dialog.dart';
 
 import 'package:flutter/material.dart';
 
@@ -44,15 +41,11 @@ class DashboardScreen extends StatefulWidget {
   final SystemServiceClient systemService;
   final void Function(String route) onNavigate;
 
-  /// BladeWatch-rdtj.7: the "Pair a device" action. Null hides it (tests that do not exercise it).
-  final PairingChannel? pairingChannel;
-
   const DashboardScreen({
     super.key,
     required this.controller,
     required this.systemService,
     required this.onNavigate,
-    this.pairingChannel,
   });
 
   @override
@@ -77,21 +70,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Timer? _driveTimer;
   Timer? _tripsTimer;
 
-  /// The PAIRED DEVICES card's list (the owner, 2026-10-04): the pairing dialog's own controller,
-  /// used for its device list only -- nothing here mints a code.
-  late final PairingController? _pairing = widget.pairingChannel == null ? null : PairingController(widget.pairingChannel!);
-
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
     widget.controller.refresh();
-    _pairing?.addListener(_onChanged);
-    _pairing?.refreshDevices();
-    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
-      widget.controller.refresh(includeTrips: false);
-      _pairing?.refreshDevices();
-    });
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh(includeTrips: false));
     _driveTimer = Timer.periodic(_driveInterval, (_) => widget.controller.refreshDrive());
     _tripsTimer = Timer.periodic(_tripsInterval, (_) => widget.controller.refreshTrips());
   }
@@ -106,7 +90,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _driveTimer?.cancel();
     _tripsTimer?.cancel();
     widget.controller.removeListener(_onChanged);
-    _pairing?.dispose();
     super.dispose();
   }
 
@@ -148,37 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       Padding(
         padding: const EdgeInsets.only(bottom: 20),
-        child: _HeroChips(
-          controller: c,
-          l10n: l10n,
-          hud: hud,
-          // An explicit action, never a QR on the dashboard: a permanently visible pairing
-          // code would be a permanently visible way in (BladeWatch-rdtj.7).
-          trailing: widget.pairingChannel == null
-              ? null
-              : FilledButton.icon(
-                  key: const ValueKey('dashboard.pair'),
-                  onPressed: () async {
-                    await showPairingDialog(context, widget.pairingChannel!);
-                    unawaited(_pairing?.refreshDevices());
-                  },
-                  icon: const Icon(Icons.qr_code_2, size: 14),
-                  label: Text(l10n.pairing_title.toUpperCase()),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: hud.panel,
-                    foregroundColor: hud.magenta,
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                    minimumSize: const Size(0, 36),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    // `side` set on the style, not only on the shape: the HUD ThemeData's button theme has its own
-                    // side, and a ButtonStyle side wins over the shape's.
-                    side: BorderSide(color: hud.magentaBorder),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwHud.radiusSmall)),
-                    textStyle: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700, em: 0.05),
-                  ),
-                ),
-        ),
+        child: _HeroChips(controller: c, l10n: l10n, hud: hud),
       ),
       _MetricRow(
         controller: c,
@@ -189,18 +142,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onVehicleTap: _openVehicleDialog,
         onLiveTap: () => widget.onNavigate(BwRoutes.liveView),
       ),
-      if (_pairing case final pairing?)
-        Padding(
-          padding: const EdgeInsets.only(top: 20),
-          child: _PairedDevicesCard(
-            pairing: pairing,
-            l10n: l10n,
-            hud: hud,
-            onRemove: (device) async {
-              if (await confirmRemovePairedDevice(context, device)) await pairing.remove(device.id);
-            },
-          ),
-        ),
     ];
 
     return Scaffold(
@@ -507,57 +448,6 @@ class _VehicleCard extends StatelessWidget {
   }
 }
 
-/// What can reach this car (the owner, 2026-10-04): every paired companion, when it was paired, and
-/// a way to cut one off. Pairing a new one stays the explicit "Pair a device" action above.
-class _PairedDevicesCard extends StatelessWidget {
-  final PairingController pairing;
-  final AppLocalizations l10n;
-  final BwHud hud;
-  final void Function(PairedDevice device) onRemove;
-
-  const _PairedDevicesCard({required this.pairing, required this.l10n, required this.hud, required this.onRemove});
-
-  @override
-  Widget build(BuildContext context) => _HeroPanel(
-    hud: hud,
-    icon: Icons.devices_other,
-    title: l10n.pairing_devices_title,
-    children: [
-      if (pairing.devices.isEmpty)
-        Text(l10n.pairing_devices_empty, style: hudText(14, hud.textSecondary, lineHeight: 20))
-      else
-        for (final d in pairing.devices)
-          Padding(
-            key: ValueKey('dashboard.device.${d.id}'),
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(d.name, style: hudText(16, hud.textPrimary, lineHeight: 22, weight: FontWeight.w700)),
-                      Text(
-                        MaterialLocalizations.of(context).formatMediumDate(d.pairedAt),
-                        style: hudText(12, hud.statLabel, lineHeight: 16),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton(onPressed: () => onRemove(d), child: Text(l10n.pairing_remove)),
-              ],
-            ),
-          ),
-      if (pairing.actionFailed)
-        Text(
-          l10n.pairing_error,
-          key: const ValueKey('dashboard.devicesError'),
-          style: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700),
-        ),
-    ],
-  );
-}
-
 /// A soft coloured blob for a corner of the hero.
 class _CornerGlow extends StatelessWidget {
   final Color color;
@@ -678,11 +568,7 @@ class _HeroChips extends StatelessWidget {
   final AppLocalizations l10n;
   final BwHud hud;
 
-  /// Ends the row: the Pair a device action, which used to take a row of its own and push the
-  /// tiles toward the fold (design review 2026-09-27).
-  final Widget? trailing;
-
-  const _HeroChips({required this.controller, required this.l10n, required this.hud, this.trailing});
+  const _HeroChips({required this.controller, required this.l10n, required this.hud});
 
   @override
   Widget build(BuildContext context) {
@@ -700,12 +586,7 @@ class _HeroChips extends StatelessWidget {
       // measured to) name -- never a guessed P / NORMAL / off.
       ..._driveChips(controller.drive),
     ];
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [...chips, ?trailing],
-    );
+    return Wrap(spacing: 12, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.center, children: chips);
   }
 
   List<Widget> _driveChips(DriveInfo d) {

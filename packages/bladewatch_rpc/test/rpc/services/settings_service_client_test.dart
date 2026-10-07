@@ -144,5 +144,51 @@ void main() {
       expect(fake.calls.map((c) => c.method), ['GetStatusOverlay', 'SetStatusOverlay']);
     });
 
+    // BladeWatch-hr6r: the Settings PIN lock.
+
+    test('getSettingsLock sends SettingsService/GetSettingsLock and decodes retryAfterMs from a proto3Json int64 string', () async {
+      // int64 fields are serialised as JSON STRINGS in proto3 JSON, never bare numbers --
+      // this proves mergeFromProto3Json actually decodes that shape, not just an int.
+      fake.stubJson('SettingsService', 'GetSettingsLock', <String, dynamic>{'enabled': true, 'retryAfterMs': '45000'});
+
+      final result = await client.getSettingsLock(GetSettingsLockRequest());
+
+      expect(result, isA<GetSettingsLockResponse>());
+      expect(result.enabled, isTrue);
+      expect(result.retryAfterMs.toInt(), 45000);
+      expect(fake.calls.single.service, 'SettingsService');
+      expect(fake.calls.single.method, 'GetSettingsLock');
+      expect(fake.calls.single.request, isA<GetSettingsLockRequest>());
+    });
+
+    test('setSettingsLock sends the enabled and pin fields and decodes success/error', () async {
+      fake.stubJson('SettingsService', 'SetSettingsLock', <String, dynamic>{'success': true, 'error': ''});
+
+      final result = await client.setSettingsLock(SetSettingsLockRequest(enabled: true, pin: '123456'));
+
+      expect(result.success, isTrue);
+      expect(result.error, '');
+      expect(fake.calls.single.method, 'SetSettingsLock');
+      final sent = fake.calls.single.request as SetSettingsLockRequest;
+      expect(sent.enabled, isTrue);
+      expect(sent.pin, '123456');
+    });
+
+    test('verifySettingsPin sends the pin and decodes ok, retryAfterMs and attemptsLeft', () async {
+      fake.stubJson(
+        'SettingsService',
+        'VerifySettingsPin',
+        <String, dynamic>{'ok': false, 'retryAfterMs': '60000', 'attemptsLeft': 0},
+      );
+
+      final result = await client.verifySettingsPin(VerifySettingsPinRequest(pin: '000000'));
+
+      expect(result.ok, isFalse);
+      expect(result.retryAfterMs.toInt(), 60000);
+      expect(result.attemptsLeft, 0);
+      expect(fake.calls.single.method, 'VerifySettingsPin');
+      expect((fake.calls.single.request as VerifySettingsPinRequest).pin, '000000');
+    });
+
   });
 }

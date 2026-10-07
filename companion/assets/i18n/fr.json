@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Saisissez la clé du relais définie dans la voiture.",
     "relay_change": "Modifier",
     "relay_remove": "Supprimer la clé",
-    "relay_explainer": "Le téléphone et la voiture se connectent directement dès que possible. Le relais n'est utilisé que lorsque les deux sont sur des réseaux mobiles qui l'empêchent, et il ne peut pas lire ce qu'il transmet."
+    "relay_explainer": "Le téléphone et la voiture se connectent directement dès que possible. Le relais n'est utilisé que lorsque les deux sont sur des réseaux mobiles qui l'empêchent, et il ne peut pas lire ce qu'il transmet.",
+    "settings_lock_title": "Verrouillage des paramètres",
+    "settings_lock_switch": "Code PIN des paramètres",
+    "settings_lock_change_pin": "Changer le code PIN",
+    "settings_lock_enter_title": "Saisir le code PIN",
+    "settings_lock_new_pin_title": "Définir un nouveau code PIN",
+    "settings_lock_confirm_pin_title": "Confirmez votre nouveau code PIN",
+    "settings_lock_mismatch": "Les codes PIN ne correspondent pas. Réessayez.",
+    "settings_lock_wrong_pin": "Code PIN incorrect. Tentatives restantes : {count}.",
+    "settings_lock_locked_out": "Trop de tentatives. Réessayez dans {time}.",
+    "settings_lock_unreachable": "Impossible de contacter votre voiture pour le moment.",
+    "settings_lock_disable_confirm_title": "Désactiver le code PIN des paramètres ?",
+    "settings_lock_disable_confirm_body": "Les paramètres s'ouvriront sans code PIN jusqu'à ce que vous le réactiviez.",
+    "settings_lock_explainer": "Ce code PIN appartient à la voiture : il est partagé avec l'application embarquée et chaque autre appareil compagnon associé.",
+    "settings_lock_backspace": "Supprimer le dernier chiffre",
+    "settings_lock_biometric_switch": "Utiliser la biométrie au lieu du code PIN",
+    "settings_lock_biometric_reason": "Déverrouiller les paramètres BladeWatch",
+    "settings_lock_biometric_retry": "Réessayer avec la biométrie"
   }
 }

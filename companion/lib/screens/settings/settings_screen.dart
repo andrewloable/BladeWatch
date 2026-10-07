@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/settings.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/storage.pb.dart';
@@ -7,11 +9,14 @@ import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_theme/hud_widgets.dart';
+import 'package:bladewatch_theme/pin_pad.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 
+import '../../car/biometrics.dart';
 import '../../car/car_page.dart';
 import '../../car/car_store.dart';
+import '../../car/settings_gate.dart';
 import '../../i18n.dart';
 import '../common/format.dart';
 import '../common/hud_style.dart';
@@ -23,11 +28,16 @@ import 'relay_access.dart';
 /// storage, language, overlay) -- the web settings page's counterpart. Sentry detection settings
 /// live on the Surveillance screen, as on the web.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, required this.store, required this.onLanguage, required this.onUnpair});
+  SettingsScreen({super.key, required this.store, required this.onLanguage, required this.onUnpair, Biometrics? biometrics})
+      : biometrics = biometrics ?? LocalAuthBiometrics();
 
   final CarStore store;
   final Future<void> Function(String? lang) onLanguage;
   final Future<void> Function() onUnpair;
+
+  /// Overridable only for tests -- see [LocalAuthBiometrics] for why a plain `flutter test` never
+  /// needs a fake to get `available() == false` (BladeWatch-hr6r.6).
+  final Biometrics biometrics;
 
   static const recordingModes = ['NONE', 'CONTINUOUS', 'DRIVE_MODE', 'PROXIMITY_GUARD'];
   static const qualities = ['ECONOMY', 'STANDARD', 'HIGH', 'PREMIUM', 'MAX'];
@@ -43,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
   late final _rpc = context.session.rpc;
   late final _settings = SettingsServiceClient(_rpc);
   late final _storage = StorageServiceClient(_rpc);
+  Biometrics get _biometrics => widget.biometrics;
   late final _data = loader(() async => (
         status: await SystemServiceClient(_rpc).getStatus(GetStatusRequest()),
         quality: await _settings.getQuality(GetQualityRequest()),
@@ -50,7 +61,20 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
         overlay: await _settings.getStatusOverlay(GetStatusOverlayRequest()),
         storage: await _storage.getStorageSettings(GetStorageSettingsRequest()),
         fields: await _overlayFields(),
+        lock: await _settingsLock(),
+        biometricAvailable: await _biometrics.available(),
       ));
+
+  /// The Settings PIN lock's current state (BladeWatch-hr6r), with the same cache-update-on-
+  /// success behaviour as [SettingsGate.refresh] -- this screen manages the lock, it does not
+  /// gate navigation, so it talks to [SettingsServiceClient] directly rather than going through
+  /// the gate the rest of the app uses.
+  Future<GetSettingsLockResponse> _settingsLock() async {
+    final r = await _settings.getSettingsLock(GetSettingsLockRequest());
+    widget.store.settingsLockKnown = r.enabled;
+    unawaited(widget.store.save());
+    return r;
+  }
 
   /// The recording overlay's fields (BladeWatch-rdtj.67); null when the car does not say, so an
   /// older car still gets the rest of Settings.
@@ -104,6 +128,58 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
   final _recLimit = TextEditingController();
   final _survLimit = TextEditingController();
   bool _filled = false;
+
+  // BladeWatch-hr6r: the Settings PIN lock.
+  PinPadStrings _pinPadStrings(Tr tr) => PinPadStrings(
+        title: tr('companion.settings_lock_enter_title'),
+        cancel: tr('common.cancel'),
+        backspaceTooltip: tr('companion.settings_lock_backspace'),
+        newPinTitle: tr('companion.settings_lock_new_pin_title'),
+        confirmPinTitle: tr('companion.settings_lock_confirm_pin_title'),
+        mismatch: tr('companion.settings_lock_mismatch'),
+      );
+
+  /// Sets a new PIN and turns the lock on -- also used for "Change PIN" while it is already on.
+  Future<void> _setNewPin() async {
+    final pin = await showNewPinDialog(context, strings: _pinPadStrings(context.tr));
+    if (pin == null || !mounted) return;
+    await _save(() async {
+      final r = await _settings.setSettingsLock(SetSettingsLockRequest(enabled: true, pin: pin));
+      if (!r.success) throw StateError(r.error);
+      widget.store.settingsLockKnown = true;
+      unawaited(widget.store.save());
+    });
+  }
+
+  Future<void> _turnOffLock() async {
+    final tr = context.tr;
+    if (!await _confirm(tr('companion.settings_lock_disable_confirm_title'), tr('companion.settings_lock_disable_confirm_body'),
+        yes: tr('common.disable'), destructive: true)) {
+      return;
+    }
+    await _save(() async {
+      final r = await _settings.setSettingsLock(SetSettingsLockRequest(enabled: false));
+      if (!r.success) throw StateError(r.error);
+      widget.store.settingsLockKnown = false;
+      unawaited(widget.store.save());
+    });
+  }
+
+  /// Turning biometric unlock ON needs the car's actual PIN first -- a plain verification dialog,
+  /// not the gate's biometric-first flow -- so a stranger who picks up an already-paired, unlocked
+  /// phone cannot opt it in themselves (BladeWatch-hr6r.6). Turning it off is a local flip with no
+  /// proof needed, same as the lock switch above.
+  Future<void> _enableBiometricUnlock() async {
+    final ok = await showPinDialog(context, strings: _pinPadStrings(context.tr), check: (pin) => checkSettingsPin(context, _settings, pin));
+    if (!ok || !mounted) return;
+    setState(() => widget.store.biometricUnlockEnabled = true);
+    unawaited(widget.store.save());
+  }
+
+  void _disableBiometricUnlock() {
+    setState(() => widget.store.biometricUnlockEnabled = false);
+    unawaited(widget.store.save());
+  }
 
   @override
   void dispose() {
@@ -214,8 +290,40 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
             : v.quality.recordingQualityOptions.keys.toList();
         final codecs = v.quality.codecOptions.isEmpty ? const {'H264': 'H.264', 'H265': 'H.265'} : v.quality.codecOptions;
         final langs = v.locale.supported.keys.toList()..sort();
+        final lockOn = v.lock.enabled;
+        final lockSection = Section(title: tr('companion.settings_lock_title'), children: [
+          SwitchListTile(
+            key: const ValueKey('settings.lock'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(tr('companion.settings_lock_switch')),
+            value: lockOn,
+            onChanged: (on) => on ? _setNewPin() : _turnOffLock(),
+          ),
+          if (lockOn)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: OutlinedButton(
+                key: const ValueKey('settings.lockChange'),
+                onPressed: _setNewPin,
+                child: Text(tr('companion.settings_lock_change_pin')),
+              ),
+            ),
+          if (lockOn && v.biometricAvailable)
+            SwitchListTile(
+              key: const ValueKey('settings.lockBiometric'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(tr('companion.settings_lock_biometric_switch')),
+              value: widget.store.biometricUnlockEnabled,
+              onChanged: (on) => on ? _enableBiometricUnlock() : _disableBiometricUnlock(),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(tr('companion.settings_lock_explainer'), style: Theme.of(context).textTheme.bodySmall),
+          ),
+        ]);
         return PageList(children: [
           app,
+          lockSection,
           Section(title: tr('settings.recording_mode_acc'), children: [
             Text(tr('settings.recording_mode_hint')),
             for (final m in SettingsScreen.recordingModes)

@@ -1750,6 +1750,23 @@
     "relay_key_needed": "車に設定したリレーキーを入力してください。",
     "relay_change": "変更",
     "relay_remove": "キーを削除",
-    "relay_explainer": "電話と車は、可能な限り直接接続します。リレーは、両方がそれを妨げるモバイルネットワーク上にある場合にのみ使われ、転送する内容を読むことはできません。"
+    "relay_explainer": "電話と車は、可能な限り直接接続します。リレーは、両方がそれを妨げるモバイルネットワーク上にある場合にのみ使われ、転送する内容を読むことはできません。",
+    "settings_lock_title": "設定ロック",
+    "settings_lock_switch": "設定用PIN",
+    "settings_lock_change_pin": "PINを変更",
+    "settings_lock_enter_title": "PINを入力",
+    "settings_lock_new_pin_title": "新しいPINを設定",
+    "settings_lock_confirm_pin_title": "新しいPINを確認",
+    "settings_lock_mismatch": "PINが一致しませんでした。もう一度お試しください。",
+    "settings_lock_wrong_pin": "PINが違います。残り試行回数: {count}",
+    "settings_lock_locked_out": "試行回数が多すぎます。{time}後に再試行してください。",
+    "settings_lock_unreachable": "現在お車に接続できません。",
+    "settings_lock_disable_confirm_title": "設定用PINを無効にしますか?",
+    "settings_lock_disable_confirm_body": "再度有効にするまで、設定はPINなしで開きます。",
+    "settings_lock_explainer": "このPINは車のものです。車内アプリや、他のペアリングされたすべてのコンパニオンと共有されます。",
+    "settings_lock_backspace": "最後の数字を削除",
+    "settings_lock_biometric_switch": "PINの代わりに生体認証を使う",
+    "settings_lock_biometric_reason": "BladeWatchの設定のロックを解除",
+    "settings_lock_biometric_retry": "もう一度生体認証を試す"
   }
 }

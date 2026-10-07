@@ -1750,6 +1750,23 @@
     "relay_key_needed": "ป้อนคีย์รีเลย์ที่คุณตั้งไว้ในรถ",
     "relay_change": "เปลี่ยน",
     "relay_remove": "ลบคีย์",
-    "relay_explainer": "โทรศัพท์และรถจะเชื่อมต่อกันโดยตรงทุกครั้งที่ทำได้ รีเลย์จะถูกใช้เฉพาะเมื่อทั้งสองอยู่บนเครือข่ายมือถือที่ปิดกั้นการเชื่อมต่อโดยตรง และรีเลย์อ่านข้อมูลที่ส่งต่อไม่ได้"
+    "relay_explainer": "โทรศัพท์และรถจะเชื่อมต่อกันโดยตรงทุกครั้งที่ทำได้ รีเลย์จะถูกใช้เฉพาะเมื่อทั้งสองอยู่บนเครือข่ายมือถือที่ปิดกั้นการเชื่อมต่อโดยตรง และรีเลย์อ่านข้อมูลที่ส่งต่อไม่ได้",
+    "settings_lock_title": "ล็อกการตั้งค่า",
+    "settings_lock_switch": "PIN ตั้งค่า",
+    "settings_lock_change_pin": "เปลี่ยน PIN",
+    "settings_lock_enter_title": "ใส่ PIN",
+    "settings_lock_new_pin_title": "ตั้ง PIN ใหม่",
+    "settings_lock_confirm_pin_title": "ยืนยัน PIN ใหม่ของคุณ",
+    "settings_lock_mismatch": "PIN ไม่ตรงกัน ลองใหม่อีกครั้ง",
+    "settings_lock_wrong_pin": "PIN ไม่ถูกต้อง จำนวนครั้งที่เหลือ: {count}",
+    "settings_lock_locked_out": "พยายามมากเกินไป ลองใหม่อีกครั้งใน {time}",
+    "settings_lock_unreachable": "ไม่สามารถติดต่อรถของคุณได้ในขณะนี้",
+    "settings_lock_disable_confirm_title": "ปิดใช้งาน PIN ตั้งค่าไหม?",
+    "settings_lock_disable_confirm_body": "ตั้งค่าจะเปิดโดยไม่ต้องใส่ PIN จนกว่าคุณจะเปิดใช้งานอีกครั้ง",
+    "settings_lock_explainer": "PIN นี้เป็นของรถ ใช้ร่วมกับแอปในรถและทุกอุปกรณ์คู่หูที่จับคู่ไว้",
+    "settings_lock_backspace": "ลบตัวเลขล่าสุด",
+    "settings_lock_biometric_switch": "ใช้ไบโอเมตริกซ์แทน PIN",
+    "settings_lock_biometric_reason": "ปลดล็อกการตั้งค่า BladeWatch",
+    "settings_lock_biometric_retry": "ลองใช้ไบโอเมตริกซ์อีกครั้ง"
   }
 }

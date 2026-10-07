@@ -1750,6 +1750,23 @@
     "relay_key_needed": "वह रिले कुंजी दर्ज करें जो आपने कार में सेट की है।",
     "relay_change": "बदलें",
     "relay_remove": "कुंजी हटाएँ",
-    "relay_explainer": "जब भी संभव हो, आपका फ़ोन और कार सीधे जुड़ते हैं। रिले का इस्तेमाल सिर्फ़ तब होता है जब दोनों ऐसे मोबाइल नेटवर्क पर हों जो इसे रोकते हैं, और रिले आगे भेजा गया डेटा पढ़ नहीं सकता।"
+    "relay_explainer": "जब भी संभव हो, आपका फ़ोन और कार सीधे जुड़ते हैं। रिले का इस्तेमाल सिर्फ़ तब होता है जब दोनों ऐसे मोबाइल नेटवर्क पर हों जो इसे रोकते हैं, और रिले आगे भेजा गया डेटा पढ़ नहीं सकता।",
+    "settings_lock_title": "सेटिंग्स लॉक",
+    "settings_lock_switch": "सेटिंग्स पिन",
+    "settings_lock_change_pin": "पिन बदलें",
+    "settings_lock_enter_title": "पिन दर्ज करें",
+    "settings_lock_new_pin_title": "नया पिन सेट करें",
+    "settings_lock_confirm_pin_title": "अपना नया पिन फिर से दर्ज करें",
+    "settings_lock_mismatch": "पिन मेल नहीं खाए. फिर से कोशिश करें.",
+    "settings_lock_wrong_pin": "गलत पिन. बचे हुए प्रयास: {count}.",
+    "settings_lock_locked_out": "बहुत अधिक प्रयास. {time} में फिर से कोशिश करें.",
+    "settings_lock_unreachable": "अभी आपकी कार से संपर्क नहीं हो पा रहा है.",
+    "settings_lock_disable_confirm_title": "सेटिंग्स पिन बंद करें?",
+    "settings_lock_disable_confirm_body": "जब तक आप इसे फिर से चालू नहीं करते, सेटिंग्स बिना पिन के खुलेंगी.",
+    "settings_lock_explainer": "यह पिन कार का है — यह कार के इन-कार ऐप और हर दूसरे जोड़े गए कंपैनियन के साथ साझा किया जाता है.",
+    "settings_lock_backspace": "आख़िरी अंक मिटाएं",
+    "settings_lock_biometric_switch": "पिन की जगह बायोमेट्रिक्स उपयोग करें",
+    "settings_lock_biometric_reason": "BladeWatch सेटिंग्स अनलॉक करें",
+    "settings_lock_biometric_retry": "बायोमेट्रिक्स फिर से आज़माएं"
   }
 }

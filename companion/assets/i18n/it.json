@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Inserisci la chiave del relay impostata nell'auto.",
     "relay_change": "Modifica",
     "relay_remove": "Rimuovi chiave",
-    "relay_explainer": "Il telefono e l'auto si collegano direttamente ogni volta che possono. Il relay viene usato solo quando entrambi sono su reti mobili che lo impediscono, e non può leggere ciò che inoltra."
+    "relay_explainer": "Il telefono e l'auto si collegano direttamente ogni volta che possono. Il relay viene usato solo quando entrambi sono su reti mobili che lo impediscono, e non può leggere ciò che inoltra.",
+    "settings_lock_title": "Blocco impostazioni",
+    "settings_lock_switch": "PIN delle impostazioni",
+    "settings_lock_change_pin": "Cambia PIN",
+    "settings_lock_enter_title": "Inserisci PIN",
+    "settings_lock_new_pin_title": "Imposta un nuovo PIN",
+    "settings_lock_confirm_pin_title": "Conferma il nuovo PIN",
+    "settings_lock_mismatch": "I PIN non corrispondono. Riprova.",
+    "settings_lock_wrong_pin": "PIN errato. Tentativi rimasti: {count}.",
+    "settings_lock_locked_out": "Troppi tentativi. Riprova tra {time}.",
+    "settings_lock_unreachable": "Al momento non è possibile raggiungere la tua auto.",
+    "settings_lock_disable_confirm_title": "Disattivare il PIN delle impostazioni?",
+    "settings_lock_disable_confirm_body": "Le impostazioni si apriranno senza PIN finché non lo riattivi.",
+    "settings_lock_explainer": "Questo PIN appartiene all'auto: è condiviso con l'app di bordo e con ogni altro companion associato.",
+    "settings_lock_backspace": "Elimina ultima cifra",
+    "settings_lock_biometric_switch": "Usa la biometria invece del PIN",
+    "settings_lock_biometric_reason": "Sblocca le impostazioni di BladeWatch",
+    "settings_lock_biometric_retry": "Riprova con la biometria"
   }
 }

@@ -93,4 +93,26 @@ class SettingsServiceClient {
         request,
         (json) => SetStatusOverlayResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
+
+  // BladeWatch-hr6r: the Settings PIN lock.
+  Future<GetSettingsLockResponse> getSettingsLock(GetSettingsLockRequest request) => _transport.call(
+        'SettingsService',
+        'GetSettingsLock',
+        request,
+        (json) => GetSettingsLockResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<SetSettingsLockResponse> setSettingsLock(SetSettingsLockRequest request) => _transport.call(
+        'SettingsService',
+        'SetSettingsLock',
+        request,
+        (json) => SetSettingsLockResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<VerifySettingsPinResponse> verifySettingsPin(VerifySettingsPinRequest request) => _transport.call(
+        'SettingsService',
+        'VerifySettingsPin',
+        request,
+        (json) => VerifySettingsPinResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
 }

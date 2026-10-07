@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:bladewatch_ui/main.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/prefs_channel.dart';
 import 'package:bladewatch_ui/platform/setup_channel.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
@@ -19,6 +22,7 @@ import 'package:bladewatch_ui/screens/settings/settings_about_controller.dart' s
 import 'package:bladewatch_ui/screens/settings/settings_about_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_appearance_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_appearance_models.dart';
+import 'package:bladewatch_ui/screens/settings/settings_lock_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_screen.dart';
 import 'package:bladewatch_ui/screens/startup/startup_controller.dart';
 import 'package:bladewatch_ui/screens/startup/startup_screen.dart';
@@ -430,6 +434,97 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  // BladeWatch-hr6r: the Settings PIN lock's route guard and its re-lock-on-background wiring,
+  // exercised through the real app root rather than ShellController/SettingsLockController in
+  // isolation -- this is the one place that proves main.dart actually wires the three together
+  // (the guarded-routes set passed to ShellController, routeGuard reassigned every build, and
+  // the AppLifecycleListener main.dart registers).
+  testWidgets('backgrounding the app while Settings is open relocks it and returns to Dashboard',
+      (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    final fakeChannel = FakePlatformChannel()
+      ..stub('daemon', 'processStatus', {
+        'status': 'ok',
+        'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'PEAR_PEER': true},
+      })
+      ..stub('prefs', 'getSetupGuideLastSeenBuild', null)
+      ..stub('prefs', 'setSetupGuideLastSeenBuild', null)
+      ..stub('prefs', 'getSettingsLockKnown', null)
+      ..stub('prefs', 'setSettingsLockKnown', null)
+      ..stub('setup', 'openAutoStartSettings', null)
+      ..stub('setup', 'openOverlaySettings', null);
+    final rpc = FakeRpcClient()
+      ..stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'})
+      ..stubJson('SettingsService', 'VerifySettingsPin', {'ok': true, 'retryAfterMs': '0', 'attemptsLeft': 5});
+    final startupController = StartupController(
+      daemonChannel: DaemonChannel(fakeChannel),
+      readyToNavigateDelay: Duration.zero,
+      healthCheck: () async => true,
+    );
+    final dashboardController = DashboardController(
+      tripsService: TripsServiceClient(rpc),
+      recordingsService: RecordingsServiceClient(rpc),
+      systemService: SystemServiceClient(rpc),
+      daemonChannel: DaemonChannel(fakeChannel),
+    );
+    // Pre-configured with the guarded routes main.dart itself would pass -- main.dart's build()
+    // reassigns `.routeGuard` on whichever ShellController it ends up using, injected or not, so
+    // the PIN dialog below is the REAL SettingsLockController.admit, not a test double.
+    final shellController = ShellController(guardedRoutes: const {BwRoutes.settings, BwRoutes.surveillance});
+    final settingsLockController =
+        SettingsLockController(settingsService: SettingsServiceClient(rpc), prefs: PrefsChannel(fakeChannel));
+    PackageInfo.setMockInitialValues(
+      appName: 'BladeWatch',
+      packageName: 'net.bladewatch.incarapp',
+      version: '9.9.9',
+      buildNumber: '1',
+      buildSignature: '',
+    );
+    final setupGuideController = SetupGuideController(
+      prefs: PrefsChannel(fakeChannel),
+      setup: SetupChannel(fakeChannel),
+      versionSource: () async => const AppVersionInfo(version: '9.9.9', buildNumber: '1', packageName: 'net.bladewatch.incarapp'),
+    );
+
+    await tester.pumpWidget(BladeWatchApp(
+      shellController: shellController,
+      startupController: startupController,
+      dashboardController: dashboardController,
+      setupGuideController: setupGuideController,
+      settingsLockController: settingsLockController,
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(find.byType(AppShell), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('setupGuide.done')));
+    await tester.pumpAndSettle();
+
+    // Open Settings: the lock is on, so this goes through the real PIN dialog, not straight in.
+    unawaited(shellController.selectRoute(BwRoutes.settings));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsNothing, reason: 'the PIN dialog is up first');
+    for (final d in '123456'.split('')) {
+      await tester.tap(find.widgetWithText(OutlinedButton, d));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(shellController.selectedRoute, BwRoutes.settings);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(settingsLockController.unlocked, isTrue);
+
+    // The head unit's screen sleeps with the app process alive.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pumpAndSettle();
+
+    expect(settingsLockController.unlocked, isFalse, reason: 'relocked on background');
+    expect(shellController.selectedRoute, BwRoutes.dashboard, reason: 'Settings must not sit open while backgrounded');
+    expect(tester.takeException(), isNull);
+
     await tester.pumpWidget(const SizedBox());
   });
 

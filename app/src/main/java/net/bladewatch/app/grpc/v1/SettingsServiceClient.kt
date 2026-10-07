@@ -161,4 +161,44 @@ public class SettingsServiceClient(
     ),
   )
 
+
+  /**
+   *  BladeWatch-hr6r: the Settings PIN lock. One PIN, held by the car; both the in-car UI and
+   *  every paired companion check it here rather than each keeping its own.
+   */
+  override suspend fun getSettingsLock(request: GetSettingsLockRequest, headers: Headers): ResponseMessage<GetSettingsLockResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SettingsService/GetSettingsLock",
+      net.bladewatch.app.grpc.v1.GetSettingsLockRequest::class,
+      net.bladewatch.app.grpc.v1.GetSettingsLockResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun setSettingsLock(request: SetSettingsLockRequest, headers: Headers): ResponseMessage<SetSettingsLockResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SettingsService/SetSettingsLock",
+      net.bladewatch.app.grpc.v1.SetSettingsLockRequest::class,
+      net.bladewatch.app.grpc.v1.SetSettingsLockResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun verifySettingsPin(request: VerifySettingsPinRequest, headers: Headers): ResponseMessage<VerifySettingsPinResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SettingsService/VerifySettingsPin",
+      net.bladewatch.app.grpc.v1.VerifySettingsPinRequest::class,
+      net.bladewatch.app.grpc.v1.VerifySettingsPinResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
 }

@@ -2979,4 +2979,73 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'Điện thoại và xe kết nối trực tiếp bất cứ khi nào có thể. Relay chỉ được dùng khi cả hai ở trên mạng di động chặn kết nối trực tiếp, và relay không đọc được dữ liệu nó chuyển tiếp.';
+
+  @override
+  String get settings_section_security => 'An ninh';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Yêu cầu mã PIN để mở Cài đặt và Giám sát.';
+
+  @override
+  String get settings_lock_switch_label => 'Mã PIN cài đặt';
+
+  @override
+  String get settings_lock_change_pin => 'Đổi mã PIN';
+
+  @override
+  String get settings_lock_enter_title => 'Nhập mã PIN';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Nhập mã PIN cài đặt 6 chữ số của bạn';
+
+  @override
+  String get settings_lock_new_pin_title => 'Đặt mã PIN mới';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Xác nhận mã PIN mới của bạn';
+
+  @override
+  String get settings_lock_mismatch => 'Mã PIN không khớp. Hãy thử lại.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sai mã PIN. Còn lại $count lần thử.',
+      one: 'Sai mã PIN. Còn lại $count lần thử.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Quá nhiều lần thử. Hãy thử lại sau $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Hiện không thể kết nối với dịch vụ BladeWatch.';
+
+  @override
+  String get settings_lock_disable_confirm_title => 'Tắt mã PIN cài đặt?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Cài đặt sẽ mở mà không cần mã PIN cho đến khi bạn bật lại.';
+
+  @override
+  String get settings_lock_turn_off => 'Tắt';
+
+  @override
+  String get settings_lock_explainer =>
+      'Mã PIN này được chia sẻ với mọi thiết bị đồng hành đã ghép nối. Một thiết bị đồng hành có mở khóa bằng vân tay hoặc khuôn mặt có thể đặt lại mã này nếu bạn quên.';
+
+  @override
+  String get settings_lock_backspace => 'Xóa số cuối';
+
+  @override
+  String get settings_lock_save_failed => 'Không thể lưu. Hãy thử lại.';
 }

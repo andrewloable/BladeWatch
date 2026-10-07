@@ -1750,6 +1750,23 @@
     "relay_key_needed": "차량에 설정한 릴레이 키를 입력하세요.",
     "relay_change": "변경",
     "relay_remove": "키 삭제",
-    "relay_explainer": "휴대폰과 차량은 가능하면 항상 직접 연결됩니다. 릴레이는 둘 다 직접 연결을 막는 모바일 네트워크에 있을 때만 사용되며, 전달하는 내용을 읽을 수 없습니다."
+    "relay_explainer": "휴대폰과 차량은 가능하면 항상 직접 연결됩니다. 릴레이는 둘 다 직접 연결을 막는 모바일 네트워크에 있을 때만 사용되며, 전달하는 내용을 읽을 수 없습니다.",
+    "settings_lock_title": "설정 잠금",
+    "settings_lock_switch": "설정 PIN",
+    "settings_lock_change_pin": "PIN 변경",
+    "settings_lock_enter_title": "PIN 입력",
+    "settings_lock_new_pin_title": "새 PIN 설정",
+    "settings_lock_confirm_pin_title": "새 PIN 확인",
+    "settings_lock_mismatch": "PIN이 일치하지 않습니다. 다시 시도하세요.",
+    "settings_lock_wrong_pin": "PIN이 틀렸습니다. 남은 시도 횟수: {count}",
+    "settings_lock_locked_out": "시도 횟수가 너무 많습니다. {time} 후에 다시 시도하세요.",
+    "settings_lock_unreachable": "지금은 차량에 연결할 수 없습니다.",
+    "settings_lock_disable_confirm_title": "설정 PIN을 해제하시겠습니까?",
+    "settings_lock_disable_confirm_body": "다시 켜기 전까지 설정은 PIN 없이 열립니다.",
+    "settings_lock_explainer": "이 PIN은 차량의 것입니다. 차량 내 앱과 페어링된 다른 모든 컴패니언과 공유됩니다.",
+    "settings_lock_backspace": "마지막 숫자 삭제",
+    "settings_lock_biometric_switch": "PIN 대신 생체 인식 사용",
+    "settings_lock_biometric_reason": "BladeWatch 설정 잠금 해제",
+    "settings_lock_biometric_retry": "생체 인식 다시 시도"
   }
 }

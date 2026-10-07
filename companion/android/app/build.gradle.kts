@@ -52,10 +52,10 @@ android {
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
         // flag during build.
         versionCode = flutter.versionCode
-        // BladeWatch versions have FOUR parts and pub rejects that in pubspec.yaml (1.4.1+14103 there),
+        // BladeWatch versions have FOUR parts and pub rejects that in pubspec.yaml (1.4.1+14104 there),
         // so the name is written out, as the in-car app's build does. The companion carries the car
         // apps' version (the owner, 2026-10-04): keep it in step with app/build.gradle.kts.
-        versionName = "1.4.1.3"
+        versionName = "1.4.1.4"
     }
 
     signingConfigs {

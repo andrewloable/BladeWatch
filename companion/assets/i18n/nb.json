@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Skriv inn relénøkkelen du satte i bilen.",
     "relay_change": "Endre",
     "relay_remove": "Fjern nøkkel",
-    "relay_explainer": "Telefonen og bilen kobler seg direkte til hverandre når de kan. Reléet brukes bare når begge er på mobilnett som hindrer det, og det kan ikke lese det det videresender."
+    "relay_explainer": "Telefonen og bilen kobler seg direkte til hverandre når de kan. Reléet brukes bare når begge er på mobilnett som hindrer det, og det kan ikke lese det det videresender.",
+    "settings_lock_title": "Innstillingslås",
+    "settings_lock_switch": "Innstillings-PIN",
+    "settings_lock_change_pin": "Endre PIN",
+    "settings_lock_enter_title": "Angi PIN",
+    "settings_lock_new_pin_title": "Angi en ny PIN",
+    "settings_lock_confirm_pin_title": "Bekreft din nye PIN",
+    "settings_lock_mismatch": "PIN-kodene stemte ikke. Prøv igjen.",
+    "settings_lock_wrong_pin": "Feil PIN. Gjenværende forsøk: {count}.",
+    "settings_lock_locked_out": "For mange forsøk. Prøv igjen om {time}.",
+    "settings_lock_unreachable": "Kan ikke nå bilen din akkurat nå.",
+    "settings_lock_disable_confirm_title": "Slå av innstillings-PIN?",
+    "settings_lock_disable_confirm_body": "Innstillinger åpnes uten PIN til du slår den på igjen.",
+    "settings_lock_explainer": "Denne PIN-en tilhører bilen – den deles med bilappen og hver andre tilkoblede companion.",
+    "settings_lock_backspace": "Slett siste tall",
+    "settings_lock_biometric_switch": "Bruk biometri i stedet for PIN",
+    "settings_lock_biometric_reason": "Lås opp BladeWatch-innstillinger",
+    "settings_lock_biometric_retry": "Prøv biometri på nytt"
   }
 }

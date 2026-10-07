@@ -92,4 +92,23 @@ void main() {
     expect(call.method, 'setSetupGuideLastSeenBuild');
     expect((call.args as Map)['value'], '43');
   });
+
+  test('getSettingsLockKnown returns the stored value', () async {
+    channel.stub('prefs', 'getSettingsLockKnown', true);
+    expect(await prefs.getSettingsLockKnown(), isTrue);
+  });
+
+  test('getSettingsLockKnown returns null when never recorded', () async {
+    channel.stub('prefs', 'getSettingsLockKnown', null);
+    expect(await prefs.getSettingsLockKnown(), isNull);
+  });
+
+  test('setSettingsLockKnown sends the value under the right key', () async {
+    channel.stub('prefs', 'setSettingsLockKnown', null);
+    await prefs.setSettingsLockKnown(false);
+    final call = channel.calls.single;
+    expect(call.group, 'prefs');
+    expect(call.method, 'setSettingsLockKnown');
+    expect((call.args as Map)['value'], false);
+  });
 }

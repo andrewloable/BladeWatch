@@ -332,9 +332,10 @@ the connection it is deciding whether to trust.
 
 ## Companion pairing (BladeWatch-rdtj.7)
 
-The owner, in the car, taps **Pair a device** on the dashboard. The in-car UI asks the daemon
-for a pairing QR (`pairingMint` on 19876) and shows it in a dialog -- never continuously on the
-dashboard: a permanently visible pairing code is a permanently visible way in.
+The owner, in the car, taps **Pair a device** in Settings > Security (moved there from the
+Dashboard in v1.4.1.4, BladeWatch-xfb5). The in-car UI asks the daemon for a pairing QR
+(`pairingMint` on 19876) and shows it in a dialog -- never continuously on screen: a permanently
+visible pairing code is a permanently visible way in.
 
 **The QR is not a credential.** It is unpadded base64url JSON:
 `{v, deviceId, pearTopic, tlsPort, tlsFp, probeKey, code, exp}` -- what the companion needs to
@@ -411,6 +412,82 @@ paired, and four rules make that so:
   started over as before, but a `600` copy `bladewatch_secrets.json.damaged-<ms>` is kept first.
 - *The companion keeps what it cannot load.* Its `CarStore` copies a file that will not load
   aside before anything can overwrite it.
+
+## Settings PIN lock (BladeWatch-hr6r)
+
+One 6-digit PIN, held by the car, gates the Settings screen in both the in-car UI and every
+paired companion — checked here rather than each app keeping its own. `SettingsLock`
+(`app/src/main/java/com/loabletech/bladewatch/auth/SettingsLock.kt`) stores a salted PBKDF2 hash
+in the secret store's `settingsLock` section: 16-byte random salt, `PBKDF2WithHmacSHA256`,
+100,000 iterations, 256-bit derived key, base64-encoded `salt`/`hash`/`iterations` written in one
+`replaceSection` call so a crash can never leave a salt without its matching hash. The PIN itself
+is never stored, logged, or returned by any RPC.
+
+**Threat model, stated plainly: this is a UI gate, not an API ACL.** It stops someone with
+physical access to the head unit, or an unlocked phone, from opening Settings. It does **not**
+restrict the API itself: any JWT holder can still call `SettingsService.SetSettingsLock` (or any
+other setter on this API) directly, exactly as today. `SetSettingsLock` deliberately does not
+demand the current PIN for this reason — see "Forgotten-PIN recovery" below.
+
+**Lockout, in memory, per daemon process.** 5 consecutive wrong PINs lock entry out for 60
+seconds; each further wrong PIN before a success doubles the wait (120s, 240s, …), capped at 1
+hour. A PIN submitted while locked out is refused outright — neither checked nor counted as an
+attempt, and the reported wait only ever counts down from the lockout already in effect, never
+resets or extends from an in-lockout attempt. A correct PIN resets the attempt counter and the
+lockout. A daemon restart also resets the counter (`// ponytail:` in `SettingsLock` — persist it
+if restarts become attacker-triggerable).
+
+**`settingsLock` is daemon-only**, alongside the LAN TLS identity, the Pear topic seed, the
+discovery probe key and the paired-companions list (`TcpCommandServer
+.DAEMON_ONLY_SECRET_SECTIONS`, pinned by `DaemonOnlySecretSectionTest`): the app UID cannot read
+the hash or clear the lock over `secret_*` IPC. It is reached only through the three Connect RPCs
+below, behind the same JWT every other RPC on this API already requires — see
+[http-api-reference.md](http-api-reference.md#settings-lock-bladewatch-hr6r) for their request/
+response shapes.
+
+**Forgotten-PIN recovery.** Since `SetSettingsLock` takes no current PIN, a companion unlocked by
+biometrics (device-local, not the car's PIN — see the companion's own docs) can change or clear
+the car's PIN on the owner's behalf. The last-resort path with no companion at hand is over ADB
+at the car, verified on-device (BladeWatch-hr6r.7, 2026-10-07):
+
+```bash
+# 1. Back up first, to a path you delete once you've confirmed the result.
+adb shell cp /data/local/tmp/bladewatch_secrets.json /data/local/tmp/secrets.bak
+
+# 2. Remove the settingsLock member only. The file is one line of compact JSON
+#    (no whitespace), settingsLock's salt/hash are base64 (never contains "}"),
+#    and SettingsLock.isEnabled() is simply "does a hash exist" — so deleting the
+#    whole member is the same as SetSettingsLock(enabled: false), and the exact
+#    field names/order below (salt, hash, iterations) must match: if they don't,
+#    this is a no-op (nothing is written) rather than a corruption.
+adb shell "sed -E 's/,\"settingsLock\":\{\"salt\":\"[^\"]*\",\"hash\":\"[^\"]*\",\"iterations\":[0-9]+\}//' /data/local/tmp/bladewatch_secrets.json > /data/local/tmp/secrets.new"
+
+# 3. Verify the result before trusting it: same brace balance, settingsLock gone,
+#    every other key still present. Never cat the file — it holds secrets.
+adb shell 'o=$(grep -o "{" /data/local/tmp/secrets.new | wc -l); c=$(grep -o "}" /data/local/tmp/secrets.new | wc -l); echo "open=$o close=$c"'
+adb shell grep -o '"[a-zA-Z_]*":' /data/local/tmp/secrets.new   # settingsLock must be ABSENT; auth/pear/lanTls/etc. present
+
+# 4. Replace atomically and restore the mode (shell:shell, 600).
+adb shell 'cp /data/local/tmp/secrets.new /data/local/tmp/bladewatch_secrets.json && chmod 600 /data/local/tmp/bladewatch_secrets.json && rm -f /data/local/tmp/secrets.new'
+```
+
+No daemon restart is needed: `SecretConfigStore` re-reads the file from disk on every call
+(`readRootMapFromFile` → `source.readText()`, no in-memory cache of the whole store), so
+`SettingsLock.isEnabled()` sees the edit on its very next check — verified on-device: Settings
+opened immediately after step 4 with no PIN prompt, and the Security pane's toggle showed off.
+Delete the step-1 backup only after confirming this yourself too.
+
+**The companion's biometric opt-in (BladeWatch-hr6r.6) is sound only because of the pairing
+gate above it.** `local_auth` on the companion proves "the person holding this phone is its
+owner" — the car is never asked, and never could be: a fingerprint or face template never leaves
+the device. That is a meaningfully weaker claim than "knows the car's PIN", so it is gated behind
+an explicit, per-device opt-in: `CarStore.biometricUnlockEnabled` defaults to false, and the
+Settings screen only flips it on after `VerifySettingsPin` succeeds for *that* device (see
+`companion/lib/car/settings_gate.dart`'s `checkSettingsPin`). Without the in-car Dashboard's own
+PIN gate on pairing (epic step 2, BladeWatch-hr6r.4), a stranger could pair their own phone and
+flip this switch with their own fingerprint; with it, pairing already proved they know the PIN,
+so the opt-in only ever saves a legitimate owner from retyping it. Unpairing resets the flag — a
+new car has a different PIN, and the device must prove it again before trusting its sensor for it.
 
 ## JWT + live-view flow
 

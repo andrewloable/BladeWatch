@@ -3003,6 +3003,77 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'O telemóvel e o carro ligam-se diretamente sempre que possível. O relé só é usado quando ambos estão em redes móveis que o impedem, e não consegue ler o que reencaminha.';
+
+  @override
+  String get settings_section_security => 'Segurança';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Exigir um PIN para abrir Configurações e Vigilância.';
+
+  @override
+  String get settings_lock_switch_label => 'PIN das configurações';
+
+  @override
+  String get settings_lock_change_pin => 'Alterar PIN';
+
+  @override
+  String get settings_lock_enter_title => 'Introduzir PIN';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Introduza o seu PIN de configurações de 6 dígitos';
+
+  @override
+  String get settings_lock_new_pin_title => 'Definir um novo PIN';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Confirme o seu novo PIN';
+
+  @override
+  String get settings_lock_mismatch => 'Os PIN não coincidem. Tente novamente.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN incorreto. Restam $count tentativas.',
+      one: 'PIN incorreto. Resta $count tentativa.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Demasiadas tentativas. Tente novamente em $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Não é possível contactar o serviço BladeWatch neste momento.';
+
+  @override
+  String get settings_lock_disable_confirm_title =>
+      'Desativar o PIN das configurações?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'As configurações abrirão sem PIN até o reativar.';
+
+  @override
+  String get settings_lock_turn_off => 'Desativar';
+
+  @override
+  String get settings_lock_explainer =>
+      'Este PIN é partilhado com cada companion emparelhado. Um companion com desbloqueio por impressão digital ou reconhecimento facial pode repô-lo se o esquecer.';
+
+  @override
+  String get settings_lock_backspace => 'Eliminar o último dígito';
+
+  @override
+  String get settings_lock_save_failed =>
+      'Não foi possível guardar. Tente novamente.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -6003,4 +6074,76 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get settings_relay_explainer =>
       'O celular e o carro se conectam diretamente sempre que possível. O relay só é usado quando os dois estão em redes móveis que impedem isso, e ele não consegue ler o que encaminha.';
+
+  @override
+  String get settings_section_security => 'Segurança';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Exigir um PIN para abrir Configurações e Vigilância.';
+
+  @override
+  String get settings_lock_switch_label => 'PIN das configurações';
+
+  @override
+  String get settings_lock_change_pin => 'Alterar PIN';
+
+  @override
+  String get settings_lock_enter_title => 'Digitar PIN';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Digite seu PIN de configurações de 6 dígitos';
+
+  @override
+  String get settings_lock_new_pin_title => 'Definir um novo PIN';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Confirme seu novo PIN';
+
+  @override
+  String get settings_lock_mismatch =>
+      'Os PINs não coincidem. Tente novamente.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN incorreto. Restam $count tentativas.',
+      one: 'PIN incorreto. Resta $count tentativa.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Muitas tentativas. Tente novamente em $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Não é possível contatar o serviço BladeWatch neste momento.';
+
+  @override
+  String get settings_lock_disable_confirm_title =>
+      'Desativar o PIN das configurações?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'As configurações abrirão sem PIN até você reativá-lo.';
+
+  @override
+  String get settings_lock_turn_off => 'Desativar';
+
+  @override
+  String get settings_lock_explainer =>
+      'Este PIN é compartilhado com cada companion pareado. Um companion com desbloqueio por impressão digital ou reconhecimento facial pode redefini-lo se você o esquecer.';
+
+  @override
+  String get settings_lock_backspace => 'Excluir último dígito';
+
+  @override
+  String get settings_lock_save_failed =>
+      'Não foi possível salvar. Tente novamente.';
 }

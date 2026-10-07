@@ -541,6 +541,15 @@ theme cannot express is a small kit in
 | `HudStatusDot` | four states, never collapsed: ok (cyan, glow), warning (amber), bad (magenta), idle (grey); `pulse` only for live things |
 | `HudEmptyState` / `HudErrorState` / `HudLoading` | icon over an upper-case message; magenta for an error, with an optional retry; an accent spinner |
 
+**`PinPad` (BladeWatch-hr6r)**, [pin_pad.dart](../packages/bladewatch_theme/lib/pin_pad.dart): the 6-digit PIN
+entry both apps share — six dot indicators (`hud.accent` filled, `hud.panelBorder` outline; they say how many
+digits are entered, never which ones) over a 3x4 keypad of real `OutlinedButton`s (`hud.panel` fill, 12 dp radius,
+dimmed `textSecondary` border and text while disabled), an error line in `hud.magenta`, and an optional leading
+widget in the otherwise-empty bottom-left key (the companion's biometric retry button). `showPinDialog` /
+`showNewPinDialog` wrap it in a plain `AlertDialog` on the root navigator — the same `showHudDialog` helper as
+every other dialog, not a new chrome pattern. No literal strings live in the package; every label comes from the
+caller's `PinPadStrings`, so the in-car ARB catalog and the companion's JSON catalogs each supply their own.
+
 Tests: `flutter_ui/test/theme/hud_theme_data_test.dart` (every component reads its token) and
 `flutter_ui/test/widgets/hud_kit_test.dart` (each kit widget, and a demo harness that renders one of every stock
 control in both modes).
@@ -593,7 +602,17 @@ upper-cased.
   row keeps its own coloured reachability lines), the destructive Reset block and the storage-format card use the
   magenta and its border, the Surveillance safe-zone map markers are accent (zone) and magenta (the car), and the
   Recording and Surveillance tab rows are ruled off the content like the Trips tab bar. The standalone Surveillance
-  route (`showTitleBar: true`) draws its own title bar; inside the hub the pane title is the header.
+  route (`showTitleBar: true`) draws its own title bar; inside the hub the pane title is the header. Security
+  (BladeWatch-hr6r, [settings_security_screen.dart](../flutter_ui/lib/screens/settings/settings_security_screen.dart))
+  is the same `Card` + `SwitchListTile` shape as Relay access: a switch, a Change PIN row that appears once it is on,
+  an inline error, and the footer explainer — the only new chrome is the `PinPad` dialogs it opens (see the HUD kit's
+  own entry for those). Below it, a second `Card` (BladeWatch-xfb5, moved here from the Dashboard) holds Paired
+  devices: a header row with the title and a magenta-free `OutlinedButton.icon` "PAIR A DEVICE" action (plain
+  Material styling here, not the Dashboard's HUD chrome, since this pane is already the theme `Card`/`ListTile`
+  shape throughout), then a `ListTile` per paired device (name, paired-on date, a Remove text button) or the
+  empty-state line, and an inline error row if the list can't be read. Pairing and removing both go through the
+  same `SettingsLockController.admit` the switch above uses, so either one still asks for the PIN when the lock
+  is on.
 
 **Dashboard** ([dashboard_screen.dart](../flutter_ui/lib/screens/dashboard/dashboard_screen.dart)). Five blocks
 down a 24 dp-padded page, spread apart (`justify-between`) when the window is taller than they are and
@@ -617,8 +636,8 @@ reached by scrolling (measured on the car).
   untrimmed. One 24 dp row on the summary card's three columns, so the columns line up down the page: Battery, EV
   Range, and a third column holding Fuel and Fuel Range side by side, empty on a car with no tank.
 - *Chips*: 4 dp boxes, 20x10 padding, 12 dp bold uppercase; not tappable. The recording chip has a pulsing dot only while
-  recording. Pair a device is the same box in magenta (its label is the localized `pairing_title`, uppercased, so it
-  reads `PAIR A DEVICE`, not the reference's `PAIR DEVICE`).
+  recording. (Pair a device, once the row's trailing action, moved to Settings > Security in v1.4.1.4 — see
+  Settings' own Security entry above.)
 - *Tiles*: five across (16 gap) from 1100 dp of width, otherwise two to a row; 112 dp tall, 4 dp radius, 16 padding.
   Values 20 dp bold (the vehicle model 12 dp, keeping its own casing: `DM-i`), labels 10 dp. Live is magenta (with a glow in
   dark), Remote access glows cyan in dark and is cyan-700 in light. The recordings tile's dot and the remote tile's status

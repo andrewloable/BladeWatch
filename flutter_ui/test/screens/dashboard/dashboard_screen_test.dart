@@ -1,6 +1,4 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/screens/pairing/pairing_dialog.dart';
-import 'package:bladewatch_ui/platform/pairing_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
@@ -63,7 +61,11 @@ void main() {
     navigated = [];
   });
 
-  Widget wrap(DashboardController controller, {Locale? locale, ThemeData? theme, PairingChannel? pairing}) => MaterialApp(
+  Widget wrap(
+    DashboardController controller, {
+    Locale? locale,
+    ThemeData? theme,
+  }) => MaterialApp(
         theme: theme ?? BladeWatchTheme.light(),
         // The HUD title square and recording dot pulse forever (HudPulse); with animations on,
         // pumpAndSettle never settles. HudPulse stands still under disableAnimations.
@@ -78,7 +80,6 @@ void main() {
           controller: controller,
           systemService: SystemServiceClient(rpc),
           onNavigate: (route) => navigated.add(route),
-          pairingChannel: pairing,
         ),
       );
 
@@ -87,43 +88,20 @@ void main() {
   // virtual surface means every tile — including ones below the fold on a
   // real device — is actually built and tappable without each test having
   // to fight ListView scroll-position/cache-extent timing individually.
-  Future<void> pumpDashboard(WidgetTester tester, DashboardController controller, {Locale? locale, ThemeData? theme, PairingChannel? pairing}) async {
+  Future<void> pumpDashboard(
+    WidgetTester tester,
+    DashboardController controller, {
+    Locale? locale,
+    ThemeData? theme,
+  }) async {
     tester.view.physicalSize = const Size(1400, 3200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    await tester.pumpWidget(wrap(controller, locale: locale, theme: theme, pairing: pairing));
+    await tester.pumpWidget(wrap(controller, locale: locale, theme: theme));
   }
-
-  // BladeWatch-rdtj.7: pairing is an explicit action, never a QR sitting on the dashboard.
-  testWidgets('Pair a device opens the pairing dialog, which mints its QR only then', (tester) async {
-    final pairing = FakePlatformChannel()
-      ..stub('pairing', 'mint', {'payload': 'qr-text', 'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch})
-      ..stub('pairing', 'list', {'companions': []});
-    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
-    await tester.pump();
-    expect(pairing.calls.map((c) => c.method), isNot(contains('mint')), reason: 'nothing is minted until the owner asks');
-    expect(find.byKey(const ValueKey('pairing.qr')), findsNothing);
-
-    await tester.tap(find.byKey(const ValueKey('dashboard.pair')));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byType(PairingDialog), findsOneWidget);
-    expect(pairing.calls.map((c) => c.method), containsAll(['mint', 'list']));
-    expect(find.byKey(const ValueKey('pairing.qr')), findsOneWidget);
-  });
-
-  // Design review 2026-09-27 (BladeWatch-5l5o): the action ends the chip row instead of taking a
-  // row of its own, and a long model name is shrunk to fit rather than cut.
-  testWidgets('Pair a device sits at the end of the chip row', (tester) async {
-    final pairing = FakePlatformChannel()..stub('pairing', 'list', {'companions': []});
-    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
-    await tester.pump();
-    final row = find.ancestor(of: find.byKey(const ValueKey('dashboard.pair')), matching: find.byType(Wrap));
-    expect(find.descendant(of: row, matching: find.byKey(const ValueKey('chip.gear'))), findsOneWidget);
-  });
 
   testWidgets('a metric tile value is shrunk to fit, never cut with an ellipsis', (tester) async {
     stubHappyPath();
@@ -134,51 +112,6 @@ void main() {
     for (final t in tester.widgetList<Text>(values)) {
       expect(t.overflow, isNot(TextOverflow.ellipsis), reason: '"${t.data}"');
     }
-  });
-
-  testWidgets('without a pairing channel there is no pairing action', (tester) async {
-    await pumpDashboard(tester, buildController());
-    await tester.pump();
-    expect(find.byKey(const ValueKey('dashboard.pair')), findsNothing);
-    expect(find.text('PAIRED DEVICES'), findsNothing);
-  });
-
-  // The owner, 2026-10-04: a section on the dashboard for the paired devices.
-  testWidgets('PAIRED DEVICES lists what can reach the car, and removing one asks first', (tester) async {
-    final pairing = FakePlatformChannel()
-      ..stub('pairing', 'list', {
-        'companions': [
-          <Object?, Object?>{'id': 'a1', 'name': 'Owner phone', 'pairedAt': DateTime(2026, 9, 24).millisecondsSinceEpoch},
-          <Object?, Object?>{'id': 'b2', 'name': 'Living room TV', 'pairedAt': DateTime(2026, 10, 4).millisecondsSinceEpoch},
-        ],
-      })
-      ..stub('pairing', 'revoke', {'status': 'ok'});
-    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
-    await tester.pump();
-    expect(find.text('PAIRED DEVICES'), findsOneWidget);
-    expect(find.text('Owner phone'), findsOneWidget);
-    expect(find.text('Living room TV'), findsOneWidget);
-    expect(find.textContaining('Oct 4'), findsOneWidget);
-
-    final remove = find.descendant(of: find.byKey(const ValueKey('dashboard.device.b2')), matching: find.byType(TextButton));
-    await tester.tap(remove);
-    await tester.pumpAndSettle();
-    expect(pairing.calls.map((c) => c.method), isNot(contains('revoke')), reason: 'nothing is removed before the owner confirms');
-    await tester.tap(find.byKey(const ValueKey('pairing.removeConfirm')));
-    await tester.pumpAndSettle();
-    expect(pairing.calls.where((c) => c.method == 'revoke').single.args, {'id': 'b2'});
-  });
-
-  testWidgets('PAIRED DEVICES says when there are none, and when the car does not answer', (tester) async {
-    final pairing = FakePlatformChannel()..stub('pairing', 'list', {'companions': []});
-    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
-    await tester.pump();
-    expect(find.text('No devices paired yet.'), findsOneWidget);
-
-    pairing.stubError('pairing', 'list', const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'));
-    await tester.pump(const Duration(seconds: 15));
-    await tester.pump();
-    expect(find.byKey(const ValueKey('dashboard.devicesError')), findsOneWidget);
   });
 
   testWidgets('loading state shows pending placeholders, not a crash', (tester) async {
@@ -1152,20 +1085,6 @@ void main() {
         expect(rec.borderColor, BwHud.dark.panelBorderStrong);
       });
 
-      testWidgets('Pair a device keeps its key and action, restyled magenta', (tester) async {
-        final pairing = FakePlatformChannel()
-          ..stub('pairing', 'mint', {'payload': 'qr-text', 'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch})
-          ..stub('pairing', 'list', {'companions': []});
-        stubHappyPath();
-        await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
-        await tester.pumpAndSettle();
-        final button = find.byKey(const ValueKey('dashboard.pair'));
-        expect(find.descendant(of: button, matching: find.text('PAIR A DEVICE')), findsOneWidget);
-        expect(find.descendant(of: button, matching: find.byIcon(Icons.qr_code_2)), findsOneWidget);
-        final style = tester.widget<FilledButton>(button).style!;
-        expect(style.foregroundColor!.resolve({}), BwHud.light.magenta);
-        expect(style.side!.resolve({})!.color, BwHud.light.magentaBorder);
-      });
     });
 
     group('tiles', () {

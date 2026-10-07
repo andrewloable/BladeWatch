@@ -41,4 +41,13 @@ class PrefsChannel {
 
   Future<void> setSetupGuideLastSeenBuild(String buildNumber) =>
       _channel.invoke<void>('prefs', 'setSetupGuideLastSeenBuild', {'value': buildNumber});
+
+  /// The last-known Settings PIN lock state (BladeWatch-hr6r) — what
+  /// [SettingsLockController] falls back to when the daemon cannot be asked
+  /// right now, so the lock fails closed rather than silently opening
+  /// unlocked. Null means never recorded.
+  Future<bool?> getSettingsLockKnown() => _channel.invoke<bool?>('prefs', 'getSettingsLockKnown');
+
+  Future<void> setSettingsLockKnown(bool value) =>
+      _channel.invoke<void>('prefs', 'setSettingsLockKnown', {'value': value});
 }

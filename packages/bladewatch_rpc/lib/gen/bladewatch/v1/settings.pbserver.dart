@@ -15,10 +15,10 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import 'package:bladewatch_rpc/gen/bladewatch/v1/settings.pb.dart' as $0;
-import 'package:bladewatch_rpc/gen/bladewatch/v1/settings.pbjson.dart';
+import 'settings.pb.dart' as $0;
+import 'settings.pbjson.dart';
 
-export 'package:bladewatch_rpc/gen/bladewatch/v1/settings.pb.dart';
+export 'settings.pb.dart';
 
 abstract class SettingsServiceBase extends $pb.GeneratedService {
   $async.Future<$0.GetQualityResponse> getQuality(
@@ -43,6 +43,12 @@ abstract class SettingsServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.GetTelemetryOverlayFieldsRequest request);
   $async.Future<$0.SetTelemetryOverlayFieldsResponse> setTelemetryOverlayFields(
       $pb.ServerContext ctx, $0.SetTelemetryOverlayFieldsRequest request);
+  $async.Future<$0.GetSettingsLockResponse> getSettingsLock(
+      $pb.ServerContext ctx, $0.GetSettingsLockRequest request);
+  $async.Future<$0.SetSettingsLockResponse> setSettingsLock(
+      $pb.ServerContext ctx, $0.SetSettingsLockRequest request);
+  $async.Future<$0.VerifySettingsPinResponse> verifySettingsPin(
+      $pb.ServerContext ctx, $0.VerifySettingsPinRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -68,6 +74,12 @@ abstract class SettingsServiceBase extends $pb.GeneratedService {
         return $0.GetTelemetryOverlayFieldsRequest();
       case 'SetTelemetryOverlayFields':
         return $0.SetTelemetryOverlayFieldsRequest();
+      case 'GetSettingsLock':
+        return $0.GetSettingsLockRequest();
+      case 'SetSettingsLock':
+        return $0.SetSettingsLockRequest();
+      case 'VerifySettingsPin':
+        return $0.VerifySettingsPinRequest();
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -100,6 +112,12 @@ abstract class SettingsServiceBase extends $pb.GeneratedService {
       case 'SetTelemetryOverlayFields':
         return setTelemetryOverlayFields(
             ctx, request as $0.SetTelemetryOverlayFieldsRequest);
+      case 'GetSettingsLock':
+        return getSettingsLock(ctx, request as $0.GetSettingsLockRequest);
+      case 'SetSettingsLock':
+        return setSettingsLock(ctx, request as $0.SetSettingsLockRequest);
+      case 'VerifySettingsPin':
+        return verifySettingsPin(ctx, request as $0.VerifySettingsPinRequest);
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }

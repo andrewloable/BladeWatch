@@ -19,7 +19,9 @@ import 'package:bladewatch_ui/screens/settings/settings_privacy_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_relay_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_appearance_controller.dart';
+import 'package:bladewatch_ui/screens/settings/settings_lock_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_security_screen.dart';
 import 'package:bladewatch_ui/screens/trips/trips_controller.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_screen.dart';
 import 'package:bladewatch_ui/shell/shell_controller.dart';
@@ -66,6 +68,9 @@ void main() {
     languageOpened = false;
     channel.stub('prefs', 'getThemeMode', null);
     channel.stub('prefs', 'getDriveSide', null);
+    channel.stub('prefs', 'getSettingsLockKnown', null);
+    channel.stub('prefs', 'setSettingsLockKnown', null);
+    rpc.stubJson('SettingsService', 'GetSettingsLock', {});
     channel.stub('publicConfig', 'getSection', <Object?, Object?>{});
     channel.stub('publicConfig', 'putBoolean', true);
     channel.stub('daemon', 'processStatus', {
@@ -108,6 +113,7 @@ void main() {
         overlayFieldsGetSender: (uri, headers) async =>
             const RawHttpResponse(200, '{"success":true,"availableFields":[],"selections":{}}'),
         overlayFieldsPostSender: (uri, headers, body) async => const RawHttpResponse(200, '{"success":true}'),
+        settingsLockController: SettingsLockController(settingsService: SettingsServiceClient(rpc), prefs: PrefsChannel(channel)),
       );
   }
 
@@ -141,6 +147,21 @@ void main() {
 
     expect(find.byType(SettingsRecordingScreen), findsOneWidget);
     expect(find.byType(SettingsAppearanceScreen), findsNothing);
+  });
+
+  // BladeWatch-hr6r: the Settings PIN lock pane, sharing the root-owned SettingsLockController
+  // rather than a fresh one disposed on every tab switch (same rule as Appearance/Trips).
+  testWidgets('selecting Security shows the lock pane, without disposing its controller', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.byKey(const ValueKey('settings.section.security')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsSecurityScreen), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('settings.section.appearance')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsSecurityScreen), findsNothing); // swapped out, not disposed as a hub-owned controller
   });
 
   testWidgets('selecting Overlay shows the overlay switches', (tester) async {
@@ -354,8 +375,8 @@ void main() {
     testWidgets('the sub-rail is HUD rows and the selected one carries the accent border', (tester) async {
       await pump(tester);
 
-      // Eight sections since Relay access (BladeWatch-a7mu).
-      expect(find.byType(HudListRow), findsNWidgets(8));
+      // Nine sections since Security (BladeWatch-hr6r); eight since Relay access (BladeWatch-a7mu).
+      expect(find.byType(HudListRow), findsNWidgets(9));
       Color borderOf(String section) => tester
           .widget<HudPanel>(find.descendant(of: find.byKey(ValueKey('settings.section.$section')), matching: find.byType(HudPanel)).first)
           .borderColor;

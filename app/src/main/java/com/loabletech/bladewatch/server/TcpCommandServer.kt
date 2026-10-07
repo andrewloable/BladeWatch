@@ -8,6 +8,7 @@ import net.bladewatch.app.monitor.AccMonitor
 import net.bladewatch.app.storage.StorageManager
 import org.json.JSONArray
 import net.bladewatch.app.auth.CompanionPairing
+import net.bladewatch.app.auth.SettingsLock
 import net.bladewatch.app.auth.WifiPairing
 import net.bladewatch.app.daemon.PearStatus
 import net.bladewatch.app.daemon.PearTopic
@@ -64,6 +65,7 @@ class TcpCommandServer(private val port: Int) {
 
     private val DAEMON_ONLY_SECRET_SECTIONS = setOf(
         LanTls.SECTION, PearTopic.SECTION, LanDiscoveryResponder.SECTION, CompanionPairing.SECTION,
+        SettingsLock.SECTION,
     )
 
     fun start() {

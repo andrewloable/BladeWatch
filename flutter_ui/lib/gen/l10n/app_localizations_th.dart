@@ -2967,4 +2967,72 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'โทรศัพท์และรถจะเชื่อมต่อกันโดยตรงทุกครั้งที่ทำได้ รีเลย์จะถูกใช้เฉพาะเมื่อทั้งสองอยู่บนเครือข่ายมือถือที่ปิดกั้นการเชื่อมต่อโดยตรง และรีเลย์อ่านข้อมูลที่ส่งต่อไม่ได้';
+
+  @override
+  String get settings_section_security => 'ความปลอดภัย';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'กำหนดให้ต้องใส่ PIN เพื่อเปิดตั้งค่าและโหมดเฝ้าระวัง';
+
+  @override
+  String get settings_lock_switch_label => 'PIN ตั้งค่า';
+
+  @override
+  String get settings_lock_change_pin => 'เปลี่ยน PIN';
+
+  @override
+  String get settings_lock_enter_title => 'ใส่ PIN';
+
+  @override
+  String get settings_lock_enter_subtitle => 'ใส่ PIN ตั้งค่า 6 หลักของคุณ';
+
+  @override
+  String get settings_lock_new_pin_title => 'ตั้ง PIN ใหม่';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'ยืนยัน PIN ใหม่ของคุณ';
+
+  @override
+  String get settings_lock_mismatch => 'PIN ไม่ตรงกัน ลองใหม่อีกครั้ง';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN ไม่ถูกต้อง เหลืออีก $count ครั้ง',
+      one: 'PIN ไม่ถูกต้อง เหลืออีก $count ครั้ง',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'พยายามมากเกินไป ลองใหม่อีกครั้งใน $time';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'ไม่สามารถติดต่อบริการ BladeWatch ได้ในขณะนี้';
+
+  @override
+  String get settings_lock_disable_confirm_title => 'ปิดใช้งาน PIN ตั้งค่าไหม?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'ตั้งค่าจะเปิดโดยไม่ต้องใส่ PIN จนกว่าคุณจะเปิดใช้งานอีกครั้ง';
+
+  @override
+  String get settings_lock_turn_off => 'ปิดใช้งาน';
+
+  @override
+  String get settings_lock_explainer =>
+      'PIN นี้ใช้ร่วมกับทุกอุปกรณ์คู่หูที่จับคู่ไว้ อุปกรณ์คู่หูที่ปลดล็อกด้วยลายนิ้วมือหรือใบหน้าสามารถรีเซ็ตได้หากคุณลืม PIN';
+
+  @override
+  String get settings_lock_backspace => 'ลบตัวเลขล่าสุด';
+
+  @override
+  String get settings_lock_save_failed => 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง';
 }

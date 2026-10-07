@@ -121,4 +121,70 @@ void main() {
       expect(store.relayKeyInUse, isNull, reason: 'Pear would refuse it on every search');
     });
   });
+
+  group('settings lock cache (BladeWatch-hr6r)', () {
+    test('round-trips the known lock state', () async {
+      final store = testStore(car: testCar())..settingsLockKnown = true;
+      await store.save();
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.settingsLockKnown, isTrue);
+    });
+
+    test('a file from before the settings lock loads as unknown (false), still paired', () async {
+      final store = testStore(car: testCar());
+      await store.save();
+      final raw = jsonDecode(await store.file.readAsString()) as Map<String, Object?>..remove('settingsLock');
+      await store.file.writeAsString(jsonEncode(raw));
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.car, isNotNull);
+      expect(again.settingsLockKnown, isFalse);
+    });
+
+    test('a malformed settingsLock entry never un-pairs this device', () async {
+      final store = testStore(car: testCar());
+      await store.save();
+      final raw = jsonDecode(await store.file.readAsString()) as Map<String, Object?>;
+      raw['settingsLock'] = 'not a map';
+      await store.file.writeAsString(jsonEncode(raw));
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.car, isNotNull, reason: 'the pairing is kept');
+      expect(again.settingsLockKnown, isFalse);
+    });
+  });
+
+  group('biometric unlock opt-in (BladeWatch-hr6r.6)', () {
+    test('round-trips the opt-in', () async {
+      final store = testStore(car: testCar())..biometricUnlockEnabled = true;
+      await store.save();
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.biometricUnlockEnabled, isTrue);
+    });
+
+    test('a file from before biometric unlock existed loads as off, still paired', () async {
+      final store = testStore(car: testCar());
+      await store.save();
+      final raw = jsonDecode(await store.file.readAsString()) as Map<String, Object?>..remove('biometricUnlock');
+      await store.file.writeAsString(jsonEncode(raw));
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.car, isNotNull);
+      expect(again.biometricUnlockEnabled, isFalse);
+    });
+
+    test('a malformed biometricUnlock entry never un-pairs this device', () async {
+      final store = testStore(car: testCar());
+      await store.save();
+      final raw = jsonDecode(await store.file.readAsString()) as Map<String, Object?>;
+      raw['biometricUnlock'] = 'not a bool';
+      await store.file.writeAsString(jsonEncode(raw));
+      final again = CarStore(store.file);
+      await again.load();
+      expect(again.car, isNotNull, reason: 'the pairing is kept');
+      expect(again.biometricUnlockEnabled, isFalse);
+    });
+  });
 }

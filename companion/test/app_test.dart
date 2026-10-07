@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bladewatch_companion/app.dart';
+import 'package:bladewatch_companion/car/biometrics.dart';
 import 'package:bladewatch_companion/car/car_store.dart';
 import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_companion/screens/about/about_screen.dart';
 import 'package:bladewatch_companion/screens/dashboard/dashboard_screen.dart';
+import 'package:bladewatch_companion/screens/common/shell_nav.dart';
 import 'package:bladewatch_companion/screens/pairing/pairing_controller.dart';
 import 'package:bladewatch_companion/screens/pairing/pairing_screen.dart';
 import 'package:bladewatch_companion/screens/settings/settings_screen.dart';
@@ -63,7 +65,8 @@ void main() {
     s.rpc.stubJson('VehicleService', 'GetState', {'success': true});
   }
 
-  Future<CompanionAppState> pumpApp(WidgetTester tester, CarStore store, {Size size = const Size(420, 900), bool fakeRedeem = false}) async {
+  Future<CompanionAppState> pumpApp(WidgetTester tester, CarStore store,
+      {Size size = const Size(420, 900), bool fakeRedeem = false, Biometrics? biometrics}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -84,6 +87,7 @@ void main() {
       pairing: fakeRedeem
           ? PairingController(openSession: (car) async => TestSession().session, redeem: (u, code, n) async => testCredential)
           : null,
+      biometrics: biometrics ?? FakeBiometrics(),
     ));
     await tester.pump();
     await tester.pump();
@@ -300,6 +304,9 @@ void main() {
     await tester.pump();
     expect(s.retries, 1, reason: 'a resumed app looks for a car it lost at once');
 
+    // BladeWatch-hr6r.6: unpairing resets the biometric opt-in -- a different car has a different
+    // PIN, and this device must prove it again before trusting its own sensor for it.
+    store.biometricUnlockEnabled = true;
     s.session.markRefused();
     await tester.pump();
     expect(find.text(t('companion.refused').toUpperCase()), findsOneWidget);
@@ -307,6 +314,7 @@ void main() {
     await realTime(tester, find.byType(PairingScreen));
     expect(find.byType(PairingScreen), findsOneWidget);
     expect(store.car, isNull);
+    expect(store.biometricUnlockEnabled, isFalse);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -329,5 +337,162 @@ void main() {
   test('Tr.english is what the tests read; the app loads per language', () {
     expect(testTr.lang, 'en');
     expect(Tr.languages, contains('en'));
+  });
+
+  // BladeWatch-hr6r: the Settings PIN lock gates settings/surveillance/notifications, wherever
+  // navigation to them comes from.
+  group('Settings PIN lock', () {
+    Future<void> openMore(WidgetTester tester) async {
+      await tester.tap(find.byKey(const ValueKey('nav.more')));
+      await settle(tester);
+    }
+
+    Future<void> tapDigits(WidgetTester tester, String digits) async {
+      for (final d in digits.split('')) {
+        await tester.tap(find.widgetWithText(OutlinedButton, d));
+        await tester.pump();
+      }
+    }
+
+    testWidgets('lock on: opening Settings from the More sheet asks for the PIN first', (tester) async {
+      await pumpApp(tester, MemoryStore(car: testCar()));
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'});
+      s.rpc.stubJson('SettingsService', 'VerifySettingsPin', {'ok': true, 'retryAfterMs': '0', 'attemptsLeft': 5});
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.settings')));
+      await settle(tester);
+      expect(find.byType(SettingsScreen), findsNothing, reason: 'the PIN dialog is up first');
+      expect(find.text(t('companion.settings_lock_enter_title')), findsOneWidget);
+
+      await tapDigits(tester, '123456');
+      await settle(tester);
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    // BladeWatch-hr6r.6: proves the real wiring, not just the gate in isolation -- CompanionApp's
+    // own `biometrics` constructor param actually reaches HomeShell's gate.
+    testWidgets('lock on, biometrics opted in and available: no PIN dialog at all', (tester) async {
+      final biometrics = FakeBiometrics(isAvailable: true, authResult: true);
+      final store = MemoryStore(car: testCar())..biometricUnlockEnabled = true;
+      await pumpApp(tester, store, biometrics: biometrics);
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'});
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.settings')));
+      await settle(tester);
+
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      expect(find.text(t('companion.settings_lock_enter_title')), findsNothing);
+      expect(biometrics.authenticateCalls, 1);
+      expect(s.rpc.calls.where((c) => c.method == 'VerifySettingsPin'), isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('lock on: Cancel leaves the current page showing', (tester) async {
+      await pumpApp(tester, MemoryStore(car: testCar()));
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'});
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.settings')));
+      await settle(tester);
+      await tester.tap(find.text(t('common.cancel')));
+      await settle(tester);
+
+      expect(find.byType(SettingsScreen), findsNothing);
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('lock on: once unlocked, moving to another gated page does not re-prompt', (tester) async {
+      await pumpApp(tester, MemoryStore(car: testCar()));
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'});
+      s.rpc.stubJson('SettingsService', 'VerifySettingsPin', {'ok': true, 'retryAfterMs': '0', 'attemptsLeft': 5});
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.settings')));
+      await settle(tester);
+      await tapDigits(tester, '123456');
+      await settle(tester);
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      s.rpc.calls.clear();
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.surveillance')));
+      await settle(tester);
+
+      expect(s.rpc.calls.where((c) => c.method == 'VerifySettingsPin'), isEmpty, reason: 'already unlocked this session');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('lock on: leaving for a non-gated page relocks it', (tester) async {
+      await pumpApp(tester, MemoryStore(car: testCar()));
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'});
+      s.rpc.stubJson('SettingsService', 'VerifySettingsPin', {'ok': true, 'retryAfterMs': '0', 'attemptsLeft': 5});
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.settings')));
+      await settle(tester);
+      await tapDigits(tester, '123456');
+      await settle(tester);
+
+      await tester.tap(find.byKey(const ValueKey('nav.dashboard')));
+      await settle(tester);
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.settings')));
+      await settle(tester);
+
+      expect(find.byType(SettingsScreen), findsNothing, reason: 'the PIN dialog is up again');
+      expect(find.text(t('companion.settings_lock_enter_title')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('lock off: no prompt anywhere', (tester) async {
+      await pumpApp(tester, MemoryStore(car: testCar()));
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': false, 'retryAfterMs': '0'});
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.notifications')));
+      await settle(tester);
+
+      expect(find.text(t('companion.settings_lock_enter_title')), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('ShellNav.go is gated too -- it shares the same _go as the bar and the sheet', (tester) async {
+      await pumpApp(tester, MemoryStore(car: testCar()));
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'});
+
+      ShellNav.of(tester.element(find.byType(DashboardScreen)))!.go('settings');
+      await settle(tester);
+
+      expect(find.byType(SettingsScreen), findsNothing, reason: 'the PIN dialog is up first, same as every other path');
+      expect(find.text(t('companion.settings_lock_enter_title')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('backgrounding the app while a gated page is open relocks it and returns to Dashboard', (tester) async {
+      await pumpApp(tester, MemoryStore(car: testCar()));
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'});
+      s.rpc.stubJson('SettingsService', 'VerifySettingsPin', {'ok': true, 'retryAfterMs': '0', 'attemptsLeft': 5});
+
+      await openMore(tester);
+      await tester.tap(find.byKey(const ValueKey('more.settings')));
+      await settle(tester);
+      await tapDigits(tester, '123456');
+      await settle(tester);
+      expect(find.byType(SettingsScreen), findsOneWidget);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await settle(tester);
+
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      expect(find.byType(SettingsScreen), findsNothing);
+      // That it is really relocked (not just visually switched while the gate stays "unlocked")
+      // is covered directly and robustly in settings_gate_test.dart, without this test's own
+      // sheet/dialog/pause interaction chain to fight.
+      await tester.pumpWidget(const SizedBox());
+    });
   });
 }

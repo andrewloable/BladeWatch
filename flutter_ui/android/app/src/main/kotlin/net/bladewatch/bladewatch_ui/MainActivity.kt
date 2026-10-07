@@ -319,6 +319,16 @@ class MainActivity : FlutterActivity() {
                     prefs.edit().putString("setupGuideLastSeenBuild", requireArgs(call).string("value")).apply()
                     result.success(null)
                 }
+                // BladeWatch-hr6r: the last-known Settings PIN lock state, so the lock fails
+                // closed (shows the PIN dialog rather than opening Settings) when the daemon
+                // cannot be asked right now. Null means never recorded.
+                "prefs.getSettingsLockKnown" -> result.success(
+                    if (prefs.contains("settingsLockKnown")) prefs.getBoolean("settingsLockKnown", false) else null
+                )
+                "prefs.setSettingsLockKnown" -> {
+                    prefs.edit().putBoolean("settingsLockKnown", requireArgs(call).bool("value")).apply()
+                    result.success(null)
+                }
 
                 // Both start activities, so they hop back to the Activity thread
                 // now that this channel runs on a background TaskQueue.

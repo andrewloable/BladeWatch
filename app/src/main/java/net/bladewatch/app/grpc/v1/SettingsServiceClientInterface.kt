@@ -46,4 +46,14 @@ public interface SettingsServiceClientInterface {
   public suspend fun getTelemetryOverlayFields(request: GetTelemetryOverlayFieldsRequest, headers: Headers = emptyMap()): ResponseMessage<GetTelemetryOverlayFieldsResponse>
 
   public suspend fun setTelemetryOverlayFields(request: SetTelemetryOverlayFieldsRequest, headers: Headers = emptyMap()): ResponseMessage<SetTelemetryOverlayFieldsResponse>
+
+  /**
+   *  BladeWatch-hr6r: the Settings PIN lock. One PIN, held by the car; both the in-car UI and
+   *  every paired companion check it here rather than each keeping its own.
+   */
+  public suspend fun getSettingsLock(request: GetSettingsLockRequest, headers: Headers = emptyMap()): ResponseMessage<GetSettingsLockResponse>
+
+  public suspend fun setSettingsLock(request: SetSettingsLockRequest, headers: Headers = emptyMap()): ResponseMessage<SetSettingsLockResponse>
+
+  public suspend fun verifySettingsPin(request: VerifySettingsPinRequest, headers: Headers = emptyMap()): ResponseMessage<VerifySettingsPinResponse>
 }

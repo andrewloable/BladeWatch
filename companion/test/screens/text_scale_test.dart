@@ -114,6 +114,7 @@ void main() {
       store: MemoryStore(car: testCar()),
       loadTr: (_) async => testTr,
       openSession: (_) async => session,
+      biometrics: FakeBiometrics(),
     ));
     await settle(tester);
 

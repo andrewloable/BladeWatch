@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:bladewatch_theme/hud_theme.dart';
 import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
+import 'car/biometrics.dart';
 import 'car/car_page.dart';
 import 'car/car_session.dart';
 import 'car/car_store.dart';
+import 'car/settings_gate.dart';
 import 'i18n.dart';
 import 'screens/common/stats.dart' show fitScaler;
 import 'screens/alerts/alerts_controller.dart';
@@ -29,6 +32,7 @@ class CompanionApp extends StatefulWidget {
     this.pairing,
     this.wifiPairing = false,
     this.tv = false,
+    this.biometrics,
   });
 
   final CarStore store;
@@ -46,6 +50,10 @@ class CompanionApp extends StatefulWidget {
 
   /// An Android TV: the remote's up and down leave text fields ([DpadFieldExit]).
   final bool tv;
+
+  /// Test seam for the Settings PIN lock's biometric step (BladeWatch-hr6r.6); null means the
+  /// real [LocalAuthBiometrics] everywhere it is used.
+  final Biometrics? biometrics;
 
   @override
   State<CompanionApp> createState() => CompanionAppState();
@@ -119,6 +127,9 @@ class CompanionAppState extends State<CompanionApp> {
     _alerts?.dispose();
     _session?.dispose();
     store.car = null;
+    // A new car has a different PIN; this device must prove it again before trusting its own
+    // sensor for whatever car pairs next (BladeWatch-hr6r.6).
+    store.biometricUnlockEnabled = false;
     await store.save();
     setState(() {
       _session = null;
@@ -149,7 +160,7 @@ class CompanionAppState extends State<CompanionApp> {
     } else {
       home = SessionScope(
         session: session,
-        child: HomeShell(alerts: _alerts!, store: store, onLanguage: setLanguage, onUnpair: unpair),
+        child: HomeShell(alerts: _alerts!, store: store, onLanguage: setLanguage, onUnpair: unpair, biometrics: widget.biometrics),
       );
     }
     return MaterialApp(
@@ -169,12 +180,16 @@ class CompanionAppState extends State<CompanionApp> {
 /// The car's screens: a bottom bar with "More" on a phone, a permanent side panel when wide. There is no app bar:
 /// the screen's name is a [HudTitleBar] over it, and the navigation is the in-car rail's item ([HudNavItem]).
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, required this.alerts, required this.store, required this.onLanguage, required this.onUnpair});
+  const HomeShell({super.key, required this.alerts, required this.store, required this.onLanguage, required this.onUnpair, this.biometrics});
 
   final AlertsController alerts;
   final CarStore store;
   final Future<void> Function(String? lang) onLanguage;
   final Future<void> Function() onUnpair;
+
+  /// Test seam for the Settings PIN lock's biometric step (BladeWatch-hr6r.6); null means the
+  /// real [LocalAuthBiometrics] everywhere it is used (the gate and the Settings screen).
+  final Biometrics? biometrics;
 
   /// The design language's wide-layout minimum (docs/ui-ux-design-language.md).
   static const wideMinWidth = 700.0;
@@ -186,18 +201,74 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   var _index = 0;
 
-  void _go(int i) => setState(() => _index = i);
+  // BladeWatch-hr6r: the Settings PIN lock gates these three destinations.
+  static const _gatedIds = {'settings', 'surveillance', 'notifications'};
+  SettingsGate? _gate;
+  bool _gatePending = false;
+
+  // The head unit's own screen stays on, but a phone or desktop gets backgrounded with the app
+  // alive -- onPause covers the normal "went to the background" transition; onHide is the
+  // newer, more fine-grained signal some platforms emit first.
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onPause: _onBackground,
+    onHide: _onBackground,
+  );
+
+  void _onBackground() {
+    final gate = _gate;
+    gate?.relock();
+    if (gate != null && gate.enabled && _gatedIds.contains(_destinations()[_index].id)) {
+      setState(() => _index = 0);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle; // force creation -- a `late final` field nothing else reads never registers
+  }
+
+  List<Destination> _destinations() => destinations(
+        alerts: widget.alerts,
+        store: widget.store,
+        onLanguage: widget.onLanguage,
+        onUnpair: widget.onUnpair,
+        biometrics: widget.biometrics,
+      );
+
+  /// Switches to destination [i], asking the Settings PIN lock first for a gated one. Ignores a
+  /// second tap while a prompt is already open; moving between two gated destinations does not
+  /// re-prompt while already unlocked (`SettingsGate.admit` itself handles that).
+  Future<void> _go(int i) async {
+    if (_gatePending) return;
+    final id = _destinations()[i].id;
+    if (_gatedIds.contains(id)) {
+      _gatePending = true;
+      final ok = await _gate!.admit(context);
+      _gatePending = false;
+      if (!ok || !mounted) return;
+    } else {
+      _gate?.relock();
+    }
+    setState(() => _index = i);
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
     final hud = BwHud.of(context);
-    final all = destinations(
-      alerts: widget.alerts,
-      store: widget.store,
-      onLanguage: widget.onLanguage,
-      onUnpair: widget.onUnpair,
-    );
+    // Built fresh on every call, matching `_destinations()` above -- a plain value-object list,
+    // never state of its own. Constructed here (not lazily from a tap handler) so the one-time
+    // `context.session` read it needs for `_gate` always happens during build, which the
+    // SessionContext extension's `dependOnInheritedWidgetOfExactType` requires.
+    _gate ??= SettingsGate(settingsService: SettingsServiceClient(context.session.rpc), store: widget.store, biometrics: widget.biometrics);
+    final all = _destinations();
     final current = all[_index];
     final page = ShellNav(
       go: (id) {

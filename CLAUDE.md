@@ -397,7 +397,7 @@ desktop client is the companion above.
 
 ## Testing
 
-**Service host (Kotlin/Java)** — 143 JVM test files (1019 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
+**Service host (Kotlin/Java)** — 290 JVM test files (2080 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), the Settings PIN lock (`SettingsLockTest`, `SettingsLockHandlersTest`, BladeWatch-hr6r), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
 
 ```bash
 # NOTE: `:app:test` is an aggregate lifecycle task and does NOT accept --tests
@@ -405,7 +405,7 @@ desktop client is the companion above.
 ./gradlew :app:testDebugUnitTest --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
 
-**In-car UI (Dart)** — 107 test files under `flutter_ui/test/`, 1569 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
+**In-car UI (Dart)** — 110 test files under `flutter_ui/test/`, 1628 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
 
 ```bash
 cd flutter_ui && flutter analyze && flutter test
@@ -414,14 +414,14 @@ cd flutter_ui && flutter test --coverage --coverage-package '^(bladewatch_ui|bla
 
 **Shared RPC package (Dart)** — `packages/bladewatch_rpc/` is the Connect client, the generated
 messages and `FakeRpcClient`, moved out of `flutter_ui/lib` in BladeWatch-rdtj.10 so the
-companion shares one copy: 22 test files, 187 tests, gated at **100%**. Its tests left
+companion shares one copy: 22 test files, 190 tests, gated at **100%**. Its tests left
 `flutter_ui/test` with it, so `cd flutter_ui && flutter test` no longer runs them:
 
 ```bash
 cd packages/bladewatch_rpc && flutter analyze && flutter test
 ```
 
-**Companion (Dart)** — see "Platform Scope"; 30 test files, 328 tests, gated at 98% (measured 98.32% at 1.4.1.3). `integration_test/relay_key_test.dart` checks the relay-key derivation on the REAL worklet: `flutter test integration_test/relay_key_test.dart -d macos` (or an arm64 Android target).
+**Companion (Dart)** — see "Platform Scope"; 32 test files, 377 tests, gated at 98% (measured 98.36% at 1.4.1.4). `integration_test/relay_key_test.dart` checks the relay-key derivation on the REAL worklet: `flutter test integration_test/relay_key_test.dart -d macos` (or an arm64 Android target).
 
 **Relay (Node.js)** — `cd relay && npm ci && npm test`: 8 tests on a local hyperdht testnet, including the key-derivation test vector that flutter_pear's pear-end must reproduce.
 

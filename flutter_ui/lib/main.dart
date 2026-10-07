@@ -48,6 +48,7 @@ import 'screens/settings/settings_appearance_models.dart';
 import 'screens/settings/settings_about_controller.dart';
 import 'screens/settings/settings_about_screen.dart';
 import 'screens/settings/settings_daemons_controller.dart';
+import 'screens/settings/settings_lock_controller.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/startup/startup_controller.dart';
 import 'screens/startup/startup_health_check.dart';
@@ -112,6 +113,11 @@ class BladeWatchApp extends StatefulWidget {
   /// (BladeWatch-imh6.7 — the choice was persisted and then ignored).
   final SettingsAppearanceController? appearanceController;
 
+  /// The Settings PIN lock (BladeWatch-hr6r) -- root-owned like the other controllers above,
+  /// for the same reason: `ShellController`'s route guard and the Dashboard's pairing gate need
+  /// it, not only the Settings > Security pane.
+  final SettingsLockController? settingsLockController;
+
   const BladeWatchApp({
     super.key,
     this.shellController,
@@ -121,6 +127,7 @@ class BladeWatchApp extends StatefulWidget {
     this.tripsController,
     this.setupGuideController,
     this.appearanceController,
+    this.settingsLockController,
   });
 
   @override
@@ -128,7 +135,12 @@ class BladeWatchApp extends StatefulWidget {
 }
 
 class _BladeWatchAppState extends State<BladeWatchApp> {
-  late final ShellController _shellController = widget.shellController ?? ShellController();
+  late final ShellController _shellController =
+      widget.shellController ??
+      ShellController(
+        guardedRoutes: _lockGuardedRoutes,
+        onLeaveGuardedRoute: () => _settingsLockController.relock(),
+      );
   late final StartupController _startupController =
       widget.startupController ??
       StartupController(daemonChannel: DaemonChannel(MethodChannelBridge()), healthCheck: checkDaemonHealth);
@@ -141,6 +153,8 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     super.initState();
     _localeController.load();
     _appearanceController.load();
+    _settingsLockController.refresh();
+    _lifecycleListener; // force creation -- a `late final` field nothing else reads never registers
   }
 
   // Shared by every RPC-owning controller below (Dashboard, its vehicle
@@ -192,6 +206,16 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
 
   late final SettingsAboutController _settingsAboutController =
       widget.settingsAboutController ?? SettingsAboutController(versionSource: _appVersionInfo);
+
+  // BladeWatch-hr6r: the Settings PIN lock. Root-owned like the others above it on this
+  // page — ShellController's route guard and the Dashboard's pairing gate need it, not only
+  // the Settings > Security pane.
+  late final SettingsLockController _settingsLockController =
+      widget.settingsLockController ?? SettingsLockController(settingsService: _settingsService, prefs: _prefsChannel);
+
+  /// The routes the Settings PIN lock protects: the Settings hub (whose sub-rail includes
+  /// Surveillance) and the standalone Surveillance rail destination.
+  static const _lockGuardedRoutes = {BwRoutes.settings, BwRoutes.surveillance};
 
   static Future<AppVersionInfo> _appVersionInfo() async {
     final info = await PackageInfo.fromPlatform();
@@ -275,8 +299,25 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
 
   bool _startupComplete = false;
 
+  // BladeWatch-hr6r: the head unit's screen sleeps with the app process alive, so Settings must
+  // not come back unlocked for the next person in the car just because the screen woke up again.
+  // onPause covers the normal "went to the background" transition; onHide is the newer,
+  // more fine-grained signal some platforms emit first.
+  late final AppLifecycleListener _lifecycleListener = AppLifecycleListener(
+    onPause: _onAppBackgrounded,
+    onHide: _onAppBackgrounded,
+  );
+
+  void _onAppBackgrounded() {
+    _settingsLockController.relock();
+    if (_settingsLockController.enabled && _lockGuardedRoutes.contains(_shellController.selectedRoute)) {
+      _shellController.selectRoute(BwRoutes.dashboard);
+    }
+  }
+
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     _shellController.dispose();
     _startupController.dispose();
     _dashboardController.dispose();
@@ -295,6 +336,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     // MaterialApp's themeMode, so leaking it leaks a listener on every rebuild
     // of the app root.
     _appearanceController.dispose();
+    _settingsLockController.dispose();
     _setupGuideController.dispose();
     super.dispose();
   }
@@ -327,6 +369,10 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
               _setupGuideChecked = true;
               WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowSetupGuideOnLaunch(context));
             }
+            // BladeWatch-hr6r: reassigned every build, not captured once at construction -- see
+            // ShellController.routeGuard's doc comment for why a context captured here, instead
+            // of fresh on each build, would go stale.
+            _shellController.routeGuard = (_) => _settingsLockController.admit(context);
             return _startupComplete
                 ? AppShell(
                     controller: _shellController,
@@ -335,7 +381,6 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                       controller: _dashboardController,
                       systemService: _systemService,
                       onNavigate: _shellController.selectRoute,
-                      pairingChannel: _pairingChannel,
                     ),
                     settingsScreen: SettingsScreen(
                       deps: SettingsHubDependencies(
@@ -357,6 +402,8 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                         onOpenLanguagePicker: () => _showLanguagePicker(context),
                         tripsController: _tripsController,
                         jwtSource: _authChannel,
+                        settingsLockController: _settingsLockController,
+                        pairingChannel: _pairingChannel,
                       ),
                     ),
                     settingsAboutScreen: SettingsAboutScreen(

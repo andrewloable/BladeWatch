@@ -3011,4 +3011,76 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'El teléfono y el coche se conectan directamente siempre que pueden. El relé solo se usa cuando ambos están en redes móviles que lo impiden, y no puede leer lo que reenvía.';
+
+  @override
+  String get settings_section_security => 'Seguridad';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Solicitar un PIN para abrir Ajustes y Vigilancia.';
+
+  @override
+  String get settings_lock_switch_label => 'PIN de ajustes';
+
+  @override
+  String get settings_lock_change_pin => 'Cambiar PIN';
+
+  @override
+  String get settings_lock_enter_title => 'Introducir PIN';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Introduce tu PIN de ajustes de 6 dígitos';
+
+  @override
+  String get settings_lock_new_pin_title => 'Establecer un nuevo PIN';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Confirma tu nuevo PIN';
+
+  @override
+  String get settings_lock_mismatch =>
+      'Los PIN no coinciden. Inténtalo de nuevo.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN incorrecto. Quedan $count intentos.',
+      one: 'PIN incorrecto. Queda $count intento.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Demasiados intentos. Vuelve a intentarlo en $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'No se puede conectar con el servicio de BladeWatch en este momento.';
+
+  @override
+  String get settings_lock_disable_confirm_title =>
+      '¿Desactivar el PIN de ajustes?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Ajustes se abrirá sin PIN hasta que lo vuelvas a activar.';
+
+  @override
+  String get settings_lock_turn_off => 'Desactivar';
+
+  @override
+  String get settings_lock_explainer =>
+      'Este PIN se comparte con cada companion emparejado. Un companion con huella digital o reconocimiento facial puede restablecerlo si lo olvidas.';
+
+  @override
+  String get settings_lock_backspace => 'Borrar el último dígito';
+
+  @override
+  String get settings_lock_save_failed =>
+      'No se pudo guardar. Inténtalo de nuevo.';
 }

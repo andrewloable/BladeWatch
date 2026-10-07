@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.4.1+14103
+version: 1.4.1+14104
 
 environment:
   # Same floor as flutter_ui and bladewatch_rpc: the release workflow pins Flutter 3.44.4,
@@ -62,6 +62,9 @@ dependencies:
   path_provider: ^2.1.6
   mobile_scanner: ^7.4.2
   device_info_plus: ^13.2.0
+  # Biometric unlock of the Settings PIN lock on devices that have a sensor (BladeWatch-hr6r.6).
+  # No Linux implementation exists upstream -- Biometrics.available() must treat that as "none".
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:

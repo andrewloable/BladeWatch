@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Введите ключ ретранслятора, заданный в автомобиле.",
     "relay_change": "Изменить",
     "relay_remove": "Удалить ключ",
-    "relay_explainer": "Телефон и автомобиль подключаются напрямую, когда это возможно. Ретранслятор используется, только если оба находятся в мобильных сетях, которые этому мешают, и он не может прочитать то, что передаёт."
+    "relay_explainer": "Телефон и автомобиль подключаются напрямую, когда это возможно. Ретранслятор используется, только если оба находятся в мобильных сетях, которые этому мешают, и он не может прочитать то, что передаёт.",
+    "settings_lock_title": "Блокировка настроек",
+    "settings_lock_switch": "PIN-код настроек",
+    "settings_lock_change_pin": "Изменить PIN-код",
+    "settings_lock_enter_title": "Введите PIN-код",
+    "settings_lock_new_pin_title": "Задайте новый PIN-код",
+    "settings_lock_confirm_pin_title": "Подтвердите новый PIN-код",
+    "settings_lock_mismatch": "PIN-коды не совпадают. Попробуйте снова.",
+    "settings_lock_wrong_pin": "Неверный PIN-код. Осталось попыток: {count}.",
+    "settings_lock_locked_out": "Слишком много попыток. Повторите через {time}.",
+    "settings_lock_unreachable": "Не удаётся связаться с машиной прямо сейчас.",
+    "settings_lock_disable_confirm_title": "Отключить PIN-код настроек?",
+    "settings_lock_disable_confirm_body": "Настройки будут открываться без PIN-кода, пока вы не включите его снова.",
+    "settings_lock_explainer": "Этот PIN-код принадлежит машине — он используется совместно с её приложением и каждым другим подключённым компаньоном.",
+    "settings_lock_backspace": "Удалить последнюю цифру",
+    "settings_lock_biometric_switch": "Использовать биометрию вместо PIN-кода",
+    "settings_lock_biometric_reason": "Разблокировать настройки BladeWatch",
+    "settings_lock_biometric_retry": "Повторить попытку с биометрией"
   }
 }

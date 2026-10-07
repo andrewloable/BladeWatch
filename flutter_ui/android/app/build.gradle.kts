@@ -50,7 +50,7 @@ android {
         // The two APKs are installed as a pair and the About screen reads this
         // value through package_info_plus, so they must report the same string.
         // Keep this in step with app/build.gradle.kts's versionName.
-        versionName = "1.4.1.3"
+        versionName = "1.4.1.4"
 
         // BYD head unit is arm64-v8a only — same reasoning as the main app's
         // splits.abi block.

@@ -5263,6 +5263,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your phone and the car connect directly whenever they can. The relay is used only when both are on mobile networks that block that, and it cannot read what it forwards.'**
   String get settings_relay_explainer;
+
+  /// Settings hub section for the Settings PIN lock (BladeWatch-hr6r).
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get settings_section_security;
+
+  /// One-line description under the Security pane title.
+  ///
+  /// In en, this message translates to:
+  /// **'Require a PIN to open Settings and Surveillance.'**
+  String get settings_section_security_subtitle;
+
+  /// The on/off switch that turns the Settings PIN lock on and off.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings PIN'**
+  String get settings_lock_switch_label;
+
+  /// Row/button that lets the owner set a new PIN, replacing the current one. Enabled only while the lock is on.
+  ///
+  /// In en, this message translates to:
+  /// **'Change PIN'**
+  String get settings_lock_change_pin;
+
+  /// Title of the dialog that asks for the Settings PIN to unlock a protected screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN'**
+  String get settings_lock_enter_title;
+
+  /// Shown above the PIN pad's dots in the unlock dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your 6-digit Settings PIN'**
+  String get settings_lock_enter_subtitle;
+
+  /// Title of the PIN pad's first step when turning the lock on or changing the PIN.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new PIN'**
+  String get settings_lock_new_pin_title;
+
+  /// Title of the PIN pad's second step: re-enter the same PIN to confirm it.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your new PIN'**
+  String get settings_lock_confirm_pin_title;
+
+  /// Shown when the confirmation entry does not match the first one; the PIN pad starts over at the first entry.
+  ///
+  /// In en, this message translates to:
+  /// **'PINs didn\'t match. Try again.'**
+  String get settings_lock_mismatch;
+
+  /// Shown after an incorrect PIN, with how many more wrong PINs are allowed before a lockout.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Wrong PIN. {count} attempt left.} other{Wrong PIN. {count} attempts left.}}'**
+  String settings_lock_wrong_pin(int count);
+
+  /// Shown while PIN entry is locked out after too many wrong attempts. time is a pre-formatted unit like "60s", "2m" or "1h", not a bare number.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again in {time}.'**
+  String settings_lock_locked_out(String time);
+
+  /// Shown when checking the PIN failed because the car could not be reached, not because the PIN was wrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the BladeWatch service right now.'**
+  String get settings_lock_unreachable;
+
+  /// Title of the confirmation dialog before turning the Settings PIN lock off.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Settings PIN?'**
+  String get settings_lock_disable_confirm_title;
+
+  /// Body of the confirmation dialog before turning the Settings PIN lock off.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings will open without a PIN until you turn it back on.'**
+  String get settings_lock_disable_confirm_body;
+
+  /// Confirm button in the dialog that turns the Settings PIN lock off.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get settings_lock_turn_off;
+
+  /// Footnote under the Security pane: the PIN is the car's, not per-app, and how a forgotten PIN is recovered.
+  ///
+  /// In en, this message translates to:
+  /// **'This PIN is shared with every paired companion. A companion with fingerprint or face unlock can reset it if you forget it.'**
+  String get settings_lock_explainer;
+
+  /// Tooltip/accessibility label for the PIN pad's backspace key.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete last digit'**
+  String get settings_lock_backspace;
+
+  /// Error when the daemon did not take a Settings PIN lock write; nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Try again.'**
+  String get settings_lock_save_failed;
 }
 
 class _AppLocalizationsDelegate

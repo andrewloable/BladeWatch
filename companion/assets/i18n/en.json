@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Enter the relay key you set in the car.",
     "relay_change": "Change",
     "relay_remove": "Remove key",
-    "relay_explainer": "Your phone and the car connect directly whenever they can. The relay is used only when both are on mobile networks that block that, and it cannot read what it forwards."
+    "relay_explainer": "Your phone and the car connect directly whenever they can. The relay is used only when both are on mobile networks that block that, and it cannot read what it forwards.",
+    "settings_lock_title": "Settings lock",
+    "settings_lock_switch": "Settings PIN",
+    "settings_lock_change_pin": "Change PIN",
+    "settings_lock_enter_title": "Enter PIN",
+    "settings_lock_new_pin_title": "Set a new PIN",
+    "settings_lock_confirm_pin_title": "Confirm your new PIN",
+    "settings_lock_mismatch": "PINs didn't match. Try again.",
+    "settings_lock_wrong_pin": "Wrong PIN. Attempts left: {count}.",
+    "settings_lock_locked_out": "Too many attempts. Try again in {time}.",
+    "settings_lock_unreachable": "Can't reach your car right now.",
+    "settings_lock_disable_confirm_title": "Turn off Settings PIN?",
+    "settings_lock_disable_confirm_body": "Settings will open without a PIN until you turn it back on.",
+    "settings_lock_explainer": "This PIN is the car's — shared with the in-car app and every other paired companion.",
+    "settings_lock_backspace": "Delete last digit",
+    "settings_lock_biometric_switch": "Use biometrics instead of PIN",
+    "settings_lock_biometric_reason": "Unlock BladeWatch settings",
+    "settings_lock_biometric_retry": "Try biometrics again"
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../gen/l10n/app_localizations.dart';
 import '../../platform/config_channel.dart';
 import '../../platform/daemon_channel.dart';
+import '../../platform/pairing_channel.dart';
 import '../../platform/prefs_channel.dart';
 import '../../platform/public_config_channel.dart';
 import 'package:bladewatch_rpc/rpc/jwt_source.dart';
@@ -33,6 +34,8 @@ import 'settings_recording_controller.dart';
 import 'settings_recording_screen.dart';
 import 'settings_relay_controller.dart';
 import 'settings_relay_screen.dart';
+import 'settings_lock_controller.dart';
+import 'settings_security_screen.dart';
 import 'settings_trips_screen.dart';
 
 /// Everything [SettingsScreen]'s sub-rail sections need to build their own
@@ -83,6 +86,15 @@ class SettingsHubDependencies {
   final RawGetSender? overlayFieldsGetSender;
   final RawHttpSender? overlayFieldsPostSender;
 
+  /// BladeWatch-hr6r: the Settings PIN lock. Root-owned, like [appearanceController] and
+  /// [tripsController] above — `ShellController`'s route guard and the Security pane's pairing
+  /// gate need the same instance, not a fresh one created when this pane happens to be selected.
+  final SettingsLockController settingsLockController;
+
+  /// BladeWatch-xfb5: the Security pane's "Pair a device" / paired-devices list, moved here from
+  /// the Dashboard. Null hides that section (tests that do not exercise it).
+  final PairingChannel? pairingChannel;
+
   const SettingsHubDependencies({
     required this.prefs,
     required this.shellController,
@@ -104,6 +116,8 @@ class SettingsHubDependencies {
     required this.jwtSource,
     this.overlayFieldsGetSender,
     this.overlayFieldsPostSender,
+    required this.settingsLockController,
+    this.pairingChannel,
   });
 }
 
@@ -113,7 +127,7 @@ class SettingsHubDependencies {
 const String _statusOverlaySection = 'statusOverlay';
 const String _developerOptionsSection = 'developerOptions';
 
-enum _Section { appearance, recording, surveillance, trips, overlay, daemons, relay, privacy }
+enum _Section { appearance, recording, surveillance, trips, overlay, daemons, relay, privacy, security }
 
 /// Ground truth: `SettingsFragment.kt`'s landscape two-pane sub-rail — see
 /// the class doc for why this port doesn't also build the portrait
@@ -239,6 +253,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
         controller = c;
         content = SettingsPrivacyScreen(controller: c, systemService: deps.systemService);
+      case _Section.security:
+        // Deliberately NOT assigned to `controller`: root-owned, shared with the route guard and
+        // the Dashboard's pairing gate, so the dispose below must not take it (same rule as
+        // appearance/trips above).
+        content = SettingsSecurityScreen(controller: deps.settingsLockController, pairingChannel: deps.pairingChannel);
     }
     setState(() {
       _section = section;
@@ -256,6 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _Section.daemons => l10n.settings_section_daemons,
     _Section.relay => l10n.settings_section_relay,
     _Section.privacy => l10n.settings_section_privacy,
+    _Section.security => l10n.settings_section_security,
   };
 
   /// Native marks Recording and Surveillance with `navigates = true` purely for
@@ -276,6 +296,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _Section.daemons => l10n.settings_section_daemons_subtitle,
     _Section.relay => l10n.settings_relay_subtitle,
     _Section.privacy => null,
+    _Section.security => l10n.settings_section_security_subtitle,
   };
 
   IconData _icon(_Section section) => switch (section) {
@@ -287,6 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _Section.daemons => Icons.miscellaneous_services,
     _Section.relay => Icons.alt_route,
     _Section.privacy => Icons.privacy_tip,
+    _Section.security => Icons.lock,
   };
 
   @override

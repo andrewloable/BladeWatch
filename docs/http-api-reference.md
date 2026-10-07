@@ -126,7 +126,7 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | `SafeLocationsService` | `ListZones`, `AddZone`, `UpdateZone`, `DeleteZone`, `Toggle` | `/api/surveillance/safe-locations*` |
 | `StreamService` | `Enable`, `Disable`, `GetStatus`, `GetQuality`/`SetQuality`, `GetViewMode`/`SetViewMode` | `/api/stream/*` |
 | — | `GET /api/stream/still[?camera=0..3]` (REST-only, no Connect RPC): the live still JPEG, all four cameras at 1280×960 or one camera at its native 1280×960; header `X-Still-View: mosaic\|0..3` (BladeWatch-y78o.1, rdtj.68) | `/api/stream/still` |
-| `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode`, `GetStatusOverlay`/`SetStatusOverlay`, `GetTelemetryOverlayFields`/`SetTelemetryOverlayFields` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
+| `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode`, `GetStatusOverlay`/`SetStatusOverlay`, `GetTelemetryOverlayFields`/`SetTelemetryOverlayFields`, `GetSettingsLock`/`SetSettingsLock`/`VerifySettingsPin` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` (the settings-lock trio is Connect-only) |
 | `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `PreviewStorageLimitChange`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
 | `VehicleService` | `GetState`, `GetAcDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
 | `NotificationsService` | `GetCategories`, `SendTest`, `ListInbox` | (`ListInbox`: Connect only) |
@@ -281,6 +281,31 @@ the storage settings are also surfaced via `StorageService` on Connect.
 Connect mirrors: `SettingsService.{GetQuality,SetQuality,GetAppearance,
 SetAppearance,GetLocale,SetLocale,SetRecordingMode}` and
 `StorageService.{GetStorageSettings,SetStorageSettings,PreviewStorageLimitChange}`.
+
+### Settings Lock (BladeWatch-hr6r)
+
+`SettingsService.GetSettingsLock`/`SetSettingsLock`/`VerifySettingsPin` are Connect
+only, with no REST twin. One 6-digit PIN, held by the car (`SettingsLock`, a salted
+PBKDF2 hash in the secret store's `settingsLock` section — daemon-only, see
+[ipc-auth-and-secrets.md](ipc-auth-and-secrets.md)), checked by both the in-car UI
+and every paired companion rather than each app keeping its own. This is a UI gate
+against someone with physical access to the head unit or an unlocked companion, not
+an API ACL: any JWT holder can still call `SetSettingsLock` directly, exactly as
+every other setter on this API can be called directly today.
+
+- `GetSettingsLock` — empty request. Returns `{enabled, retryAfterMs}`.
+  `retryAfterMs` is > 0 while a prior `VerifySettingsPin` lockout is still active.
+- `SetSettingsLock` — `{enabled, pin}`. `enabled:true` requires `pin` to be exactly
+  6 ASCII digits and turns the lock on; `enabled:false` clears the PIN and turns
+  the lock off (`pin` is ignored). Does **not** require the current PIN — the
+  forgotten-PIN recovery path is a companion unlocked by biometrics calling this
+  RPC itself. Returns `{success, error}`.
+- `VerifySettingsPin` — `{pin}`. Returns `{ok, retryAfterMs, attemptsLeft}`. Lock
+  disabled: always `ok:true`. 5 consecutive wrong PINs lock entry out for 60s;
+  each further wrong PIN before a success doubles the wait, capped at 1 hour. A PIN
+  submitted while locked out is refused outright — neither checked nor counted as
+  an attempt (`ok:false`, `retryAfterMs` > 0, `attemptsLeft` 0). A correct PIN
+  resets the attempt counter and the lockout.
 
 ## External Storage
 
