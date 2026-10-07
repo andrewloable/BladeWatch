@@ -110,6 +110,20 @@ class CarStore {
     return relayEnabled && key != null && RegExp(r'^[0-9]{12}$').hasMatch(key) ? key : null;
   }
 
+  /// The last-known Settings PIN lock state (BladeWatch-hr6r) -- what [SettingsGate] falls back
+  /// to when the car cannot be asked right now, so the lock fails closed rather than silently
+  /// opening unlocked. Never the PIN itself, which this store never holds.
+  bool settingsLockKnown = false;
+
+  /// Whether THIS device may use its own biometrics (fingerprint, face) instead of the PIN
+  /// (BladeWatch-hr6r.6) -- purely local, never sent to or known by the car. Off by default;
+  /// turning it on requires proving the car's current PIN first (see settings_screen.dart), so a
+  /// stranger picking up an already-paired, unlocked phone cannot turn it on themselves. Reset to
+  /// false whenever this device unpairs (app.dart's unpair()): a different car has a different
+  /// PIN, and the owner must prove they know it again before this device trusts its own sensor
+  /// for that car.
+  bool biometricUnlockEnabled = false;
+
   Future<void> load() async {
     try {
       final j = jsonDecode(await file.readAsString()) as Map<String, Object?>;
@@ -123,6 +137,10 @@ class CarStore {
       final key = relay is Map ? relay['key'] : null;
       relayEnabled = relay is Map && relay['enabled'] == true;
       relayKey = key is String ? key : null;
+      // Same leniency as relay above.
+      final settingsLock = j['settingsLock'];
+      settingsLockKnown = settingsLock is Map && settingsLock['enabled'] == true;
+      biometricUnlockEnabled = j['biometricUnlock'] == true;
     } catch (_) {
       // First launch (no file), or an unreadable one: start unpaired rather than crash. But keep
       // a file that exists and would not load beside it first: the next save would otherwise
@@ -149,6 +167,8 @@ class CarStore {
       'language': language,
       'muted': mutedCategories.toList()..sort(),
       'relay': {'enabled': relayEnabled, 'key': relayKey},
+      'settingsLock': {'enabled': settingsLockKnown},
+      'biometricUnlock': biometricUnlockEnabled,
     }));
     await tmp.rename(file.path);
   }

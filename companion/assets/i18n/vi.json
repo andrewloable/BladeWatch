@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Nhập khóa relay bạn đã đặt trên xe.",
     "relay_change": "Đổi",
     "relay_remove": "Xóa khóa",
-    "relay_explainer": "Điện thoại và xe kết nối trực tiếp bất cứ khi nào có thể. Relay chỉ được dùng khi cả hai ở trên mạng di động chặn kết nối trực tiếp, và relay không đọc được dữ liệu nó chuyển tiếp."
+    "relay_explainer": "Điện thoại và xe kết nối trực tiếp bất cứ khi nào có thể. Relay chỉ được dùng khi cả hai ở trên mạng di động chặn kết nối trực tiếp, và relay không đọc được dữ liệu nó chuyển tiếp.",
+    "settings_lock_title": "Khóa cài đặt",
+    "settings_lock_switch": "Mã PIN cài đặt",
+    "settings_lock_change_pin": "Đổi mã PIN",
+    "settings_lock_enter_title": "Nhập mã PIN",
+    "settings_lock_new_pin_title": "Đặt mã PIN mới",
+    "settings_lock_confirm_pin_title": "Xác nhận mã PIN mới của bạn",
+    "settings_lock_mismatch": "Mã PIN không khớp. Hãy thử lại.",
+    "settings_lock_wrong_pin": "Sai mã PIN. Số lần thử còn lại: {count}.",
+    "settings_lock_locked_out": "Quá nhiều lần thử. Hãy thử lại sau {time}.",
+    "settings_lock_unreachable": "Hiện không thể kết nối với xe của bạn.",
+    "settings_lock_disable_confirm_title": "Tắt mã PIN cài đặt?",
+    "settings_lock_disable_confirm_body": "Cài đặt sẽ mở mà không cần mã PIN cho đến khi bạn bật lại.",
+    "settings_lock_explainer": "Mã PIN này thuộc về xe — được dùng chung với ứng dụng trên xe và mọi thiết bị đồng hành khác đã ghép nối.",
+    "settings_lock_backspace": "Xóa số cuối",
+    "settings_lock_biometric_switch": "Dùng sinh trắc học thay cho mã PIN",
+    "settings_lock_biometric_reason": "Mở khóa cài đặt BladeWatch",
+    "settings_lock_biometric_retry": "Thử lại bằng sinh trắc học"
   }
 }

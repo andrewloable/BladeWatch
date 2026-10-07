@@ -18,7 +18,7 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
-export 'package:bladewatch_rpc/gen/bladewatch/v1/settings.pbenum.dart';
+export 'settings.pbenum.dart';
 
 /// QualityTierInfo describes one recording quality tier.
 class QualityTierInfo extends $pb.GeneratedMessage {
@@ -2035,6 +2035,412 @@ class SetTelemetryOverlayFieldsResponse extends $pb.GeneratedMessage {
   void clearError() => $_clearField(2);
 }
 
+class GetSettingsLockRequest extends $pb.GeneratedMessage {
+  factory GetSettingsLockRequest() => GetSettingsLockRequest._();
+
+  GetSettingsLockRequest._();
+
+  factory GetSettingsLockRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetSettingsLockRequest()..mergeFromBuffer(data, registry);
+  factory GetSettingsLockRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetSettingsLockRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetSettingsLockRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetSettingsLockRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetSettingsLockRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetSettingsLockRequest copyWith(
+          void Function(GetSettingsLockRequest) updates) =>
+      super.copyWith((message) => updates(message as GetSettingsLockRequest))
+          as GetSettingsLockRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetSettingsLockRequest() / GetSettingsLockRequest.new instead')
+  static GetSettingsLockRequest create() => GetSettingsLockRequest._();
+  static $pb.GeneratedMessage $_createMessage() => GetSettingsLockRequest._();
+  @$core.override
+  GetSettingsLockRequest createEmptyInstance() => GetSettingsLockRequest._();
+  @$core.pragma('dart2js:noInline')
+  static GetSettingsLockRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetSettingsLockRequest>(
+          GetSettingsLockRequest.$_createMessage);
+  static GetSettingsLockRequest? _defaultInstance;
+}
+
+class GetSettingsLockResponse extends $pb.GeneratedMessage {
+  factory GetSettingsLockResponse({
+    $core.bool? enabled,
+    $fixnum.Int64? retryAfterMs,
+  }) {
+    final result = GetSettingsLockResponse._();
+    if (enabled != null) result.enabled = enabled;
+    if (retryAfterMs != null) result.retryAfterMs = retryAfterMs;
+    return result;
+  }
+
+  GetSettingsLockResponse._();
+
+  factory GetSettingsLockResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetSettingsLockResponse()..mergeFromBuffer(data, registry);
+  factory GetSettingsLockResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetSettingsLockResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetSettingsLockResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetSettingsLockResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'enabled')
+    ..aInt64(2, _omitFieldNames ? '' : 'retryAfterMs')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetSettingsLockResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetSettingsLockResponse copyWith(
+          void Function(GetSettingsLockResponse) updates) =>
+      super.copyWith((message) => updates(message as GetSettingsLockResponse))
+          as GetSettingsLockResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetSettingsLockResponse() / GetSettingsLockResponse.new instead')
+  static GetSettingsLockResponse create() => GetSettingsLockResponse._();
+  static $pb.GeneratedMessage $_createMessage() => GetSettingsLockResponse._();
+  @$core.override
+  GetSettingsLockResponse createEmptyInstance() => GetSettingsLockResponse._();
+  @$core.pragma('dart2js:noInline')
+  static GetSettingsLockResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetSettingsLockResponse>(
+          GetSettingsLockResponse.$_createMessage);
+  static GetSettingsLockResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get enabled => $_getBF(0);
+  @$pb.TagNumber(1)
+  set enabled($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasEnabled() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearEnabled() => $_clearField(1);
+
+  /// > 0 while wrong PINs have locked entry out: ms until VerifySettingsPin should be tried again.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get retryAfterMs => $_getI64(1);
+  @$pb.TagNumber(2)
+  set retryAfterMs($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasRetryAfterMs() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearRetryAfterMs() => $_clearField(2);
+}
+
+class SetSettingsLockRequest extends $pb.GeneratedMessage {
+  factory SetSettingsLockRequest({
+    $core.bool? enabled,
+    $core.String? pin,
+  }) {
+    final result = SetSettingsLockRequest._();
+    if (enabled != null) result.enabled = enabled;
+    if (pin != null) result.pin = pin;
+    return result;
+  }
+
+  SetSettingsLockRequest._();
+
+  factory SetSettingsLockRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetSettingsLockRequest()..mergeFromBuffer(data, registry);
+  factory SetSettingsLockRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetSettingsLockRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetSettingsLockRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetSettingsLockRequest.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'enabled')
+    ..aOS(2, _omitFieldNames ? '' : 'pin')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetSettingsLockRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetSettingsLockRequest copyWith(
+          void Function(SetSettingsLockRequest) updates) =>
+      super.copyWith((message) => updates(message as SetSettingsLockRequest))
+          as SetSettingsLockRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use SetSettingsLockRequest() / SetSettingsLockRequest.new instead')
+  static SetSettingsLockRequest create() => SetSettingsLockRequest._();
+  static $pb.GeneratedMessage $_createMessage() => SetSettingsLockRequest._();
+  @$core.override
+  SetSettingsLockRequest createEmptyInstance() => SetSettingsLockRequest._();
+  @$core.pragma('dart2js:noInline')
+  static SetSettingsLockRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetSettingsLockRequest>(
+          SetSettingsLockRequest.$_createMessage);
+  static SetSettingsLockRequest? _defaultInstance;
+
+  /// false clears the PIN and disables the lock.
+  @$pb.TagNumber(1)
+  $core.bool get enabled => $_getBF(0);
+  @$pb.TagNumber(1)
+  set enabled($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasEnabled() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearEnabled() => $_clearField(1);
+
+  /// Exactly 6 ASCII digits when enabled. Ignored when disabled.
+  @$pb.TagNumber(2)
+  $core.String get pin => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set pin($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasPin() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearPin() => $_clearField(2);
+}
+
+class SetSettingsLockResponse extends $pb.GeneratedMessage {
+  factory SetSettingsLockResponse({
+    $core.bool? success,
+    $core.String? error,
+  }) {
+    final result = SetSettingsLockResponse._();
+    if (success != null) result.success = success;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  SetSettingsLockResponse._();
+
+  factory SetSettingsLockResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetSettingsLockResponse()..mergeFromBuffer(data, registry);
+  factory SetSettingsLockResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetSettingsLockResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetSettingsLockResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetSettingsLockResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetSettingsLockResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetSettingsLockResponse copyWith(
+          void Function(SetSettingsLockResponse) updates) =>
+      super.copyWith((message) => updates(message as SetSettingsLockResponse))
+          as SetSettingsLockResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use SetSettingsLockResponse() / SetSettingsLockResponse.new instead')
+  static SetSettingsLockResponse create() => SetSettingsLockResponse._();
+  static $pb.GeneratedMessage $_createMessage() => SetSettingsLockResponse._();
+  @$core.override
+  SetSettingsLockResponse createEmptyInstance() => SetSettingsLockResponse._();
+  @$core.pragma('dart2js:noInline')
+  static SetSettingsLockResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetSettingsLockResponse>(
+          SetSettingsLockResponse.$_createMessage);
+  static SetSettingsLockResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get error => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set error($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasError() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearError() => $_clearField(2);
+}
+
+class VerifySettingsPinRequest extends $pb.GeneratedMessage {
+  factory VerifySettingsPinRequest({
+    $core.String? pin,
+  }) {
+    final result = VerifySettingsPinRequest._();
+    if (pin != null) result.pin = pin;
+    return result;
+  }
+
+  VerifySettingsPinRequest._();
+
+  factory VerifySettingsPinRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      VerifySettingsPinRequest()..mergeFromBuffer(data, registry);
+  factory VerifySettingsPinRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      VerifySettingsPinRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'VerifySettingsPinRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: VerifySettingsPinRequest.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'pin')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  VerifySettingsPinRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  VerifySettingsPinRequest copyWith(
+          void Function(VerifySettingsPinRequest) updates) =>
+      super.copyWith((message) => updates(message as VerifySettingsPinRequest))
+          as VerifySettingsPinRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use VerifySettingsPinRequest() / VerifySettingsPinRequest.new instead')
+  static VerifySettingsPinRequest create() => VerifySettingsPinRequest._();
+  static $pb.GeneratedMessage $_createMessage() => VerifySettingsPinRequest._();
+  @$core.override
+  VerifySettingsPinRequest createEmptyInstance() =>
+      VerifySettingsPinRequest._();
+  @$core.pragma('dart2js:noInline')
+  static VerifySettingsPinRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<VerifySettingsPinRequest>(
+          VerifySettingsPinRequest.$_createMessage);
+  static VerifySettingsPinRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get pin => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set pin($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasPin() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPin() => $_clearField(1);
+}
+
+class VerifySettingsPinResponse extends $pb.GeneratedMessage {
+  factory VerifySettingsPinResponse({
+    $core.bool? ok,
+    $fixnum.Int64? retryAfterMs,
+    $core.int? attemptsLeft,
+  }) {
+    final result = VerifySettingsPinResponse._();
+    if (ok != null) result.ok = ok;
+    if (retryAfterMs != null) result.retryAfterMs = retryAfterMs;
+    if (attemptsLeft != null) result.attemptsLeft = attemptsLeft;
+    return result;
+  }
+
+  VerifySettingsPinResponse._();
+
+  factory VerifySettingsPinResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      VerifySettingsPinResponse()..mergeFromBuffer(data, registry);
+  factory VerifySettingsPinResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      VerifySettingsPinResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'VerifySettingsPinResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: VerifySettingsPinResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'ok')
+    ..aInt64(2, _omitFieldNames ? '' : 'retryAfterMs')
+    ..aI(3, _omitFieldNames ? '' : 'attemptsLeft')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  VerifySettingsPinResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  VerifySettingsPinResponse copyWith(
+          void Function(VerifySettingsPinResponse) updates) =>
+      super.copyWith((message) => updates(message as VerifySettingsPinResponse))
+          as VerifySettingsPinResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use VerifySettingsPinResponse() / VerifySettingsPinResponse.new instead')
+  static VerifySettingsPinResponse create() => VerifySettingsPinResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      VerifySettingsPinResponse._();
+  @$core.override
+  VerifySettingsPinResponse createEmptyInstance() =>
+      VerifySettingsPinResponse._();
+  @$core.pragma('dart2js:noInline')
+  static VerifySettingsPinResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<VerifySettingsPinResponse>(
+          VerifySettingsPinResponse.$_createMessage);
+  static VerifySettingsPinResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get ok => $_getBF(0);
+  @$pb.TagNumber(1)
+  set ok($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasOk() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOk() => $_clearField(1);
+
+  /// > 0: locked out; ok is false and the PIN given was not checked.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get retryAfterMs => $_getI64(1);
+  @$pb.TagNumber(2)
+  set retryAfterMs($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasRetryAfterMs() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearRetryAfterMs() => $_clearField(2);
+
+  /// Wrong PINs left before the next lockout.
+  @$pb.TagNumber(3)
+  $core.int get attemptsLeft => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set attemptsLeft($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasAttemptsLeft() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearAttemptsLeft() => $_clearField(3);
+}
+
 /// SettingsService manages recording quality, appearance, and locale settings.
 ///
 /// HTTP mapping:
@@ -2106,6 +2512,21 @@ class SettingsServiceApi {
           'SetTelemetryOverlayFields',
           request,
           SetTelemetryOverlayFieldsResponse());
+
+  /// BladeWatch-hr6r: the Settings PIN lock. One PIN, held by the car; both the in-car UI and
+  /// every paired companion check it here rather than each keeping its own.
+  $async.Future<GetSettingsLockResponse> getSettingsLock(
+          $pb.ClientContext? ctx, GetSettingsLockRequest request) =>
+      _client.invoke<GetSettingsLockResponse>(ctx, 'SettingsService',
+          'GetSettingsLock', request, GetSettingsLockResponse());
+  $async.Future<SetSettingsLockResponse> setSettingsLock(
+          $pb.ClientContext? ctx, SetSettingsLockRequest request) =>
+      _client.invoke<SetSettingsLockResponse>(ctx, 'SettingsService',
+          'SetSettingsLock', request, SetSettingsLockResponse());
+  $async.Future<VerifySettingsPinResponse> verifySettingsPin(
+          $pb.ClientContext? ctx, VerifySettingsPinRequest request) =>
+      _client.invoke<VerifySettingsPinResponse>(ctx, 'SettingsService',
+          'VerifySettingsPin', request, VerifySettingsPinResponse());
 }
 
 const $core.bool _omitFieldNames =

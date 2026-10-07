@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Introduzca la clave del relé que configuró en el coche.",
     "relay_change": "Cambiar",
     "relay_remove": "Quitar clave",
-    "relay_explainer": "El teléfono y el coche se conectan directamente siempre que pueden. El relé solo se usa cuando ambos están en redes móviles que lo impiden, y no puede leer lo que reenvía."
+    "relay_explainer": "El teléfono y el coche se conectan directamente siempre que pueden. El relé solo se usa cuando ambos están en redes móviles que lo impiden, y no puede leer lo que reenvía.",
+    "settings_lock_title": "Bloqueo de ajustes",
+    "settings_lock_switch": "PIN de ajustes",
+    "settings_lock_change_pin": "Cambiar PIN",
+    "settings_lock_enter_title": "Introducir PIN",
+    "settings_lock_new_pin_title": "Establecer un nuevo PIN",
+    "settings_lock_confirm_pin_title": "Confirma tu nuevo PIN",
+    "settings_lock_mismatch": "Los PIN no coinciden. Inténtalo de nuevo.",
+    "settings_lock_wrong_pin": "PIN incorrecto. Intentos restantes: {count}.",
+    "settings_lock_locked_out": "Demasiados intentos. Vuelve a intentarlo en {time}.",
+    "settings_lock_unreachable": "No se puede conectar con tu coche en este momento.",
+    "settings_lock_disable_confirm_title": "¿Desactivar el PIN de ajustes?",
+    "settings_lock_disable_confirm_body": "Ajustes se abrirá sin PIN hasta que lo vuelvas a activar.",
+    "settings_lock_explainer": "Este PIN es del coche: se comparte con la app del coche y con cada otro companion emparejado.",
+    "settings_lock_backspace": "Borrar el último dígito",
+    "settings_lock_biometric_switch": "Usar datos biométricos en vez del PIN",
+    "settings_lock_biometric_reason": "Desbloquear los ajustes de BladeWatch",
+    "settings_lock_biometric_retry": "Reintentar con datos biométricos"
   }
 }

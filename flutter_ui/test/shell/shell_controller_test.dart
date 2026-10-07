@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bladewatch_ui/shell/drive_side.dart';
 import 'package:bladewatch_ui/shell/shell_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +81,114 @@ void main() {
       c.selectRoute('dashboard');
 
       expect(notified, 0);
+    });
+  });
+
+  // BladeWatch-hr6r: the Settings PIN lock's route gate.
+  group('ShellController route guard', () {
+    test('a guarded route switches once the guard resolves true', () async {
+      final c = ShellController(initialRoute: 'dashboard', guardedRoutes: {'settings'}, routeGuard: (_) async => true);
+
+      await c.selectRoute('settings');
+
+      expect(c.selectedRoute, 'settings');
+    });
+
+    test('a guarded route stays put when the guard resolves false', () async {
+      final c = ShellController(initialRoute: 'dashboard', guardedRoutes: {'settings'}, routeGuard: (_) async => false);
+
+      await c.selectRoute('settings');
+
+      expect(c.selectedRoute, 'dashboard');
+    });
+
+    test('the guard is asked which route is being entered', () async {
+      String? asked;
+      final c = ShellController(
+        initialRoute: 'dashboard',
+        guardedRoutes: {'settings', 'surveillance'},
+        routeGuard: (route) async {
+          asked = route;
+          return true;
+        },
+      );
+
+      await c.selectRoute('surveillance');
+
+      expect(asked, 'surveillance');
+    });
+
+    test('routeGuard is a settable field, reassignable after construction', () async {
+      final c = ShellController(initialRoute: 'dashboard', guardedRoutes: {'settings'});
+      c.routeGuard = (_) async => false;
+
+      await c.selectRoute('settings');
+      expect(c.selectedRoute, 'dashboard');
+
+      c.routeGuard = (_) async => true;
+      await c.selectRoute('settings');
+      expect(c.selectedRoute, 'settings');
+    });
+
+    test('no guard set means a guarded route switches unconditionally', () async {
+      final c = ShellController(initialRoute: 'dashboard', guardedRoutes: {'settings'});
+
+      await c.selectRoute('settings');
+
+      expect(c.selectedRoute, 'settings');
+    });
+
+    test('switching to a non-guarded route calls onLeaveGuardedRoute', () async {
+      var relocked = 0;
+      final c = ShellController(
+        initialRoute: 'dashboard',
+        guardedRoutes: {'settings'},
+        onLeaveGuardedRoute: () => relocked++,
+      );
+
+      await c.selectRoute('trips');
+
+      expect(c.selectedRoute, 'trips');
+      expect(relocked, 1);
+    });
+
+    test('moving between two guarded routes does not call onLeaveGuardedRoute', () async {
+      var relocked = 0;
+      final c = ShellController(
+        initialRoute: 'settings',
+        guardedRoutes: {'settings', 'surveillance'},
+        routeGuard: (_) async => true,
+        onLeaveGuardedRoute: () => relocked++,
+      );
+
+      await c.selectRoute('surveillance');
+
+      expect(c.selectedRoute, 'surveillance');
+      expect(relocked, 0);
+    });
+
+    test('a second selectRoute while a guard prompt is already open is ignored', () async {
+      final prompts = <Completer<bool>>[];
+      final c = ShellController(
+        initialRoute: 'dashboard',
+        guardedRoutes: {'settings'},
+        routeGuard: (_) {
+          final completer = Completer<bool>();
+          prompts.add(completer);
+          return completer.future;
+        },
+      );
+
+      final first = c.selectRoute('settings'); // starts the (still-pending) guard prompt
+      await Future<void>.delayed(Duration.zero);
+      final second = c.selectRoute('settings'); // a second tap while it is up: ignored
+      expect(prompts, hasLength(1), reason: 'the guard must be asked only once');
+
+      prompts.single.complete(true);
+      await first;
+      await second;
+
+      expect(c.selectedRoute, 'settings');
     });
   });
 }

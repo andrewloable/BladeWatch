@@ -644,6 +644,89 @@ final $typed_data.Uint8List setTelemetryOverlayFieldsResponseDescriptor =
         'CiFTZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3'
         'VjY2VzcxIUCgVlcnJvchgCIAEoCVIFZXJyb3I=');
 
+@$core.Deprecated('Use getSettingsLockRequestDescriptor instead')
+const GetSettingsLockRequest$json = {
+  '1': 'GetSettingsLockRequest',
+};
+
+/// Descriptor for `GetSettingsLockRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getSettingsLockRequestDescriptor =
+    $convert.base64Decode('ChZHZXRTZXR0aW5nc0xvY2tSZXF1ZXN0');
+
+@$core.Deprecated('Use getSettingsLockResponseDescriptor instead')
+const GetSettingsLockResponse$json = {
+  '1': 'GetSettingsLockResponse',
+  '2': [
+    {'1': 'enabled', '3': 1, '4': 1, '5': 8, '10': 'enabled'},
+    {'1': 'retry_after_ms', '3': 2, '4': 1, '5': 3, '10': 'retryAfterMs'},
+  ],
+};
+
+/// Descriptor for `GetSettingsLockResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getSettingsLockResponseDescriptor =
+    $convert.base64Decode(
+        'ChdHZXRTZXR0aW5nc0xvY2tSZXNwb25zZRIYCgdlbmFibGVkGAEgASgIUgdlbmFibGVkEiQKDn'
+        'JldHJ5X2FmdGVyX21zGAIgASgDUgxyZXRyeUFmdGVyTXM=');
+
+@$core.Deprecated('Use setSettingsLockRequestDescriptor instead')
+const SetSettingsLockRequest$json = {
+  '1': 'SetSettingsLockRequest',
+  '2': [
+    {'1': 'enabled', '3': 1, '4': 1, '5': 8, '10': 'enabled'},
+    {'1': 'pin', '3': 2, '4': 1, '5': 9, '10': 'pin'},
+  ],
+};
+
+/// Descriptor for `SetSettingsLockRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setSettingsLockRequestDescriptor =
+    $convert.base64Decode(
+        'ChZTZXRTZXR0aW5nc0xvY2tSZXF1ZXN0EhgKB2VuYWJsZWQYASABKAhSB2VuYWJsZWQSEAoDcG'
+        'luGAIgASgJUgNwaW4=');
+
+@$core.Deprecated('Use setSettingsLockResponseDescriptor instead')
+const SetSettingsLockResponse$json = {
+  '1': 'SetSettingsLockResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'error', '3': 2, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `SetSettingsLockResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setSettingsLockResponseDescriptor =
+    $convert.base64Decode(
+        'ChdTZXRTZXR0aW5nc0xvY2tSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEhQKBW'
+        'Vycm9yGAIgASgJUgVlcnJvcg==');
+
+@$core.Deprecated('Use verifySettingsPinRequestDescriptor instead')
+const VerifySettingsPinRequest$json = {
+  '1': 'VerifySettingsPinRequest',
+  '2': [
+    {'1': 'pin', '3': 1, '4': 1, '5': 9, '10': 'pin'},
+  ],
+};
+
+/// Descriptor for `VerifySettingsPinRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List verifySettingsPinRequestDescriptor =
+    $convert.base64Decode(
+        'ChhWZXJpZnlTZXR0aW5nc1BpblJlcXVlc3QSEAoDcGluGAEgASgJUgNwaW4=');
+
+@$core.Deprecated('Use verifySettingsPinResponseDescriptor instead')
+const VerifySettingsPinResponse$json = {
+  '1': 'VerifySettingsPinResponse',
+  '2': [
+    {'1': 'ok', '3': 1, '4': 1, '5': 8, '10': 'ok'},
+    {'1': 'retry_after_ms', '3': 2, '4': 1, '5': 3, '10': 'retryAfterMs'},
+    {'1': 'attempts_left', '3': 3, '4': 1, '5': 5, '10': 'attemptsLeft'},
+  ],
+};
+
+/// Descriptor for `VerifySettingsPinResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List verifySettingsPinResponseDescriptor = $convert.base64Decode(
+    'ChlWZXJpZnlTZXR0aW5nc1BpblJlc3BvbnNlEg4KAm9rGAEgASgIUgJvaxIkCg5yZXRyeV9hZn'
+    'Rlcl9tcxgCIAEoA1IMcmV0cnlBZnRlck1zEiMKDWF0dGVtcHRzX2xlZnQYAyABKAVSDGF0dGVt'
+    'cHRzTGVmdA==');
+
 const $core.Map<$core.String, $core.dynamic> SettingsServiceBase$json = {
   '1': 'SettingsService',
   '2': [
@@ -702,6 +785,21 @@ const $core.Map<$core.String, $core.dynamic> SettingsServiceBase$json = {
       '2': '.bladewatch.v1.SetTelemetryOverlayFieldsRequest',
       '3': '.bladewatch.v1.SetTelemetryOverlayFieldsResponse'
     },
+    {
+      '1': 'GetSettingsLock',
+      '2': '.bladewatch.v1.GetSettingsLockRequest',
+      '3': '.bladewatch.v1.GetSettingsLockResponse'
+    },
+    {
+      '1': 'SetSettingsLock',
+      '2': '.bladewatch.v1.SetSettingsLockRequest',
+      '3': '.bladewatch.v1.SetSettingsLockResponse'
+    },
+    {
+      '1': 'VerifySettingsPin',
+      '2': '.bladewatch.v1.VerifySettingsPinRequest',
+      '3': '.bladewatch.v1.VerifySettingsPinResponse'
+    },
   ],
 };
 
@@ -747,6 +845,12 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
       SetTelemetryOverlayFieldsRequest$json,
   '.bladewatch.v1.SetTelemetryOverlayFieldsResponse':
       SetTelemetryOverlayFieldsResponse$json,
+  '.bladewatch.v1.GetSettingsLockRequest': GetSettingsLockRequest$json,
+  '.bladewatch.v1.GetSettingsLockResponse': GetSettingsLockResponse$json,
+  '.bladewatch.v1.SetSettingsLockRequest': SetSettingsLockRequest$json,
+  '.bladewatch.v1.SetSettingsLockResponse': SetSettingsLockResponse$json,
+  '.bladewatch.v1.VerifySettingsPinRequest': VerifySettingsPinRequest$json,
+  '.bladewatch.v1.VerifySettingsPinResponse': VerifySettingsPinResponse$json,
 };
 
 /// Descriptor for `SettingsService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -770,4 +874,9 @@ final $typed_data.Uint8List settingsServiceDescriptor = $convert.base64Decode(
     'T3ZlcmxheUZpZWxkc1JlcXVlc3QaMC5ibGFkZXdhdGNoLnYxLkdldFRlbGVtZXRyeU92ZXJsYX'
     'lGaWVsZHNSZXNwb25zZRJ+ChlTZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzEi8uYmxhZGV3YXRj'
     'aC52MS5TZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVxdWVzdBowLmJsYWRld2F0Y2gudjEuU2'
-    'V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkc1Jlc3BvbnNl');
+    'V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkc1Jlc3BvbnNlEmAKD0dldFNldHRpbmdzTG9jaxIlLmJs'
+    'YWRld2F0Y2gudjEuR2V0U2V0dGluZ3NMb2NrUmVxdWVzdBomLmJsYWRld2F0Y2gudjEuR2V0U2'
+    'V0dGluZ3NMb2NrUmVzcG9uc2USYAoPU2V0U2V0dGluZ3NMb2NrEiUuYmxhZGV3YXRjaC52MS5T'
+    'ZXRTZXR0aW5nc0xvY2tSZXF1ZXN0GiYuYmxhZGV3YXRjaC52MS5TZXRTZXR0aW5nc0xvY2tSZX'
+    'Nwb25zZRJmChFWZXJpZnlTZXR0aW5nc1BpbhInLmJsYWRld2F0Y2gudjEuVmVyaWZ5U2V0dGlu'
+    'Z3NQaW5SZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5WZXJpZnlTZXR0aW5nc1BpblJlc3BvbnNl');

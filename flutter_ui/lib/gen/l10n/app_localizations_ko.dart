@@ -2898,4 +2898,69 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       '휴대폰과 차량은 가능하면 항상 직접 연결됩니다. 릴레이는 둘 다 직접 연결을 막는 모바일 네트워크에 있을 때만 사용되며, 전달하는 내용을 읽을 수 없습니다.';
+
+  @override
+  String get settings_section_security => '보안';
+
+  @override
+  String get settings_section_security_subtitle => '설정과 감시를 열 때 PIN을 요구합니다.';
+
+  @override
+  String get settings_lock_switch_label => '설정 PIN';
+
+  @override
+  String get settings_lock_change_pin => 'PIN 변경';
+
+  @override
+  String get settings_lock_enter_title => 'PIN 입력';
+
+  @override
+  String get settings_lock_enter_subtitle => '6자리 설정 PIN을 입력하세요';
+
+  @override
+  String get settings_lock_new_pin_title => '새 PIN 설정';
+
+  @override
+  String get settings_lock_confirm_pin_title => '새 PIN 확인';
+
+  @override
+  String get settings_lock_mismatch => 'PIN이 일치하지 않습니다. 다시 시도하세요.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN이 틀렸습니다. $count번의 시도가 남았습니다.',
+      one: 'PIN이 틀렸습니다. $count번의 시도가 남았습니다.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return '시도 횟수가 너무 많습니다. $time 후에 다시 시도하세요.';
+  }
+
+  @override
+  String get settings_lock_unreachable => '지금은 BladeWatch 서비스에 연결할 수 없습니다.';
+
+  @override
+  String get settings_lock_disable_confirm_title => '설정 PIN을 해제하시겠습니까?';
+
+  @override
+  String get settings_lock_disable_confirm_body => '다시 켜기 전까지 설정은 PIN 없이 열립니다.';
+
+  @override
+  String get settings_lock_turn_off => '해제';
+
+  @override
+  String get settings_lock_explainer =>
+      '이 PIN은 페어링된 모든 컴패니언과 공유됩니다. 지문 또는 얼굴 인식 잠금 해제가 가능한 컴패니언으로 PIN을 잊었을 때 재설정할 수 있습니다.';
+
+  @override
+  String get settings_lock_backspace => '마지막 숫자 삭제';
+
+  @override
+  String get settings_lock_save_failed => '저장하지 못했습니다. 다시 시도하세요.';
 }

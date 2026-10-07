@@ -2874,6 +2874,71 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       '手机和车辆会尽可能直接连接。只有当两者都处于阻止直接连接的移动网络时才会使用中继，且中继无法读取其转发的内容。';
+
+  @override
+  String get settings_section_security => '安全';
+
+  @override
+  String get settings_section_security_subtitle => '需要 PIN 码才能打开设置和监控。';
+
+  @override
+  String get settings_lock_switch_label => '设置 PIN 码';
+
+  @override
+  String get settings_lock_change_pin => '更改 PIN 码';
+
+  @override
+  String get settings_lock_enter_title => '输入 PIN 码';
+
+  @override
+  String get settings_lock_enter_subtitle => '输入您的 6 位设置 PIN 码';
+
+  @override
+  String get settings_lock_new_pin_title => '设置新的 PIN 码';
+
+  @override
+  String get settings_lock_confirm_pin_title => '确认您的新 PIN 码';
+
+  @override
+  String get settings_lock_mismatch => 'PIN 码不一致。请重试。';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN 码错误。还可尝试 $count 次。',
+      one: 'PIN 码错误。还可尝试 $count 次。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return '尝试次数过多。请在 $time 后重试。';
+  }
+
+  @override
+  String get settings_lock_unreachable => '目前无法连接到 BladeWatch 服务。';
+
+  @override
+  String get settings_lock_disable_confirm_title => '要关闭设置 PIN 码吗？';
+
+  @override
+  String get settings_lock_disable_confirm_body => '在您重新开启之前，设置将无需 PIN 码即可打开。';
+
+  @override
+  String get settings_lock_turn_off => '关闭';
+
+  @override
+  String get settings_lock_explainer =>
+      '此 PIN 码与每个已配对的伴侣设备共享。已启用指纹或面容解锁的伴侣设备可在您忘记时重置它。';
+
+  @override
+  String get settings_lock_backspace => '删除最后一位数字';
+
+  @override
+  String get settings_lock_save_failed => '保存失败，请重试。';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -5746,6 +5811,71 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   @override
   String get settings_relay_explainer =>
       '手机和车辆会尽可能直接连接。只有当两者都处于阻止直接连接的移动网络时才会使用中继，且中继无法读取其转发的内容。';
+
+  @override
+  String get settings_section_security => '安全';
+
+  @override
+  String get settings_section_security_subtitle => '需要 PIN 码才能打开设置和监控。';
+
+  @override
+  String get settings_lock_switch_label => '设置 PIN 码';
+
+  @override
+  String get settings_lock_change_pin => '更改 PIN 码';
+
+  @override
+  String get settings_lock_enter_title => '输入 PIN 码';
+
+  @override
+  String get settings_lock_enter_subtitle => '输入您的 6 位设置 PIN 码';
+
+  @override
+  String get settings_lock_new_pin_title => '设置新的 PIN 码';
+
+  @override
+  String get settings_lock_confirm_pin_title => '确认您的新 PIN 码';
+
+  @override
+  String get settings_lock_mismatch => 'PIN 码不一致。请重试。';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN 码错误。还可尝试 $count 次。',
+      one: 'PIN 码错误。还可尝试 $count 次。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return '尝试次数过多。请在 $time 后重试。';
+  }
+
+  @override
+  String get settings_lock_unreachable => '目前无法连接到 BladeWatch 服务。';
+
+  @override
+  String get settings_lock_disable_confirm_title => '要关闭设置 PIN 码吗？';
+
+  @override
+  String get settings_lock_disable_confirm_body => '在您重新开启之前，设置将无需 PIN 码即可打开。';
+
+  @override
+  String get settings_lock_turn_off => '关闭';
+
+  @override
+  String get settings_lock_explainer =>
+      '此 PIN 码与每个已配对的伴侣设备共享。已启用指纹或面容解锁的伴侣设备可在您忘记时重置它。';
+
+  @override
+  String get settings_lock_backspace => '删除最后一位数字';
+
+  @override
+  String get settings_lock_save_failed => '保存失败，请重试。';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -8619,4 +8749,69 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   @override
   String get settings_relay_explainer =>
       '手機與車輛會盡可能直接連線。只有當兩者都位於阻擋直接連線的行動網路時才會使用中繼，且中繼無法讀取其轉送的內容。';
+
+  @override
+  String get settings_section_security => '安全';
+
+  @override
+  String get settings_section_security_subtitle => '需要 PIN 碼才能開啟設定和監控。';
+
+  @override
+  String get settings_lock_switch_label => '設定 PIN 碼';
+
+  @override
+  String get settings_lock_change_pin => '變更 PIN 碼';
+
+  @override
+  String get settings_lock_enter_title => '輸入 PIN 碼';
+
+  @override
+  String get settings_lock_enter_subtitle => '輸入您的 6 位數設定 PIN 碼';
+
+  @override
+  String get settings_lock_new_pin_title => '設定新的 PIN 碼';
+
+  @override
+  String get settings_lock_confirm_pin_title => '確認您的新 PIN 碼';
+
+  @override
+  String get settings_lock_mismatch => 'PIN 碼不一致。請重試。';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PIN 碼錯誤。還可嘗試 $count 次。',
+      one: 'PIN 碼錯誤。還可嘗試 $count 次。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return '嘗試次數過多。請在 $time 後重試。';
+  }
+
+  @override
+  String get settings_lock_unreachable => '目前無法連線到 BladeWatch 服務。';
+
+  @override
+  String get settings_lock_disable_confirm_title => '要關閉設定 PIN 碼嗎？';
+
+  @override
+  String get settings_lock_disable_confirm_body => '在您重新開啟之前，設定將不需 PIN 碼即可開啟。';
+
+  @override
+  String get settings_lock_turn_off => '關閉';
+
+  @override
+  String get settings_lock_explainer =>
+      '此 PIN 碼會與每個已配對的夥伴裝置共用。已啟用指紋或臉部解鎖的夥伴裝置可在您忘記時重設它。';
+
+  @override
+  String get settings_lock_backspace => '刪除最後一位數字';
+
+  @override
+  String get settings_lock_save_failed => '儲存失敗，請重試。';
 }

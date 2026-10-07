@@ -3019,4 +3019,77 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'Le téléphone et la voiture se connectent directement dès que possible. Le relais n\'est utilisé que lorsque les deux sont sur des réseaux mobiles qui l\'empêchent, et il ne peut pas lire ce qu\'il transmet.';
+
+  @override
+  String get settings_section_security => 'Sécurité';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Exiger un code PIN pour ouvrir Paramètres et Surveillance.';
+
+  @override
+  String get settings_lock_switch_label => 'Code PIN des paramètres';
+
+  @override
+  String get settings_lock_change_pin => 'Changer le code PIN';
+
+  @override
+  String get settings_lock_enter_title => 'Saisir le code PIN';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Saisissez votre code PIN à 6 chiffres';
+
+  @override
+  String get settings_lock_new_pin_title => 'Définir un nouveau code PIN';
+
+  @override
+  String get settings_lock_confirm_pin_title =>
+      'Confirmez votre nouveau code PIN';
+
+  @override
+  String get settings_lock_mismatch =>
+      'Les codes PIN ne correspondent pas. Réessayez.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Code PIN incorrect. Il reste $count tentatives.',
+      one: 'Code PIN incorrect. Il reste $count tentative.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Trop de tentatives. Réessayez dans $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Impossible de contacter le service BladeWatch pour le moment.';
+
+  @override
+  String get settings_lock_disable_confirm_title =>
+      'Désactiver le code PIN des paramètres ?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Les paramètres s\'ouvriront sans code PIN jusqu\'à ce que vous le réactiviez.';
+
+  @override
+  String get settings_lock_turn_off => 'Désactiver';
+
+  @override
+  String get settings_lock_explainer =>
+      'Ce code PIN est partagé avec chaque appareil compagnon associé. Un appareil compagnon avec empreinte digitale ou reconnaissance faciale peut le réinitialiser si vous l\'oubliez.';
+
+  @override
+  String get settings_lock_backspace => 'Supprimer le dernier chiffre';
+
+  @override
+  String get settings_lock_save_failed =>
+      'Impossible d\'enregistrer. Réessayez.';
 }

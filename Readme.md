@@ -8,7 +8,7 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
-**Contents:** [What's new](#whats-new-in-v1413) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
+**Contents:** [What's new](#whats-new-in-v1414) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
 
@@ -21,7 +21,28 @@ They share one Android UID, which is what lets the UI talk to the daemons over l
 
 A third app, the **companion** (`net.bladewatch.companionapp`), goes on your phone or computer, never on the car. It is optional, and it is how you reach the car remotely: see [Install the companion app](#install-the-companion-app).
 
-## What's new in v1.4.1.3
+## What's new in v1.4.1.4
+
+A 6-digit PIN, held by the car, to keep Settings away from anyone with physical access — a
+valet, a passenger, a child in the back seat.
+
+- **Settings PIN lock, in the car and in every companion.** Turn it on from **Settings >
+  Security** in the car (or **Settings** in the companion): set a PIN, and from then on opening
+  Settings — Surveillance and Notifications too, in the companion — asks for it first. A wrong
+  PIN says how many tries are left; five wrong PINs in a row lock entry out for a minute,
+  doubling on each further miss. It is the car's PIN, not any one app's: every paired companion
+  checks the same one.
+- **Biometric unlock on the companion.** A phone or Mac with a fingerprint reader or face
+  recognition can use it instead of typing the PIN each time — opt in from **Settings** after
+  proving you know the PIN once. A failed or cancelled biometric check falls back to the PIN,
+  with a button to try the sensor again.
+- **A forgotten PIN isn't a lockout.** Any companion already unlocked by its own biometrics can
+  change or clear the car's PIN without re-entering the old one. With no companion at hand, the
+  PIN can also be cleared over ADB at the car — see
+  [docs/ipc-auth-and-secrets.md](docs/ipc-auth-and-secrets.md#settings-pin-lock-bladewatch-hr6r).
+- **One version everywhere:** 1.4.1.4.
+
+### v1.4.1.3
 
 Reach the car from mobile data while it is online through its own SIM, through a relay you run.
 
@@ -464,7 +485,7 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
   ```bash
   cd companion
   flutter build ios --release --no-codesign
-  V=$(plutil -extract CFBundleShortVersionString raw ios/Runner/Info.plist)   # 1.4.1.3
+  V=$(plutil -extract CFBundleShortVersionString raw ios/Runner/Info.plist)   # 1.4.1.4
   rm -rf build/ipa && mkdir -p build/ipa/Payload
   cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
   (cd build/ipa && zip -qry "BladeWatch-$V.ipa" Payload && zip -q "BladeWatch-$V-sidestore.zip" "BladeWatch-$V.ipa" && rm -rf Payload "BladeWatch-$V.ipa")

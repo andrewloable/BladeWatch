@@ -2982,4 +2982,74 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'Telefon ve araç mümkün olduğunda doğrudan bağlanır. Röle yalnızca ikisi de bunu engelleyen mobil ağlardayken kullanılır ve ilettiği içeriği okuyamaz.';
+
+  @override
+  String get settings_section_security => 'Güvenlik';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Ayarlar ve Gözetimi açmak için PIN gerektir.';
+
+  @override
+  String get settings_lock_switch_label => 'Ayarlar PIN\'i';
+
+  @override
+  String get settings_lock_change_pin => 'PIN\'i değiştir';
+
+  @override
+  String get settings_lock_enter_title => 'PIN\'i girin';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      '6 haneli ayarlar PIN\'inizi girin';
+
+  @override
+  String get settings_lock_new_pin_title => 'Yeni bir PIN belirleyin';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Yeni PIN\'inizi onaylayın';
+
+  @override
+  String get settings_lock_mismatch => 'PIN\'ler eşleşmedi. Yeniden deneyin.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Yanlış PIN. $count deneme hakkınız kaldı.',
+      one: 'Yanlış PIN. $count deneme hakkınız kaldı.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Çok fazla deneme. $time sonra yeniden deneyin.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'BladeWatch servisine şu anda ulaşılamıyor.';
+
+  @override
+  String get settings_lock_disable_confirm_title =>
+      'Ayarlar PIN\'i kapatılsın mı?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Yeniden açana kadar Ayarlar PIN olmadan açılır.';
+
+  @override
+  String get settings_lock_turn_off => 'Kapat';
+
+  @override
+  String get settings_lock_explainer =>
+      'Bu PIN, eşlenen her companion ile paylaşılır. Parmak izi veya yüz tanımayla kilidi açılan bir companion, unutmanız durumunda sıfırlayabilir.';
+
+  @override
+  String get settings_lock_backspace => 'Son haneyi sil';
+
+  @override
+  String get settings_lock_save_failed => 'Kaydedilemedi. Yeniden deneyin.';
 }

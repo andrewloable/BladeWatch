@@ -1,5 +1,6 @@
 package net.bladewatch.app.server.connect.impl
 
+import net.bladewatch.app.auth.SettingsLock
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.daemon.CameraDaemon
 import net.bladewatch.app.logging.DaemonLogger
@@ -27,6 +28,7 @@ import java.util.Locale
  *   GetLocale        → LocaleManager directly
  *   SetLocale        → LocaleManager directly
  *   SetRecordingMode → CameraDaemon directly
+ *   GetSettingsLock, SetSettingsLock, VerifySettingsPin → SettingsLock directly (BladeWatch-hr6r)
  */
 class SettingsServiceImpl {
 
@@ -60,6 +62,16 @@ class SettingsServiceImpl {
         dispatcher.register(
             "bladewatch.v1.SettingsService", "SetTelemetryOverlayFields",
             this::handleSetTelemetryOverlayFields
+        )
+        // BladeWatch-hr6r: the Settings PIN lock.
+        dispatcher.register(
+            "bladewatch.v1.SettingsService", "GetSettingsLock", this::handleGetSettingsLock
+        )
+        dispatcher.register(
+            "bladewatch.v1.SettingsService", "SetSettingsLock", this::handleSetSettingsLock
+        )
+        dispatcher.register(
+            "bladewatch.v1.SettingsService", "VerifySettingsPin", this::handleVerifySettingsPin
         )
     }
 
@@ -246,6 +258,40 @@ class SettingsServiceImpl {
         } catch (e: Exception) {
             throw ConnectException("internal", "Failed to set recording mode: " + e.message)
         }
+    }
+
+    @Throws(ConnectException::class)
+    private fun handleGetSettingsLock(req: String?, clientIdentity: String?): ConnectResponse = json {
+        val lock = SettingsLock.shared
+        JSONObject()
+            .put("enabled", lock.isEnabled())
+            .put("retryAfterMs", lock.retryAfterMs())
+    }
+
+    /**
+     * Never requires the current PIN -- see [SettingsLock]'s class doc for why that is fine given
+     * this API's threat model. `enabled=false` clears the PIN and disables the lock.
+     */
+    @Throws(ConnectException::class)
+    private fun handleSetSettingsLock(req: String?, clientIdentity: String?): ConnectResponse = json {
+        val input = body(req)
+        val enabled = input.optBoolean("enabled", false)
+        val lock = SettingsLock.shared
+        val success = if (enabled) lock.setPin(input.optString("pin", "")) else lock.clear()
+        JSONObject().put("success", success).put(
+            "error",
+            if (success) "" else if (enabled) "PIN must be exactly 6 digits" else "Failed to clear the settings lock"
+        )
+    }
+
+    @Throws(ConnectException::class)
+    private fun handleVerifySettingsPin(req: String?, clientIdentity: String?): ConnectResponse = json {
+        val input = body(req)
+        val result = SettingsLock.shared.verify(input.optString("pin", ""))
+        JSONObject()
+            .put("ok", result.ok)
+            .put("retryAfterMs", result.retryAfterMs)
+            .put("attemptsLeft", result.attemptsLeft)
     }
 
     private companion object {

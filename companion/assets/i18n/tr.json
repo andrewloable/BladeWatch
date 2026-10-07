@@ -1750,6 +1750,23 @@
     "relay_key_needed": "Araçta ayarladığınız röle anahtarını girin.",
     "relay_change": "Değiştir",
     "relay_remove": "Anahtarı kaldır",
-    "relay_explainer": "Telefon ve araç mümkün olduğunda doğrudan bağlanır. Röle yalnızca ikisi de bunu engelleyen mobil ağlardayken kullanılır ve ilettiği içeriği okuyamaz."
+    "relay_explainer": "Telefon ve araç mümkün olduğunda doğrudan bağlanır. Röle yalnızca ikisi de bunu engelleyen mobil ağlardayken kullanılır ve ilettiği içeriği okuyamaz.",
+    "settings_lock_title": "Ayarlar kilidi",
+    "settings_lock_switch": "Ayarlar PIN'i",
+    "settings_lock_change_pin": "PIN'i değiştir",
+    "settings_lock_enter_title": "PIN'i girin",
+    "settings_lock_new_pin_title": "Yeni bir PIN belirleyin",
+    "settings_lock_confirm_pin_title": "Yeni PIN'inizi onaylayın",
+    "settings_lock_mismatch": "PIN'ler eşleşmedi. Yeniden deneyin.",
+    "settings_lock_wrong_pin": "Yanlış PIN. Kalan deneme sayısı: {count}.",
+    "settings_lock_locked_out": "Çok fazla deneme. {time} sonra yeniden deneyin.",
+    "settings_lock_unreachable": "Şu anda arabanıza ulaşılamıyor.",
+    "settings_lock_disable_confirm_title": "Ayarlar PIN'i kapatılsın mı?",
+    "settings_lock_disable_confirm_body": "Yeniden açana kadar Ayarlar PIN olmadan açılır.",
+    "settings_lock_explainer": "Bu PIN arabaya ait — araç içi uygulamayla ve eşlenen diğer her companion ile paylaşılır.",
+    "settings_lock_backspace": "Son haneyi sil",
+    "settings_lock_biometric_switch": "PIN yerine biyometrik kullan",
+    "settings_lock_biometric_reason": "BladeWatch ayarlarının kilidini aç",
+    "settings_lock_biometric_retry": "Biyometriği tekrar dene"
   }
 }

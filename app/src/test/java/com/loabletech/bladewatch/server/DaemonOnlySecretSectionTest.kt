@@ -3,6 +3,7 @@ package net.bladewatch.app.server
 import java.io.File
 import java.nio.file.Files
 import net.bladewatch.app.auth.CompanionPairing
+import net.bladewatch.app.auth.SettingsLock
 import net.bladewatch.app.config.SecretConfigStore
 import net.bladewatch.app.daemon.PearRelay
 import net.bladewatch.app.daemon.PearTopic
@@ -14,15 +15,18 @@ import org.junit.Test
 
 /**
  * BladeWatch-rdtj.16: the secret-store sections only byd_cam_daemon uses -- the LAN TLS identity,
- * the Pear topic seed, the discovery probe key and the paired companions -- are out of reach of
- * every secret_* IPC command, in both directions. The app UID is trusted, but it must not be able
- * to read those keys or plant a companion.
+ * the Pear topic seed, the discovery probe key, the paired companions and (BladeWatch-hr6r) the
+ * settings PIN lock -- are out of reach of every secret_* IPC command, in both directions. The
+ * app UID is trusted, but it must not be able to read those keys, plant a companion, or clear the
+ * settings lock out from under the daemon.
  */
 class DaemonOnlySecretSectionTest {
 
     private lateinit var store: SecretConfigStore
     private val server = TcpCommandServer(19876)
-    private val sections = listOf(LanTls.SECTION, PearTopic.SECTION, LanDiscoveryResponder.SECTION, CompanionPairing.SECTION)
+    private val sections = listOf(
+        LanTls.SECTION, PearTopic.SECTION, LanDiscoveryResponder.SECTION, CompanionPairing.SECTION, SettingsLock.SECTION,
+    )
 
     @Before
     fun setUp() {

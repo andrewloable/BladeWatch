@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:bladewatch_companion/car/biometrics.dart';
+import 'package:bladewatch_companion/car/car_store.dart';
 import 'package:bladewatch_companion/car/speed_test.dart';
 import 'package:bladewatch_companion/screens/about/about_screen.dart';
 import 'package:bladewatch_companion/screens/diagnostics/diagnostics_screen.dart';
@@ -53,9 +55,8 @@ void main() {
     late List<String?> languages;
     late int unpaired;
 
-    Future<TestSession> pump(WidgetTester tester, {bool sd = true, void Function(TestSession s)? more}) async {
+    Future<TestSession> pump(WidgetTester tester, {bool sd = true, void Function(TestSession s)? more, Biometrics? biometrics, CarStore? store}) async {
       final s = TestSession();
-      more?.call(s);
       stubStatus(s);
       stubStorage(s, sd: sd);
       s.rpc.stubJson('SettingsService', 'GetQuality', {
@@ -66,20 +67,23 @@ void main() {
       });
       s.rpc.stubJson('SettingsService', 'GetLocale', {'lang': 'en', 'supported': {'en': true, 'de': true}});
       s.rpc.stubJson('SettingsService', 'GetStatusOverlay', {'cameraVisible': true});
-      for (final m in ['SetRecordingMode', 'SetQuality', 'SetLocale', 'SetStatusOverlay']) {
+      s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': false, 'retryAfterMs': '0'});
+      for (final m in ['SetRecordingMode', 'SetQuality', 'SetLocale', 'SetStatusOverlay', 'SetSettingsLock']) {
         s.rpc.stubJson('SettingsService', m, {'success': true});
       }
       s.rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
       s.rpc.stubJson('RecordingsService', 'SyncCatalog', {'success': true});
+      more?.call(s); // after the defaults, so it can override one of them
       languages = [];
       unpaired = 0;
       await pumpScreen(
         tester,
         s,
         SettingsScreen(
-          store: testStore(car: testCar()),
+          store: store ?? testStore(car: testCar()),
           onLanguage: (l) async => languages.add(l),
           onUnpair: () async => unpaired++,
+          biometrics: biometrics ?? FakeBiometrics(),
         ),
         size: const Size(1200, 4000),
       );
@@ -342,6 +346,172 @@ void main() {
 
       await pump(tester, sd: false);
       expect(find.byKey(const ValueKey('settings.format')), findsNothing);
+      await unmount(tester);
+    });
+
+    // BladeWatch-hr6r: the Settings PIN lock section -- turning it on (new + confirm), changing
+    // the PIN, and turning it off after a confirm.
+    Future<void> tapDigits(WidgetTester tester, String digits) async {
+      for (final d in digits.split('')) {
+        await tester.tap(find.widgetWithText(OutlinedButton, d));
+        await tester.pump();
+      }
+    }
+
+    testWidgets('the lock starts off: no Change PIN row', (tester) async {
+      await pump(tester);
+      final switchTile = tester.widget<SwitchListTile>(find.byKey(const ValueKey('settings.lock')));
+      expect(switchTile.value, isFalse);
+      expect(find.byKey(const ValueKey('settings.lockChange')), findsNothing);
+      await unmount(tester);
+    });
+
+    testWidgets('turning the switch on asks for a new PIN twice, then enables it', (tester) async {
+      final s = await pump(tester);
+      await tester.tap(find.byKey(const ValueKey('settings.lock')));
+      await tester.pumpAndSettle();
+      await tapDigits(tester, '123456');
+      await tester.pumpAndSettle();
+      await tapDigits(tester, '123456');
+      await tester.pumpAndSettle();
+
+      final sent = s.rpc.calls.where((c) => c.method == 'SetSettingsLock').single.request as SetSettingsLockRequest;
+      expect(sent.enabled, isTrue);
+      expect(sent.pin, '123456');
+      expect(find.text(t('toast.saved')), findsOneWidget);
+      await unmount(tester);
+    });
+
+    testWidgets('cancelling the new-PIN dialog leaves the lock off', (tester) async {
+      final s = await pump(tester);
+      await tester.tap(find.byKey(const ValueKey('settings.lock')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t('common.cancel')));
+      await tester.pumpAndSettle();
+
+      expect(s.rpc.calls.where((c) => c.method == 'SetSettingsLock'), isEmpty);
+      await unmount(tester);
+    });
+
+    testWidgets('Change PIN sets a new one while the lock stays on', (tester) async {
+      final s = await pump(tester, more: (s) => s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'}));
+      await tester.tap(find.byKey(const ValueKey('settings.lockChange')));
+      await tester.pumpAndSettle();
+      await tapDigits(tester, '654321');
+      await tester.pumpAndSettle();
+      await tapDigits(tester, '654321');
+      await tester.pumpAndSettle();
+
+      expect((s.rpc.calls.where((c) => c.method == 'SetSettingsLock').single.request as SetSettingsLockRequest).pin, '654321');
+      await unmount(tester);
+    });
+
+    testWidgets('turning the switch off asks for confirmation before disabling', (tester) async {
+      final s = await pump(tester, more: (s) => s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'}));
+      await tester.tap(find.byKey(const ValueKey('settings.lock')));
+      await tester.pumpAndSettle();
+      expect(s.rpc.calls.where((c) => c.method == 'SetSettingsLock'), isEmpty, reason: 'not yet -- the confirm dialog is up');
+
+      await tester.tap(find.byKey(const ValueKey('settings.confirm')));
+      await tester.pumpAndSettle();
+
+      expect((s.rpc.calls.where((c) => c.method == 'SetSettingsLock').single.request as SetSettingsLockRequest).enabled, isFalse);
+      expect(find.text(t('toast.saved')), findsOneWidget);
+      await unmount(tester);
+    });
+
+    testWidgets('cancelling the turn-off confirmation leaves the lock on', (tester) async {
+      final s = await pump(tester, more: (s) => s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'}));
+      await tester.tap(find.byKey(const ValueKey('settings.lock')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t('common.cancel')));
+      await tester.pumpAndSettle();
+
+      expect(s.rpc.calls.where((c) => c.method == 'SetSettingsLock'), isEmpty);
+      await unmount(tester);
+    });
+
+    testWidgets('a failed save shows the toast, lock stays off', (tester) async {
+      await pump(tester, more: (s) => s.rpc.stubJson('SettingsService', 'SetSettingsLock', {'success': false, 'error': 'nope'}));
+      await tester.tap(find.byKey(const ValueKey('settings.lock')));
+      await tester.pumpAndSettle();
+      await tapDigits(tester, '123456');
+      await tester.pumpAndSettle();
+      await tapDigits(tester, '123456');
+      await tester.pumpAndSettle();
+
+      expect(find.text(t('errors.save_failed')), findsOneWidget);
+      final switchTile = tester.widget<SwitchListTile>(find.byKey(const ValueKey('settings.lock')));
+      expect(switchTile.value, isFalse);
+      await unmount(tester);
+    });
+
+    // BladeWatch-hr6r.6: the "Use biometrics instead of PIN" row -- shown only when both the lock
+    // and the device's own biometrics are on, turning it on needs the car's PIN first.
+    Future<TestSession> pumpWithLock(WidgetTester tester, {required bool biometricAvailable, CarStore? store}) => pump(
+          tester,
+          biometrics: FakeBiometrics(isAvailable: biometricAvailable),
+          store: store,
+          more: (s) => s.rpc.stubJson('SettingsService', 'GetSettingsLock', {'enabled': true, 'retryAfterMs': '0'}),
+        );
+
+    testWidgets('no biometric switch when the device has none', (tester) async {
+      await pumpWithLock(tester, biometricAvailable: false);
+      expect(find.byKey(const ValueKey('settings.lockBiometric')), findsNothing);
+      await unmount(tester);
+    });
+
+    testWidgets('no biometric switch when the lock itself is off, even with biometrics available', (tester) async {
+      await pump(tester, biometrics: FakeBiometrics(isAvailable: true));
+      expect(find.byKey(const ValueKey('settings.lockBiometric')), findsNothing);
+      await unmount(tester);
+    });
+
+    testWidgets('turning the biometric switch on asks for the PIN first; a correct PIN enables it', (tester) async {
+      final store = testStore(car: testCar());
+      final s = await pumpWithLock(tester, biometricAvailable: true, store: store);
+      s.rpc.stubJson('SettingsService', 'VerifySettingsPin', {'ok': true, 'retryAfterMs': '0', 'attemptsLeft': 5});
+
+      await tester.tap(find.byKey(const ValueKey('settings.lockBiometric')));
+      await tester.pumpAndSettle();
+      expect(find.text(t('companion.settings_lock_enter_title')), findsOneWidget);
+      await tapDigits(tester, '123456');
+      await tester.pumpAndSettle();
+
+      expect(store.biometricUnlockEnabled, isTrue);
+      expect(tester.widget<SwitchListTile>(find.byKey(const ValueKey('settings.lockBiometric'))).value, isTrue);
+      await unmount(tester);
+    });
+
+    testWidgets('a wrong PIN leaves the biometric switch off', (tester) async {
+      final store = testStore(car: testCar());
+      final s = await pumpWithLock(tester, biometricAvailable: true, store: store);
+      s.rpc.stubJson('SettingsService', 'VerifySettingsPin', {'ok': false, 'retryAfterMs': '0', 'attemptsLeft': 3});
+
+      await tester.tap(find.byKey(const ValueKey('settings.lockBiometric')));
+      await tester.pumpAndSettle();
+      await tapDigits(tester, '000000');
+      await tester.pumpAndSettle();
+      expect(find.text(t('companion.settings_lock_wrong_pin', {'count': 3})), findsOneWidget);
+      await tester.tap(find.text(t('common.cancel')));
+      await tester.pumpAndSettle();
+
+      expect(store.biometricUnlockEnabled, isFalse);
+      expect(tester.widget<SwitchListTile>(find.byKey(const ValueKey('settings.lockBiometric'))).value, isFalse);
+      await unmount(tester);
+    });
+
+    testWidgets('turning the biometric switch off needs no PIN', (tester) async {
+      final store = testStore(car: testCar())..biometricUnlockEnabled = true;
+      await pumpWithLock(tester, biometricAvailable: true, store: store);
+      expect(tester.widget<SwitchListTile>(find.byKey(const ValueKey('settings.lockBiometric'))).value, isTrue);
+
+      await tester.tap(find.byKey(const ValueKey('settings.lockBiometric')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t('companion.settings_lock_enter_title')), findsNothing, reason: 'disabling never asks for the PIN');
+      expect(store.biometricUnlockEnabled, isFalse);
+      expect(tester.widget<SwitchListTile>(find.byKey(const ValueKey('settings.lockBiometric'))).value, isFalse);
       await unmount(tester);
     });
   });

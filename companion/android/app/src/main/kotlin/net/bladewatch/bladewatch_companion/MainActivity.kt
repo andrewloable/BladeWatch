@@ -2,7 +2,7 @@ package net.bladewatch.bladewatch_companion
 
 import android.media.MediaCodecList
 import android.media.MediaFormat
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
@@ -10,8 +10,11 @@ import io.flutter.plugin.common.MethodChannel
  * BladeWatch-rdtj.73: reports this device's own hardware video decode ceiling, so the car knows
  * whether a saved clip needs transcoding before it can play here. Saved recordings only -- Live
  * view has no decode problem to solve (refreshed JPEG stills, no video codec involved).
+ *
+ * Extends FlutterFragmentActivity, not FlutterActivity (BladeWatch-hr6r.6): local_auth's Android
+ * implementation requires a FragmentActivity to host its biometric prompt.
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->

@@ -2895,4 +2895,69 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       '電話と車は、可能な限り直接接続します。リレーは、両方がそれを妨げるモバイルネットワーク上にある場合にのみ使われ、転送する内容を読むことはできません。';
+
+  @override
+  String get settings_section_security => 'セキュリティ';
+
+  @override
+  String get settings_section_security_subtitle => '設定と監視を開くにはPINを必須にします。';
+
+  @override
+  String get settings_lock_switch_label => '設定用PIN';
+
+  @override
+  String get settings_lock_change_pin => 'PINを変更';
+
+  @override
+  String get settings_lock_enter_title => 'PINを入力';
+
+  @override
+  String get settings_lock_enter_subtitle => '6桁の設定用PINを入力してください';
+
+  @override
+  String get settings_lock_new_pin_title => '新しいPINを設定';
+
+  @override
+  String get settings_lock_confirm_pin_title => '新しいPINを確認';
+
+  @override
+  String get settings_lock_mismatch => 'PINが一致しませんでした。もう一度お試しください。';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'PINが違います。残り$count回試せます。',
+      one: 'PINが違います。残り$count回試せます。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return '試行回数が多すぎます。$time後に再試行してください。';
+  }
+
+  @override
+  String get settings_lock_unreachable => '現在BladeWatchサービスに接続できません。';
+
+  @override
+  String get settings_lock_disable_confirm_title => '設定用PINを無効にしますか?';
+
+  @override
+  String get settings_lock_disable_confirm_body => '再度有効にするまで、設定はPINなしで開きます。';
+
+  @override
+  String get settings_lock_turn_off => '無効にする';
+
+  @override
+  String get settings_lock_explainer =>
+      'このPINはペアリングされたすべてのコンパニオンと共有されます。指紋認証または顔認証に対応したコンパニオンがあれば、忘れた場合にリセットできます。';
+
+  @override
+  String get settings_lock_backspace => '最後の数字を削除';
+
+  @override
+  String get settings_lock_save_failed => '保存できませんでした。もう一度お試しください。';
 }

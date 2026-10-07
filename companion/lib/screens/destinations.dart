@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../car/biometrics.dart';
 import '../car/car_store.dart';
 import 'about/about_screen.dart';
 import 'alerts/alert_settings_screen.dart';
@@ -34,6 +35,7 @@ List<Destination> destinations({
   required CarStore store,
   required Future<void> Function(String? lang) onLanguage,
   required Future<void> Function() onUnpair,
+  Biometrics? biometrics,
 }) =>
     [
       Destination('dashboard', Icons.dashboard_outlined, 'nav.dashboard', (_) => const DashboardScreen()),
@@ -46,7 +48,7 @@ List<Destination> destinations({
       Destination('surveillance', Icons.shield_outlined, 'nav.surveillance', (_) => const SurveillanceScreen()),
       Destination('notifications', Icons.tune, 'nav.notifications', (_) => AlertSettingsScreen(alerts: alerts, store: store)),
       Destination('settings', Icons.settings_outlined, 'nav.settings',
-          (_) => SettingsScreen(store: store, onLanguage: onLanguage, onUnpair: onUnpair)),
+          (_) => SettingsScreen(store: store, onLanguage: onLanguage, onUnpair: onUnpair, biometrics: biometrics)),
       Destination('performance', Icons.speed, 'nav.performance', (_) => const PerformanceScreen()),
       Destination('diagnostics', Icons.health_and_safety_outlined, 'nav.diagnostics', (_) => const DiagnosticsScreen()),
       Destination('about', Icons.info_outline, 'nav.about', (_) => const AboutScreen()),

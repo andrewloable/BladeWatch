@@ -2962,4 +2962,72 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'Your phone and the car connect directly whenever they can. The relay is used only when both are on mobile networks that block that, and it cannot read what it forwards.';
+
+  @override
+  String get settings_section_security => 'Security';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Require a PIN to open Settings and Surveillance.';
+
+  @override
+  String get settings_lock_switch_label => 'Settings PIN';
+
+  @override
+  String get settings_lock_change_pin => 'Change PIN';
+
+  @override
+  String get settings_lock_enter_title => 'Enter PIN';
+
+  @override
+  String get settings_lock_enter_subtitle => 'Enter your 6-digit Settings PIN';
+
+  @override
+  String get settings_lock_new_pin_title => 'Set a new PIN';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Confirm your new PIN';
+
+  @override
+  String get settings_lock_mismatch => 'PINs didn\'t match. Try again.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Wrong PIN. $count attempts left.',
+      one: 'Wrong PIN. $count attempt left.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Too many attempts. Try again in $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Can\'t reach the BladeWatch service right now.';
+
+  @override
+  String get settings_lock_disable_confirm_title => 'Turn off Settings PIN?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Settings will open without a PIN until you turn it back on.';
+
+  @override
+  String get settings_lock_turn_off => 'Turn off';
+
+  @override
+  String get settings_lock_explainer =>
+      'This PIN is shared with every paired companion. A companion with fingerprint or face unlock can reset it if you forget it.';
+
+  @override
+  String get settings_lock_backspace => 'Delete last digit';
+
+  @override
+  String get settings_lock_save_failed => 'Could not save. Try again.';
 }

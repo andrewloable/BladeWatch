@@ -3012,4 +3012,78 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'Телефон и автомобиль подключаются напрямую, когда это возможно. Ретранслятор используется, только если оба находятся в мобильных сетях, которые этому мешают, и он не может прочитать то, что передаёт.';
+
+  @override
+  String get settings_section_security => 'Безопасность';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Требовать PIN-код для открытия настроек и видеонаблюдения.';
+
+  @override
+  String get settings_lock_switch_label => 'PIN-код настроек';
+
+  @override
+  String get settings_lock_change_pin => 'Изменить PIN-код';
+
+  @override
+  String get settings_lock_enter_title => 'Введите PIN-код';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Введите 6-значный PIN-код настроек';
+
+  @override
+  String get settings_lock_new_pin_title => 'Задайте новый PIN-код';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Подтвердите новый PIN-код';
+
+  @override
+  String get settings_lock_mismatch =>
+      'PIN-коды не совпадают. Попробуйте снова.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Неверный PIN-код. Осталось $count попыток.',
+      many: 'Неверный PIN-код. Осталось $count попыток.',
+      few: 'Неверный PIN-код. Осталось $count попытки.',
+      one: 'Неверный PIN-код. Осталась $count попытка.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'Слишком много попыток. Повторите через $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Не удаётся связаться со службой BladeWatch прямо сейчас.';
+
+  @override
+  String get settings_lock_disable_confirm_title =>
+      'Отключить PIN-код настроек?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Настройки будут открываться без PIN-кода, пока вы не включите его снова.';
+
+  @override
+  String get settings_lock_turn_off => 'Отключить';
+
+  @override
+  String get settings_lock_explainer =>
+      'Этот PIN-код используется совместно с каждым подключённым компаньоном. Компаньон с разблокировкой по отпечатку пальца или лицу может сбросить его, если вы его забудете.';
+
+  @override
+  String get settings_lock_backspace => 'Удалить последнюю цифру';
+
+  @override
+  String get settings_lock_save_failed =>
+      'Не удалось сохранить. Попробуйте снова.';
 }

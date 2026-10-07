@@ -176,6 +176,36 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_bladewatch_v1_SetTelemetryOverlayFieldsResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetSettingsLockRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetSettingsLockRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetSettingsLockResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetSettingsLockResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetSettingsLockRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetSettingsLockRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetSettingsLockResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetSettingsLockResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_VerifySettingsPinRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_VerifySettingsPinRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_VerifySettingsPinResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_VerifySettingsPinResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -277,45 +307,64 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
       "type\030\001 \001(\tR\004type\022\026\n\006fields\030\002 \003(\tR\006fields" +
       "\"S\n!SetTelemetryOverlayFieldsResponse\022\030\n" +
       "\007success\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005" +
-      "error*\354\001\n\024RecordingQualityTier\022&\n\"RECORD" +
-      "ING_QUALITY_TIER_UNSPECIFIED\020\000\022\"\n\036RECORD" +
-      "ING_QUALITY_TIER_ECONOMY\020\001\022#\n\037RECORDING_" +
-      "QUALITY_TIER_STANDARD\020\002\022\037\n\033RECORDING_QUA" +
-      "LITY_TIER_HIGH\020\003\022\"\n\036RECORDING_QUALITY_TI" +
-      "ER_PREMIUM\020\004\022\036\n\032RECORDING_QUALITY_TIER_M" +
-      "AX\020\005*U\n\nVideoCodec\022\033\n\027VIDEO_CODEC_UNSPEC" +
-      "IFIED\020\000\022\024\n\020VIDEO_CODEC_H264\020\001\022\024\n\020VIDEO_C" +
-      "ODEC_H265\020\002*b\n\010AppTheme\022\031\n\025APP_THEME_UNS" +
-      "PECIFIED\020\000\022\022\n\016APP_THEME_DARK\020\001\022\023\n\017APP_TH" +
-      "EME_LIGHT\020\002\022\022\n\016APP_THEME_AUTO\020\0032\276\010\n\017Sett" +
-      "ingsService\022Q\n\nGetQuality\022 .bladewatch.v" +
-      "1.GetQualityRequest\032!.bladewatch.v1.GetQ" +
-      "ualityResponse\022Q\n\nSetQuality\022 .bladewatc" +
-      "h.v1.SetQualityRequest\032!.bladewatch.v1.S" +
-      "etQualityResponse\022Z\n\rGetAppearance\022#.bla" +
-      "dewatch.v1.GetAppearanceRequest\032$.bladew" +
-      "atch.v1.GetAppearanceResponse\022Z\n\rSetAppe" +
-      "arance\022#.bladewatch.v1.SetAppearanceRequ" +
-      "est\032$.bladewatch.v1.SetAppearanceRespons" +
-      "e\022N\n\tGetLocale\022\037.bladewatch.v1.GetLocale" +
-      "Request\032 .bladewatch.v1.GetLocaleRespons" +
-      "e\022N\n\tSetLocale\022\037.bladewatch.v1.SetLocale" +
-      "Request\032 .bladewatch.v1.SetLocaleRespons" +
-      "e\022c\n\020SetRecordingMode\022&.bladewatch.v1.Se" +
-      "tRecordingModeRequest\032\'.bladewatch.v1.Se" +
-      "tRecordingModeResponse\022c\n\020GetStatusOverl" +
-      "ay\022&.bladewatch.v1.GetStatusOverlayReque" +
-      "st\032\'.bladewatch.v1.GetStatusOverlayRespo" +
-      "nse\022c\n\020SetStatusOverlay\022&.bladewatch.v1." +
-      "SetStatusOverlayRequest\032\'.bladewatch.v1." +
-      "SetStatusOverlayResponse\022~\n\031GetTelemetry" +
-      "OverlayFields\022/.bladewatch.v1.GetTelemet" +
-      "ryOverlayFieldsRequest\0320.bladewatch.v1.G" +
-      "etTelemetryOverlayFieldsResponse\022~\n\031SetT" +
-      "elemetryOverlayFields\022/.bladewatch.v1.Se" +
-      "tTelemetryOverlayFieldsRequest\0320.bladewa" +
-      "tch.v1.SetTelemetryOverlayFieldsResponse" +
-      "B\036\n\032net.bladewatch.app.grpc.v1P\001b\006proto3"
+      "error\"\030\n\026GetSettingsLockRequest\"Y\n\027GetSe" +
+      "ttingsLockResponse\022\030\n\007enabled\030\001 \001(\010R\007ena" +
+      "bled\022$\n\016retry_after_ms\030\002 \001(\003R\014retryAfter" +
+      "Ms\"D\n\026SetSettingsLockRequest\022\030\n\007enabled\030" +
+      "\001 \001(\010R\007enabled\022\020\n\003pin\030\002 \001(\tR\003pin\"I\n\027SetS" +
+      "ettingsLockResponse\022\030\n\007success\030\001 \001(\010R\007su" +
+      "ccess\022\024\n\005error\030\002 \001(\tR\005error\",\n\030VerifySet" +
+      "tingsPinRequest\022\020\n\003pin\030\001 \001(\tR\003pin\"v\n\031Ver" +
+      "ifySettingsPinResponse\022\016\n\002ok\030\001 \001(\010R\002ok\022$" +
+      "\n\016retry_after_ms\030\002 \001(\003R\014retryAfterMs\022#\n\r" +
+      "attempts_left\030\003 \001(\005R\014attemptsLeft*\354\001\n\024Re" +
+      "cordingQualityTier\022&\n\"RECORDING_QUALITY_" +
+      "TIER_UNSPECIFIED\020\000\022\"\n\036RECORDING_QUALITY_" +
+      "TIER_ECONOMY\020\001\022#\n\037RECORDING_QUALITY_TIER" +
+      "_STANDARD\020\002\022\037\n\033RECORDING_QUALITY_TIER_HI" +
+      "GH\020\003\022\"\n\036RECORDING_QUALITY_TIER_PREMIUM\020\004" +
+      "\022\036\n\032RECORDING_QUALITY_TIER_MAX\020\005*U\n\nVide" +
+      "oCodec\022\033\n\027VIDEO_CODEC_UNSPECIFIED\020\000\022\024\n\020V" +
+      "IDEO_CODEC_H264\020\001\022\024\n\020VIDEO_CODEC_H265\020\002*" +
+      "b\n\010AppTheme\022\031\n\025APP_THEME_UNSPECIFIED\020\000\022\022" +
+      "\n\016APP_THEME_DARK\020\001\022\023\n\017APP_THEME_LIGHT\020\002\022" +
+      "\022\n\016APP_THEME_AUTO\020\0032\352\n\n\017SettingsService\022" +
+      "Q\n\nGetQuality\022 .bladewatch.v1.GetQuality" +
+      "Request\032!.bladewatch.v1.GetQualityRespon" +
+      "se\022Q\n\nSetQuality\022 .bladewatch.v1.SetQual" +
+      "ityRequest\032!.bladewatch.v1.SetQualityRes" +
+      "ponse\022Z\n\rGetAppearance\022#.bladewatch.v1.G" +
+      "etAppearanceRequest\032$.bladewatch.v1.GetA" +
+      "ppearanceResponse\022Z\n\rSetAppearance\022#.bla" +
+      "dewatch.v1.SetAppearanceRequest\032$.bladew" +
+      "atch.v1.SetAppearanceResponse\022N\n\tGetLoca" +
+      "le\022\037.bladewatch.v1.GetLocaleRequest\032 .bl" +
+      "adewatch.v1.GetLocaleResponse\022N\n\tSetLoca" +
+      "le\022\037.bladewatch.v1.SetLocaleRequest\032 .bl" +
+      "adewatch.v1.SetLocaleResponse\022c\n\020SetReco" +
+      "rdingMode\022&.bladewatch.v1.SetRecordingMo" +
+      "deRequest\032\'.bladewatch.v1.SetRecordingMo" +
+      "deResponse\022c\n\020GetStatusOverlay\022&.bladewa" +
+      "tch.v1.GetStatusOverlayRequest\032\'.bladewa" +
+      "tch.v1.GetStatusOverlayResponse\022c\n\020SetSt" +
+      "atusOverlay\022&.bladewatch.v1.SetStatusOve" +
+      "rlayRequest\032\'.bladewatch.v1.SetStatusOve" +
+      "rlayResponse\022~\n\031GetTelemetryOverlayField" +
+      "s\022/.bladewatch.v1.GetTelemetryOverlayFie" +
+      "ldsRequest\0320.bladewatch.v1.GetTelemetryO" +
+      "verlayFieldsResponse\022~\n\031SetTelemetryOver" +
+      "layFields\022/.bladewatch.v1.SetTelemetryOv" +
+      "erlayFieldsRequest\0320.bladewatch.v1.SetTe" +
+      "lemetryOverlayFieldsResponse\022`\n\017GetSetti" +
+      "ngsLock\022%.bladewatch.v1.GetSettingsLockR" +
+      "equest\032&.bladewatch.v1.GetSettingsLockRe" +
+      "sponse\022`\n\017SetSettingsLock\022%.bladewatch.v" +
+      "1.SetSettingsLockRequest\032&.bladewatch.v1" +
+      ".SetSettingsLockResponse\022f\n\021VerifySettin" +
+      "gsPin\022\'.bladewatch.v1.VerifySettingsPinR" +
+      "equest\032(.bladewatch.v1.VerifySettingsPin" +
+      "ResponseB\036\n\032net.bladewatch.app.grpc.v1P\001" +
+      "b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -501,6 +550,42 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetTelemetryOverlayFieldsResponse_descriptor,
         new java.lang.String[] { "Success", "Error", });
+    internal_static_bladewatch_v1_GetSettingsLockRequest_descriptor =
+      getDescriptor().getMessageType(25);
+    internal_static_bladewatch_v1_GetSettingsLockRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetSettingsLockRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_bladewatch_v1_GetSettingsLockResponse_descriptor =
+      getDescriptor().getMessageType(26);
+    internal_static_bladewatch_v1_GetSettingsLockResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetSettingsLockResponse_descriptor,
+        new java.lang.String[] { "Enabled", "RetryAfterMs", });
+    internal_static_bladewatch_v1_SetSettingsLockRequest_descriptor =
+      getDescriptor().getMessageType(27);
+    internal_static_bladewatch_v1_SetSettingsLockRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetSettingsLockRequest_descriptor,
+        new java.lang.String[] { "Enabled", "Pin", });
+    internal_static_bladewatch_v1_SetSettingsLockResponse_descriptor =
+      getDescriptor().getMessageType(28);
+    internal_static_bladewatch_v1_SetSettingsLockResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetSettingsLockResponse_descriptor,
+        new java.lang.String[] { "Success", "Error", });
+    internal_static_bladewatch_v1_VerifySettingsPinRequest_descriptor =
+      getDescriptor().getMessageType(29);
+    internal_static_bladewatch_v1_VerifySettingsPinRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_VerifySettingsPinRequest_descriptor,
+        new java.lang.String[] { "Pin", });
+    internal_static_bladewatch_v1_VerifySettingsPinResponse_descriptor =
+      getDescriptor().getMessageType(30);
+    internal_static_bladewatch_v1_VerifySettingsPinResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_VerifySettingsPinResponse_descriptor,
+        new java.lang.String[] { "Ok", "RetryAfterMs", "AttemptsLeft", });
     descriptor.resolveAllFeaturesImmutable();
   }
 

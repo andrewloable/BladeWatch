@@ -2971,4 +2971,73 @@ class AppLocalizationsNb extends AppLocalizations {
   @override
   String get settings_relay_explainer =>
       'Telefonen og bilen kobler seg direkte til hverandre når de kan. Reléet brukes bare når begge er på mobilnett som hindrer det, og det kan ikke lese det det videresender.';
+
+  @override
+  String get settings_section_security => 'Sikkerhet';
+
+  @override
+  String get settings_section_security_subtitle =>
+      'Krev PIN for å åpne Innstillinger og Overvåking.';
+
+  @override
+  String get settings_lock_switch_label => 'Innstillings-PIN';
+
+  @override
+  String get settings_lock_change_pin => 'Endre PIN';
+
+  @override
+  String get settings_lock_enter_title => 'Angi PIN';
+
+  @override
+  String get settings_lock_enter_subtitle =>
+      'Angi din 6-sifrede innstillings-PIN';
+
+  @override
+  String get settings_lock_new_pin_title => 'Angi en ny PIN';
+
+  @override
+  String get settings_lock_confirm_pin_title => 'Bekreft din nye PIN';
+
+  @override
+  String get settings_lock_mismatch => 'PIN-kodene stemte ikke. Prøv igjen.';
+
+  @override
+  String settings_lock_wrong_pin(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Feil PIN. $count forsøk igjen.',
+      one: 'Feil PIN. $count forsøk igjen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settings_lock_locked_out(String time) {
+    return 'For mange forsøk. Prøv igjen om $time.';
+  }
+
+  @override
+  String get settings_lock_unreachable =>
+      'Kan ikke nå BladeWatch-tjenesten akkurat nå.';
+
+  @override
+  String get settings_lock_disable_confirm_title => 'Slå av innstillings-PIN?';
+
+  @override
+  String get settings_lock_disable_confirm_body =>
+      'Innstillinger åpnes uten PIN til du slår den på igjen.';
+
+  @override
+  String get settings_lock_turn_off => 'Slå av';
+
+  @override
+  String get settings_lock_explainer =>
+      'Denne PIN-en deles med hver tilkoblede companion. En companion med fingeravtrykk- eller ansiktslås kan tilbakestille den hvis du glemmer den.';
+
+  @override
+  String get settings_lock_backspace => 'Slett siste tall';
+
+  @override
+  String get settings_lock_save_failed => 'Kunne ikke lagre. Prøv igjen.';
 }

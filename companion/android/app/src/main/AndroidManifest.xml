@@ -6,6 +6,10 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <!-- Biometric unlock of the Settings PIN lock (BladeWatch-hr6r.6). A TV has no biometric
+         sensor and local_auth reports it unavailable there, so this stays optional too. -->
+    <uses-feature android:name="android.hardware.fingerprint" android:required="false" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- allowBackup off: files/companion.json holds this device's credential for the car, and
          a cloud backup would put it on someone else's servers (BladeWatch-rdtj.11). -->
     <application

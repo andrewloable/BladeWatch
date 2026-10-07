@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:bladewatch_companion/car/biometrics.dart';
 import 'package:bladewatch_companion/car/car_page.dart';
 import 'package:bladewatch_companion/car/car_session.dart';
 import 'package:bladewatch_companion/car/car_store.dart';
@@ -109,3 +110,25 @@ final testPng = Uint8List.fromList([
 
 /// [testPng] as proto3 JSON writes `bytes`.
 final String base64Png = base64Encode(testPng);
+
+/// A controllable [Biometrics] for tests (BladeWatch-hr6r.6). The real [LocalAuthBiometrics]
+/// crosses a platform channel; inside a plain `pump()` that Future never resolves (it needs
+/// `tester.runAsync`, which nothing in this app's widget tests uses), so any test that exercises
+/// the Settings PIN lock's biometric path must inject this instead of the default. Unavailable by
+/// default, matching every device this app's widget tests otherwise pretend to run on.
+class FakeBiometrics implements Biometrics {
+  FakeBiometrics({this.isAvailable = false, this.authResult = true});
+
+  bool isAvailable;
+  bool authResult;
+  int authenticateCalls = 0;
+
+  @override
+  Future<bool> available() async => isAvailable;
+
+  @override
+  Future<bool> authenticate(String reason) async {
+    authenticateCalls++;
+    return authResult;
+  }
+}

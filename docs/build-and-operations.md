@@ -148,7 +148,7 @@ Important build settings:
 - NDK: `26.1.10909125`.
 - Java and Kotlin target: `11`.
 - `applicationId` / `namespace`: `net.bladewatch.app` (the source package is `com.loabletech.bladewatch`).
-- Version: `versionName = "1.4.1.3"`, `versionCode = 14103`.
+- Version: `versionName = "1.4.1.4"`, `versionCode = 14104`.
 - ABI split: `arm64-v8a` only, no universal APK. The debug output is `app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk`, with any `/` in the branch name turned into `-`.
 - Native build: CMake `3.22.1`, `-std=c++17`.
 

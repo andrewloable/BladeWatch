@@ -370,6 +370,44 @@ A notification carries an optional click URL naming where it points: `/events?fi
 
 `trips.started` and `trips.ended` (`TripEventNotifier`, BladeWatch-nmao.3) notify on trip boundaries detected by the gear-based `TripDetector` state machine. Both are **off by default** — a trip ends every time the owner parks, and a notification on every park is how people turn all notifications off. `trips.ended`'s payload carries the trip's distance and duration; discarded trips (below the minimum duration/distance thresholds) never publish anything.
 
+## Settings PIN Lock
+
+A 6-digit PIN, held by the car (BladeWatch-hr6r), can protect Settings and Surveillance from
+anyone with physical access to the head unit — a valet, a passenger, a child in the back seat.
+Turn it on from **Settings > Security**: set a PIN (entered twice, to catch a typo), and from
+then on opening Settings or Surveillance — from the nav rail, from a shortcut elsewhere in the
+app, or pairing a new companion device from Settings > Security — asks for it first. A wrong PIN says
+how many tries are left; five wrong PINs in a row lock entry out for a minute, doubling on each
+further miss. Leaving Settings, or the head unit's screen going to sleep, locks it again — the
+next person to open Settings sees the PIN prompt, not whatever pane was left open.
+
+The PIN is the car's, not the app's: every paired companion checks the same one, and a forgotten
+PIN can be reset from any companion that unlocks itself locally (fingerprint or face, where the
+device has one) without needing the old PIN. This is a screen lock, not an access-control list —
+anything already authorized to talk to the car's API (a companion's login, a direct RPC call)
+still works exactly as before; the PIN only gates what the two apps' own Settings screens show.
+
+**In the companion app**, the same PIN also gates Surveillance and Notifications, not just
+Settings — those are where a remote viewer sees camera footage and alerts, so they get the same
+screen lock as Settings. Turning the lock on or off, and changing the PIN, is done from
+**Settings** in the companion too (a switch plus a "Change PIN" button once it is on); the setting
+and the cached last-known lock state travel with the paired car, so a companion that cannot reach
+the car still shows the PIN prompt rather than silently admitting if the lock was last known to be
+on. Backgrounding the companion app relocks immediately and returns to Dashboard, so switching
+away mid-session never leaves a gated screen unlocked for whoever picks the phone up next.
+
+**Biometric unlock (v1.4.1.4, BladeWatch-hr6r.6).** A companion device with a fingerprint reader
+or face recognition can use it instead of typing the PIN each time. It is off by default and
+per device: turning on **Use biometrics instead of PIN** in Settings asks for the car's PIN one
+last time to prove the owner knows it, then that device's own sensor opens Settings, Surveillance
+and Notifications from then on. A failed or cancelled biometric check falls back to the PIN
+dialog, which offers a button to try the sensor again. Unpairing the device turns the opt-in back
+off — a different car has a different PIN, so the device must prove it again before trusting its
+sensor for it. Biometric unlock is local to the device (the car is never asked), which is sound
+only because pairing a new companion already requires the PIN at the car; see
+docs/ipc-auth-and-secrets.md for the threat-model note. Devices without a sensor, or with none
+enrolled — Android TV included — never see the switch and keep using the PIN.
+
 ## Remote Access
 
 Remote access options include:
@@ -380,22 +418,24 @@ Remote access options include:
   v1.4.0.0 (BladeWatch-rdtj.12), and with it the Dashboard's Connect card: the onion QR, the
   device ID and the web access code. The web app and its login were removed too (BladeWatch-rdtj.22).
 
-**Companion app pairing (v1.4.0.0).** "Pair a device" on the in-car dashboard shows a QR
-for the BladeWatch companion app (phones and desktops). The code works once and expires after
-five minutes; pairing switches on remote access over Pear, and the same dialog explains and
-offers the opt-in direct connection on the car's Wi-Fi. Paired devices are listed there and
-can be removed one at a time, which cuts off that device immediately without affecting the
-others. Pairing and removing are only possible in the car. The companion names itself in that
-list with the device's own name -- the computer name on macOS and Windows, the phone's name on
-Android and iOS (iOS 16+ gives only "iPhone") -- and the owner can edit it before pairing.
+**Companion app pairing (v1.4.0.0).** "Pair a device" in the in-car Settings > Security pane
+(moved there from the Dashboard in v1.4.1.4, BladeWatch-xfb5 -- device pairing is configuration,
+not status) shows a QR for the BladeWatch companion app (phones and desktops). The code works
+once and expires after five minutes; pairing switches on remote access over Pear, and the same
+dialog explains and offers the opt-in direct connection on the car's Wi-Fi. Paired devices are
+listed there and can be removed one at a time, which cuts off that device immediately without
+affecting the others. Pairing and removing are only possible in the car, and -- since the
+Settings PIN lock (BladeWatch-hr6r) -- both ask for the PIN first whenever the lock is on. The
+companion names itself in that list with the device's own name -- the computer name on macOS and
+Windows, the phone's name on Android and iOS (iOS 16+ gives only "iPhone") -- and the owner can
+edit it before pairing.
 
 **Pairing a TV or a computer (v1.4.1.2).** Devices without a camera -- Android TVs, and the
 macOS, Windows and Linux companions -- pair over the car's Wi-Fi instead of scanning: with
 Pair a device open in the car and Direct connection on, choose **Pair over Wi-Fi** on the device.
 Both screens show the same six-digit number and the owner taps **Pair** in the car if they match.
-Phones keep scanning the QR; desktops no longer offer the scan. The in-car dashboard also lists
-the paired devices in a **PAIRED DEVICES** card, each with when it was paired and a Remove
-button (which asks first).
+Phones keep scanning the QR; desktops no longer offer the scan. Settings > Security also lists
+the paired devices, each with when it was paired and a Remove button (which asks first).
 
 **Android TV (v1.4.1.2).** The companion installs on Android TV (Google TV, Sony BRAVIA and the
 like), including 32-bit ones (flutter_pear 0.4.8+). It is driven by the remote: a bright ring
