@@ -70,7 +70,7 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
             SwitchListTile(
               key: const ValueKey('surv.active'),
               contentPadding: EdgeInsets.zero,
-              title: Text(tr(v.status.surveillanceActive ? 'surveillance.active' : 'surveillance.inactive')),
+              title: Text(tr(v.status.armed ? 'surveillance.active' : 'surveillance.inactive')),
               subtitle: Text(tr(v.status.pipelineRunning ? 'surveillance.pipeline_running' : 'surveillance.pipeline_stopped')),
               value: v.status.surveillanceActive,
               onChanged: _busy

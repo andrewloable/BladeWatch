@@ -56,6 +56,10 @@ Default camera-related values found in code:
 - Honest in-app warnings: a persistent note that arming Sentry mode draws extra
   12V battery power while armed, and a conditional note (shown only while another
   app actually holds the camera) that camera access has been yielded to it.
+- The in-car Surveillance screen's Status row reads Running only while sentry is armed
+  (BladeWatch-nrwh). It is not Running just because the preference is on (for example while
+  the door-lock gate is still pending after ACC OFF) or because the camera pipeline is running
+  for dashcam recording.
 
 Default surveillance config includes:
 

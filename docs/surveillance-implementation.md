@@ -139,11 +139,18 @@ Lock sources run in parallel:
 - Periodic local door-lock polling.
 - A force-arm timeout after roughly 60 seconds.
 
-All sources converge through an idempotent `applyLockEvent()` path:
+Lock events converge through an idempotent `applyLockEvent()` path, and the timeout goes through `applyLockTimeout()`. Both ask `DoorLockArmGate` (`daemon/DoorLockArmGate.kt`) for an ARM, DISARM or NONE decision, and `CameraDaemon` acts on it:
 
-- Locked: call `enableSurveillance()`.
-- Unlocked: call `disableSurveillance()`.
-- ACC ON during any callback: ignore the lock event.
+- Locked: ARM, which calls `enableSurveillance()`.
+- Unlocked: DISARM, which calls `disableSurveillance()`.
+- ACC ON during any callback: NONE. The lock event is ignored.
+- Timeout: `DoorLockArmGate.onTimeout` depends only on ACC state, on whether the gate already armed, and on whether its gate session is still current, so a timeout from an earlier ACC OFF never arms a later session early. It never reads the daemon's surveillance-enabled flag. A timeout that does not arm logs "no action (already armed, ACC on, or superseded by a newer gate session)".
+
+On the test head unit, `getDoorLockStatus(1)` returns 0 (`DOOR_STATE_INVALID`) and never LOCK or UNLOCK, so the initial probe and the poll never arm. In practice the 60-second timeout is the arming path (BladeWatch-l55j).
+
+The gate state resets on every ACC ON, and again when the gate opens on ACC OFF.
+
+The timeout can call `enableSurveillance()` even when another path (UI enable, or a schedule change saved while ACC is off) has already enabled sentry. That re-initialises the motion baseline and per-sequence tracking once, and does not interrupt an in-progress clip.
 
 An ACC-on disarm watchdog also polls hardware state as a reverse fallback.
 
@@ -152,7 +159,7 @@ An ACC-on disarm watchdog also polls hardware state as a reverse fallback.
 When ACC turns on:
 
 1. Schedule checker stops.
-2. Door-lock gate listeners and polling are cleaned up.
+2. Door-lock gate listeners and polling are cleaned up, the gate is reset, and the daemon's surveillance-enabled flag is cleared (BladeWatch-l55j).
 3. Safe-zone suppression state is cleared.
 4. Context-dependent components may be reinitialized.
 5. Gear and telemetry systems resume.

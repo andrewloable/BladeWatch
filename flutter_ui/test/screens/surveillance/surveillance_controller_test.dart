@@ -69,8 +69,8 @@ void main() {
     });
   }
 
-  void stubStatusAndStats({bool pipelineRunning = true, bool surveillanceActive = false, int surveillanceCount = 7}) {
-    rpc.stubJson('SurveillanceService', 'GetStatus', {'pipelineRunning': pipelineRunning, 'surveillanceActive': surveillanceActive});
+  void stubStatusAndStats({bool pipelineRunning = true, bool surveillanceActive = false, bool armed = false, int surveillanceCount = 7}) {
+    rpc.stubJson('SurveillanceService', 'GetStatus', {'pipelineRunning': pipelineRunning, 'surveillanceActive': surveillanceActive, 'armed': armed});
     rpc.stubJson('RecordingsService', 'GetStats', {
       'stats': {'surveillanceCount': surveillanceCount},
     });
@@ -116,7 +116,7 @@ void main() {
 
   void stubHappyPath() {
     stubConfig();
-    stubStatusAndStats();
+    stubStatusAndStats(armed: true);
     stubStorage();
     stubSafeLocations(zones: [
       {'id': 'z1', 'name': 'Home', 'lat': 1.1, 'lng': 2.2, 'radiusM': 100},
@@ -234,12 +234,36 @@ void main() {
       expect(c.editDeterrent, 'silent');
     });
 
-    test('status isRunning true via surveillanceActive alone (pipelineRunning false)', () async {
+    test('isRunning stays false when only surveillanceActive is true (preference on, not armed)', () async {
       stubConfig();
       rpc.stubJson('SurveillanceService', 'GetStatus', {'pipelineRunning': false, 'surveillanceActive': true});
       rpc.stubJson('RecordingsService', 'GetStats', {
         'stats': {'surveillanceCount': 0},
       });
+      stubStorage();
+      stubSafeLocations();
+      final c = build();
+
+      await c.load();
+
+      expect(c.status?.isRunning, isFalse);
+    });
+
+    test('D1: pipelineRunning and surveillanceActive true but not armed is not Running', () async {
+      stubConfig();
+      stubStatusAndStats(pipelineRunning: true, surveillanceActive: true, armed: false);
+      stubStorage();
+      stubSafeLocations();
+      final c = build();
+
+      await c.load();
+
+      expect(c.status?.isRunning, isFalse);
+    });
+
+    test('D2: armed is Running', () async {
+      stubConfig();
+      stubStatusAndStats(pipelineRunning: true, surveillanceActive: true, armed: true);
       stubStorage();
       stubSafeLocations();
       final c = build();
@@ -267,7 +291,7 @@ void main() {
 
     test('GetStats throwing still lets isRunning populate from GetStatus', () async {
       stubConfig();
-      rpc.stubJson('SurveillanceService', 'GetStatus', {'pipelineRunning': true, 'surveillanceActive': false});
+      rpc.stubJson('SurveillanceService', 'GetStatus', {'pipelineRunning': true, 'surveillanceActive': false, 'armed': true});
       rpc.stubError('RecordingsService', 'GetStats', const ConnectError('unavailable', 'down'));
       stubStorage();
       stubSafeLocations();

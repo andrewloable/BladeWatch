@@ -227,6 +227,22 @@ Connect mirrors: `SurveillanceService.{GetConfig,SetConfig,GetStatus,Enable,
 Disable,GetHeatmap,GetSnapshot,GetFilterLog,SyncCatalog}` and
 `SafeLocationsService.{ListZones,AddZone,UpdateZone,DeleteZone,Toggle}`.
 
+`SurveillanceService/GetStatus` returns a flat `GetSurveillanceStatusResponse`, and its
+fields come from different sources, so do not read them as one state (BladeWatch-nrwh):
+
+- `pipelineRunning`: the camera pipeline is running. This is also true during plain dashcam
+  recording while driving, so it does not mean sentry is watching.
+- `surveillanceActive`: the persisted user preference (`surveillance.surveillanceEnabled`). It
+  stays true while sentry waits for the door-lock gate or is stopped, and it does not mean armed.
+- `armed`: true while the sentry engine is enabled (pipeline in surveillance mode and sentry
+  active). While `cameraYielded` is true the native BYD app holds the camera and no frames flow,
+  so read `cameraYielded` alongside it.
+
+The REST `GET /api/surveillance/status` object keeps its `active` and `enabled` keys (`enabled`
+is the in-memory intent flag, not the persisted preference). It adds `armed` with the same meaning,
+but only once the GPU pipeline exists (`CameraDaemon.getSurveillanceStatus` puts it inside its
+`if (pipeline != null)` block). Before that, `SurveillanceService/GetStatus` reports `armed` false.
+
 ## Streaming
 
 Handled by `StreamingApiHandler` and WebSocket upgrade paths:

@@ -112,6 +112,8 @@ message GetSurveillanceStatusRequest {}
 
 message GetSurveillanceStatusResponse {
   bool pipeline_running = 1;
+  // The persisted user preference (surveillance.surveillanceEnabled). It does not mean
+  // armed; see armed.
   bool surveillance_active = 2;
   // active_cameras (3) removed: the daemon never populates it and no consumer reads it
   // (clients read pipeline_running / surveillance_active only).
@@ -123,6 +125,10 @@ message GetSurveillanceStatusResponse {
   // true -- a permanent "another app might be using the camera" caption is noise.
   bool camera_yielded = 5;
   bool native_app_active = 6;
+  // True only while the sentry engine is processing frames (pipeline in SURVEILLANCE mode
+  // and sentry active). False while waiting for the door-lock gate, while ACC is ON, and
+  // when suppressed by safe zone or schedule.
+  bool armed = 7;
 }
 
 message EnableSurveillanceRequest {}

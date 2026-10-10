@@ -17,6 +17,11 @@ public interface GetSurveillanceStatusResponseOrBuilder extends
   boolean getPipelineRunning();
 
   /**
+   * <pre>
+   * The persisted user preference (surveillance.surveillanceEnabled). It does not mean
+   * armed; see armed.
+   * </pre>
+   *
    * <code>bool surveillance_active = 2 [json_name = "surveillanceActive"];</code>
    * @return The surveillanceActive.
    */
@@ -51,4 +56,16 @@ public interface GetSurveillanceStatusResponseOrBuilder extends
    * @return The nativeAppActive.
    */
   boolean getNativeAppActive();
+
+  /**
+   * <pre>
+   * True only while the sentry engine is processing frames (pipeline in SURVEILLANCE mode
+   * and sentry active). False while waiting for the door-lock gate, while ACC is ON, and
+   * when suppressed by safe zone or schedule.
+   * </pre>
+   *
+   * <code>bool armed = 7 [json_name = "armed"];</code>
+   * @return The armed.
+   */
+  boolean getArmed();
 }

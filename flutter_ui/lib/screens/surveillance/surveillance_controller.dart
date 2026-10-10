@@ -205,7 +205,8 @@ class SurveillanceSettingsController extends ChangeNotifier with DisposedSafeNot
     var cameraYielded = false;
     try {
       final resp = await _surveillanceService.getStatus(pb.GetSurveillanceStatusRequest());
-      isRunning = resp.pipelineRunning || resp.surveillanceActive;
+      // armed, not pipelineRunning: Running means sentry is actually watching (BladeWatch-nrwh).
+      isRunning = resp.armed;
       cameraYielded = resp.cameraYielded;
     } catch (_) {}
     var eventsToday = 0;

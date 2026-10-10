@@ -57,7 +57,7 @@ void main() {
         'deterrentCooldownSeconds': 60,
       },
     });
-    rpc.stubJson('SurveillanceService', 'GetStatus', {'pipelineRunning': true, 'surveillanceActive': false});
+    rpc.stubJson('SurveillanceService', 'GetStatus', {'pipelineRunning': true, 'surveillanceActive': false, 'armed': true});
     rpc.stubJson('RecordingsService', 'GetStats', {
       'stats': {'surveillanceCount': 5},
     });
