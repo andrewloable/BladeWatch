@@ -125,7 +125,10 @@
     "trip_started": "走行を開始しました",
     "trip_ended": "走行が終了しました",
     "trip_summary_km": "{0} km · {1} 分",
-    "trip_summary_mi": "{0} mi · {1} 分"
+    "trip_summary_mi": "{0} mi · {1} 分",
+    "manual_trip_reminder_title": "走行を記録中です",
+    "manual_trip_reminder_acc_off": "車の電源を切りましたが、手動の走行はまだ記録中です。終了する場合は BladeWatch を開いて「走行を停止」をタップしてください。",
+    "manual_trip_reminder_parked": "車が30分間駐車されていますが、手動の走行はまだ記録中です。終了する場合は「走行を停止」をタップしてください。"
   },
   "vehicle_control": {
     "cloud_required": "BYD アカウントを設定で接続する",

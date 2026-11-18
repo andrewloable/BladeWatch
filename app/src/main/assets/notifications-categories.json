@@ -136,6 +136,15 @@
       "severity": "info",
       "defaultClickUrl": "/trips",
       "note": "Fires once a trip is finalized (distance/duration above the minimum thresholds). Off by default -- a trip ends every time you park, and a notification on every park is how people turn all notifications off."
+    },
+    {
+      "id": "trips.manual_reminder",
+      "label": "Manual trip still recording",
+      "group": "Trips",
+      "defaultEnabled": true,
+      "severity": "warn",
+      "defaultClickUrl": "/trips",
+      "note": "Reminds you to stop a trip you started with the Start Trip button when the car is turned off, or has been parked for 30 minutes, while it is still recording. On by default -- a manual trip never ends by itself, so a forgotten one would record for days."
     }
   ]
 }

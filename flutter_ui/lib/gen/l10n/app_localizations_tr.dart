@@ -3052,4 +3052,72 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => 'Kaydedilemedi. Yeniden deneyin.';
+
+  @override
+  String get dashboard_trip_start => 'Yolculuğu başlat';
+
+  @override
+  String get dashboard_trip_stop => 'Yolculuğu durdur';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Manuel yolculuk kaydediliyor · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Otomatik yolculuk sürüyor. Manuel yolculuk başlatmak onu bitirir ve yenisini başlatır.';
+
+  @override
+  String get dashboard_trip_error => 'Araca ulaşılamadı. Tekrar deneyin.';
+
+  @override
+  String get trip_reminder_title => 'Yolculuk hâlâ kaydediliyor';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Manuel yolculuğunuz kaydedilirken aracı kapattınız (şimdiye kadar $elapsed).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'Manuel yolculuğunuz kaydedilirken araç 30 dakikadır park halinde (şimdiye kadar $elapsed).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Kaydetmeye devam et';
+
+  @override
+  String get trip_reminder_stop => 'Yolculuğu durdur';
+
+  @override
+  String get trips_manual_badge => 'Manuel';
+
+  @override
+  String get trips_detail_ev_title => 'Elektrikli (EV) sürüş';
+
+  @override
+  String get trips_detail_hev_title => 'Hibrit (HEV) sürüş';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Şu ana kadar: elektrik $electric · yakıt $fuel · toplam $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Şu ana kadar: elektrik $electric';
+  }
 }

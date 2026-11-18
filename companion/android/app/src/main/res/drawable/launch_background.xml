@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!--
+  BladeWatch-sjz4: the companion's launch window background. Plain BLACK with ONLY
+  the app logo in the centre, at 108 dp: exactly where and at the size where the
+  animated intro (BladeIntro in packages/bladewatch_theme) starts, so the handoff
+  from this static frame to the animation cannot be seen. Used by both LaunchTheme
+  and NormalTheme, so no white frame shows before Flutter draws.
+-->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/splash_background" />
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@drawable/ic_launcher_foreground" />
+    </item>
 </layer-list>

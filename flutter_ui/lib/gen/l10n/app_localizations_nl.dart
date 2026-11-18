@@ -3062,4 +3062,73 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get settings_lock_save_failed =>
       'Opslaan is mislukt. Probeer het opnieuw.';
+
+  @override
+  String get dashboard_trip_start => 'Rit starten';
+
+  @override
+  String get dashboard_trip_stop => 'Rit stoppen';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Handmatige rit wordt opgenomen · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Automatische rit bezig. Een handmatige rit starten beëindigt die en begint een nieuwe.';
+
+  @override
+  String get dashboard_trip_error =>
+      'Kan de auto niet bereiken. Probeer het opnieuw.';
+
+  @override
+  String get trip_reminder_title => 'Rit wordt nog opgenomen';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Je hebt de auto uitgezet terwijl je handmatige rit werd opgenomen ($elapsed tot nu toe).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'De auto staat al 30 minuten geparkeerd terwijl je handmatige rit werd opgenomen ($elapsed tot nu toe).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Blijven opnemen';
+
+  @override
+  String get trip_reminder_stop => 'Rit stoppen';
+
+  @override
+  String get trips_manual_badge => 'Handmatig';
+
+  @override
+  String get trips_detail_ev_title => 'Elektrisch rijden (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Hybride rijden (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'l / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'l / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Tot nu toe: elektriciteit $electric · brandstof $fuel · totaal $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Tot nu toe: elektriciteit $electric';
+  }
 }

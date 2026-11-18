@@ -3035,4 +3035,72 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง';
+
+  @override
+  String get dashboard_trip_start => 'เริ่มการเดินทาง';
+
+  @override
+  String get dashboard_trip_stop => 'หยุดการเดินทาง';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'กำลังบันทึกการเดินทางแบบกำหนดเอง · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'กำลังบันทึกการเดินทางอัตโนมัติ การเริ่มการเดินทางแบบกำหนดเองจะจบการเดินทางนั้นและเริ่มอันใหม่';
+
+  @override
+  String get dashboard_trip_error => 'ไม่สามารถติดต่อรถได้ ลองอีกครั้ง';
+
+  @override
+  String get trip_reminder_title => 'ยังคงบันทึกการเดินทางอยู่';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'คุณดับเครื่องรถขณะที่กำลังบันทึกการเดินทางแบบกำหนดเอง (ถึงตอนนี้ $elapsed)';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'รถจอดอยู่ 30 นาทีแล้วขณะที่กำลังบันทึกการเดินทางแบบกำหนดเอง (ถึงตอนนี้ $elapsed)';
+  }
+
+  @override
+  String get trip_reminder_keep => 'บันทึกต่อไป';
+
+  @override
+  String get trip_reminder_stop => 'หยุดการเดินทาง';
+
+  @override
+  String get trips_manual_badge => 'กำหนดเอง';
+
+  @override
+  String get trips_detail_ev_title => 'การขับขี่แบบไฟฟ้า (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'การขับขี่แบบไฮบริด (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'ถึงตอนนี้: ไฟฟ้า $electric · เชื้อเพลิง $fuel · รวม $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'ถึงตอนนี้: ไฟฟ้า $electric';
+  }
 }

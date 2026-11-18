@@ -38,23 +38,50 @@ class _DashboardScreenState extends State<DashboardScreen> with LoadersState {
   );
   // Pack and tank size, for "77% / 14.1 kWh": they change only when the owner edits a setting.
   late final _sizes = loader(() => EnergySizes.load(context.session.rpc), poll: const Duration(minutes: 1));
+  // A manual trip the driver started with the in-car Start Trip button (BladeWatch-gklt.7). Read
+  // only: the companion cannot start or stop it. A failed read shows nothing rather than an error.
+  late final _active = loader(() => _trips.getActiveTrip(GetActiveTripRequest()), poll: const Duration(seconds: 5));
 
   @override
   Widget build(BuildContext context) => LoaderView(
         loader: _status,
         builder: (context, s) => ListenableBuilder(
-          listenable: Listenable.merge([_week, _sizes]),
+          listenable: Listenable.merge([_week, _sizes, _active]),
           builder: (context, _) {
             final sizes = _sizes.value ?? EnergySizes.unknown;
+            final manual = _active.value?.status;
             return PageList(children: [
               _Chips(status: s),
               const SizedBox(height: 12),
+              if (manual != null && manual.manual) _ManualTrip(status: manual),
               _Vehicle(status: s, sizes: sizes),
               _Week(trips: _week.value, status: s),
             ]);
           },
         ),
       );
+}
+
+/// A manual trip is recording (BladeWatch-gklt.7): when it started and how long it has run. No
+/// button: starting and stopping it is the in-car dashboard's job.
+class _ManualTrip extends StatelessWidget {
+  const _ManualTrip({required this.status});
+
+  final ActiveTripStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = context.tr;
+    final elapsed = DateTime.now().millisecondsSinceEpoch - status.startTimeMs.toInt();
+    return Section(
+      key: const ValueKey('dash.manualTrip'),
+      title: tr('companion.manual_trip_recording'),
+      children: [
+        InfoRow(tr('companion.manual_trip_started'), Fmt.dateTime(status.startTimeMs, tr.lang)),
+        InfoRow(tr('companion.manual_trip_elapsed'), Fmt.duration(elapsed <= 0 ? 0 : elapsed ~/ 1000)),
+      ],
+    );
+  }
 }
 
 /// The status chips. Each dot is REAL state (HUD rule 5): the recording dot is magenta and pulses only while the car

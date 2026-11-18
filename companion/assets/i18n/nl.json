@@ -1559,6 +1559,14 @@
     "sync_database": "Database synchroniseren"
   },
   "companion": {
+    "trip_ev_title": "Elektrisch rijden (EV)",
+    "trip_hev_title": "Hybride rijden (HEV)",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "l / 100 {unit}",
+    "manual_trip_recording": "Handmatige rit wordt opgenomen",
+    "manual_trip_started": "Gestart",
+    "manual_trip_elapsed": "Duur",
+    "trip_manual_badge": "Handmatig",
     "energy": "Energie",
     "looking": "Je auto zoeken…",
     "looking_hint": "Via internet kan dit tot een minuut duren. Op de wifi van de auto gaat het sneller.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Laadstoring",
     "cat_trips_started": "Rit gestart",
     "cat_trips_ended": "Rit beëindigd",
+    "cat_trips_manual_reminder": "Handmatige rit wordt nog opgenomen",
     "group_surveillance": "Bewaking",
     "group_vehicle": "Auto",
     "group_security": "Beveiliging",

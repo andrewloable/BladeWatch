@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
-import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart' show GetConfigRequest;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart'
+    show ActiveTripStatus, GetActiveTripRequest, GetConfigRequest, StartManualTripRequest, StopManualTripRequest;
 import '../../platform/daemon_channel.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
@@ -67,6 +68,19 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   VehicleTileState _vehicleTile = const VehicleTileState.loading();
   VehicleTileState get vehicleTile => _vehicleTile;
 
+  /// The trip in progress, if any (BladeWatch-gklt.5). Refreshed on the 2 s drive cycle, so the
+  /// Start Trip button follows a trip that was started or stopped somewhere else.
+  ActiveTripStatus _activeTrip = ActiveTripStatus();
+  ActiveTripStatus get activeTrip => _activeTrip;
+
+  /// A start or stop is in flight: the button is disabled so a second tap cannot race the first.
+  bool _tripBusy = false;
+  bool get tripBusy => _tripBusy;
+
+  /// The last start or stop failed. Cleared by the next attempt.
+  bool _tripError = false;
+  bool get tripError => _tripError;
+
   /// BladeWatch-rdtj.17: the Pear peer, which the Remote access tile reports while it is on.
   PearStatus _pear = PearStatus.unknown;
   PearStatus get pear => _pear;
@@ -87,6 +101,7 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
       _refreshDaemonsSummary(),
       _refreshVehicleTile(),
       _refreshPear(),
+      _refreshActiveTrip(),
     ]);
     notifyListeners();
   }
@@ -102,16 +117,56 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   /// 15 s reload, and the owner saw EV/HEV and Auto Hold never move (BladeWatch-7zp9). The same
   /// status carries THIS WEEK's charge and fuel, so they move on this cycle too, for free.
   Future<void> refreshDrive() async {
+    var changed = await _refreshActiveTrip();
     try {
       final status = await _systemService.getStatus(GetStatusRequest());
       final drive = _driveOf(status);
       final energy = EnergyState.of(status, packKwh: _packKwh, tankL: _tankL);
-      if (drive == _drive && energy == _energy) return;
-      _drive = drive;
-      _energy = energy;
-      notifyListeners();
+      if (drive != _drive || energy != _energy) {
+        _drive = drive;
+        _energy = energy;
+        changed = true;
+      }
     } catch (_) {
       // Keep what is shown; the next tick or the full refresh tries again.
+    }
+    if (changed) notifyListeners();
+  }
+
+  /// Reads the trip in progress. True when it differs from what was shown. A failed read keeps
+  /// the last status: a dropped RPC must not flip the button.
+  Future<bool> _refreshActiveTrip() async {
+    try {
+      final status = (await _tripsService.getActiveTrip(GetActiveTripRequest())).status;
+      if (status == _activeTrip) return false;
+      _activeTrip = status;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// The Start Trip / Stop Trip button. Starts a manual trip, or stops the open one; the week's
+  /// trips are reloaded after a stop so the new trip shows up. On failure the previous state is
+  /// kept and [tripError] is set.
+  Future<void> toggleManualTrip() async {
+    if (_tripBusy) return;
+    _tripBusy = true;
+    _tripError = false;
+    notifyListeners();
+    try {
+      if (_activeTrip.manual) {
+        await _tripsService.stopManualTrip(StopManualTripRequest());
+        await _refreshActiveTrip();
+        await _refreshTripStats();
+      } else {
+        _activeTrip = (await _tripsService.startManualTrip(StartManualTripRequest())).status;
+      }
+    } catch (_) {
+      _tripError = true;
+    } finally {
+      _tripBusy = false;
+      notifyListeners();
     }
   }
 

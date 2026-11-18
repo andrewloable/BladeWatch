@@ -70,10 +70,13 @@ class WeeklyRollup {
             r.tripCount = n
             r.totalDistanceKm = trips.sumOf { it.distanceKm }
             r.totalDurationSeconds = trips.sumOf { it.durationSeconds }
-            r.totalEnergyKwh = trips.sumOf { it.getEnergyUsedKwh() }
+            r.totalEnergyKwh = trips.sumOf { it.getElectricLegKwh() }
             r.totalCost = trips.sumOf { it.tripCost }
             r.avgEfficiency = mean { it.efficiencySocPerKm }
-            r.avgEnergyPerKm = mean { it.energyPerKm }
+            // A trip with no electric leg (all HEV) has no kWh/km: leave it out of the mean rather than
+            // dragging it toward zero. Every trip with an electric leg (every BEV trip) counts as before.
+            val electric = trips.filter { it.getElectricLegKm() > 0 }
+            r.avgEnergyPerKm = if (electric.isEmpty()) 0.0 else electric.sumOf { it.energyPerKm } / electric.size
             r.avgAnticipation = mean { it.anticipationScore.toDouble() }.toInt()
             r.avgSmoothness = mean { it.smoothnessScore.toDouble() }.toInt()
             r.avgSpeedDiscipline = mean { it.speedDisciplineScore.toDouble() }.toInt()

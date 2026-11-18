@@ -23,6 +23,10 @@ option java_multiple_files = true;
 //   GetTelemetry     GET    /api/trips/{id}/telemetry
 //   GetSimilarTrips  GET    /api/trips/{id}/similar
 //   GetGpsTrace      GET    /api/trips/{id}/gps
+//   StartManualTrip  POST   /api/trips/manual/start
+//   StopManualTrip   POST   /api/trips/manual/stop
+//   GetActiveTrip    GET    /api/trips/active
+//   AcknowledgeTripReminder POST /api/trips/manual/ack
 service TripsService {
   rpc ListTrips(ListTripsRequest) returns (ListTripsResponse);
   rpc GetTrip(GetTripRequest) returns (GetTripResponse);
@@ -38,6 +42,13 @@ service TripsService {
   rpc GetTelemetry(GetTelemetryRequest) returns (GetTelemetryResponse);
   rpc GetSimilarTrips(GetSimilarTripsRequest) returns (GetSimilarTripsResponse);
   rpc GetGpsTrace(GetGpsTraceRequest) returns (GetGpsTraceResponse);
+
+  // Manual trips (BladeWatch-gklt): the driver starts a trip with the Start Trip button; it ends
+  // only via StopManualTrip (or a 7-day safety auto-stop), never on Park or ACC OFF.
+  rpc StartManualTrip(StartManualTripRequest) returns (StartManualTripResponse);
+  rpc StopManualTrip(StopManualTripRequest) returns (StopManualTripResponse);
+  rpc GetActiveTrip(GetActiveTripRequest) returns (GetActiveTripResponse);
+  rpc AcknowledgeTripReminder(AcknowledgeTripReminderRequest) returns (AcknowledgeTripReminderResponse);
 }
 
 // TripSummary is a compact trip row for list views.
@@ -79,6 +90,20 @@ message TripSummary {
   // trip, not a live drivetrain probe, so a historical trip renders the same way on a car
   // whose drivetrain reads differently today.
   bool has_fuel_data = 24;
+
+  // True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+  bool manual = 25;
+
+  // EV/HEV split (BladeWatch-reml). A BYD plug-in hybrid drives in EV or HEV energy mode and a trip
+  // can switch; each stretch is measured on its own. EV driving carries kWh and no litres; HEV
+  // driving carries litres and NO kWh (not even as information). All 0 on a trip recorded before
+  // the split existed, which has_energy_split tells apart from a trip that really drove 0 km in a
+  // mode. With HEV driving present, energy_per_km is kWh over the EV kilometres only.
+  double ev_km = 26;
+  double ev_kwh = 27;
+  double hev_km = 28;
+  double hev_litres = 29;
+  bool has_energy_split = 30;
 }
 
 // TripDetail extends TripSummary with Driving DNA scores and micro-moments.
@@ -335,4 +360,64 @@ message GetGpsTraceResponse {
   bool success = 1;
   repeated GpsPoint gps = 2;
   string error = 3;
+}
+
+// ActiveTripStatus describes the trip in progress, if any.
+message ActiveTripStatus {
+  // True while any trip (auto-detected or manual) is open.
+  bool active = 1;
+  // True when the open trip was started with the Start Trip button.
+  bool manual = 2;
+  // Epoch ms the open trip started; 0 when no trip is open.
+  int64 start_time_ms = 3;
+  // GPS distance recorded so far, in km.
+  double distance_km = 4;
+  // Epoch ms at which a manual trip is ended automatically (start + 7 days); 0 otherwise.
+  int64 auto_stop_at_ms = 5;
+  // Reminder to stop an open manual trip. reminder_seq counts reminders raised for this trip
+  // and is 0 until the first one; reminder_reason is "acc_off" or "parked_30m" (empty before the
+  // first). The in-car app shows a dialog while reminder_seq > reminder_acked_seq and then calls
+  // AcknowledgeTripReminder, so each reminder is shown once even across app restarts.
+  int64 reminder_seq = 6;
+  string reminder_reason = 7;
+  int64 reminder_acked_seq = 8;
+  // True while telemetry sampling is suspended because ACC is OFF (the trip stays open).
+  bool telemetry_paused = 9;
+
+  // What the open trip has cost SO FAR (BladeWatch-reml): EV driving so far x the electricity rate,
+  // HEV driving so far x the fuel price. live_cost_available is false with no trip open or with
+  // neither rate configured (not a cost of zero). live_has_fuel is true when a fuel price is set, so
+  // a client can leave the fuel part out for an electricity-only owner.
+  bool live_cost_available = 10;
+  double live_electric_cost = 11;
+  double live_fuel_cost = 12;
+  string live_currency = 13;
+  bool live_has_fuel = 14;
+}
+
+message StartManualTripRequest {}
+
+message StartManualTripResponse {
+  ActiveTripStatus status = 1;
+}
+
+message StopManualTripRequest {}
+
+message StopManualTripResponse {
+  // False when no manual trip was open (an auto trip in progress is left alone).
+  bool stopped = 1;
+}
+
+message GetActiveTripRequest {}
+
+message GetActiveTripResponse {
+  ActiveTripStatus status = 1;
+}
+
+message AcknowledgeTripReminderRequest {
+  int64 reminder_seq = 1;
+}
+
+message AcknowledgeTripReminderResponse {
+  ActiveTripStatus status = 1;
 }

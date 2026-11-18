@@ -1559,6 +1559,14 @@
     "sync_database": "同步数据库"
   },
   "companion": {
+    "trip_ev_title": "纯电（EV）行驶",
+    "trip_hev_title": "混动（HEV）行驶",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "正在记录手动行程",
+    "manual_trip_started": "开始时间",
+    "manual_trip_elapsed": "已进行",
+    "trip_manual_badge": "手动",
     "energy": "能耗",
     "looking": "正在查找您的车辆…",
     "looking_hint": "通过互联网可能需要一分钟。在车辆的 Wi-Fi 上会更快。",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "充电故障",
     "cat_trips_started": "行程开始",
     "cat_trips_ended": "行程结束",
+    "cat_trips_manual_reminder": "手动行程仍在记录",
     "group_surveillance": "监控",
     "group_vehicle": "车辆",
     "group_security": "安全",

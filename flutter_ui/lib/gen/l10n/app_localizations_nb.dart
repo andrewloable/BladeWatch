@@ -3040,4 +3040,72 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => 'Kunne ikke lagre. Prøv igjen.';
+
+  @override
+  String get dashboard_trip_start => 'Start tur';
+
+  @override
+  String get dashboard_trip_stop => 'Stopp tur';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Manuell tur tas opp · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Automatisk tur pågår. Å starte en manuell tur avslutter den og begynner en ny.';
+
+  @override
+  String get dashboard_trip_error => 'Fikk ikke kontakt med bilen. Prøv igjen.';
+
+  @override
+  String get trip_reminder_title => 'Turen tas fortsatt opp';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Du slo av bilen mens den manuelle turen ble tatt opp ($elapsed så langt).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'Bilen har stått parkert i 30 minutter mens den manuelle turen ble tatt opp ($elapsed så langt).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Fortsett opptak';
+
+  @override
+  String get trip_reminder_stop => 'Stopp tur';
+
+  @override
+  String get trips_manual_badge => 'Manuell';
+
+  @override
+  String get trips_detail_ev_title => 'Elektrisk kjøring (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Hybridkjøring (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'l / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'l / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Så langt: strøm $electric · drivstoff $fuel · totalt $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Så langt: strøm $electric';
+  }
 }

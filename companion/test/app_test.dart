@@ -17,6 +17,7 @@ import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/stream.pb.dart';
 import 'package:bladewatch_rpc/pairing/pairing_payload.dart';
 import 'package:flutter/material.dart';
+import 'package:bladewatch_theme/blade_intro.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support.dart';
@@ -91,6 +92,10 @@ void main() {
     ));
     await tester.pump();
     await tester.pump();
+    await tester.pump();
+    // BladeWatch-sjz4: the launch intro covers the app (and absorbs taps) for its first
+    // ~1.2 s; let it finish, as a user would, before driving the app.
+    await tester.pump(BladeIntro.defaultDuration + const Duration(milliseconds: 100));
     await tester.pump();
     return tester.state<CompanionAppState>(find.byType(CompanionApp));
   }
@@ -495,4 +500,27 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   });
+
+  // BladeWatch-sjz4: the animated launch intro overlays the companion on launch, then goes away.
+  testWidgets('the launch intro covers the app first and is gone after about 1.2 s', (tester) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    s = TestSession();
+    stubCar();
+    await tester.pumpWidget(CompanionApp(
+      store: MemoryStore(),
+      loadTr: (lang) async => testTr,
+      openSession: (car) async => s.session,
+      biometrics: FakeBiometrics(),
+    ));
+    await tester.pump();
+    expect(find.byType(BladeIntro), findsOneWidget);
+
+    await tester.pump(BladeIntro.defaultDuration + const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(find.byType(BladeIntro), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 }
+

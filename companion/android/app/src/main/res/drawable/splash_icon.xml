@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  BladeWatch-sjz4: the icon of the Android 12+ system splash. The system scales this
+  drawable to 288 dp; the 31.25 percent inset on each side leaves the logo at
+  37.5 percent of that, 108 dp, the same size as launch_background and the start of
+  the animated intro, so nothing jumps between the three.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_foreground"
+    android:inset="31.25%" />

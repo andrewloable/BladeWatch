@@ -193,6 +193,20 @@ Two consequences of the catalogue now being consulted, both intended:
   corrected on the first pass, 0 on the second, and trip 193's repaired 0.1236 kWh/km agrees
   to 0.2% with the 1.1 kWh its lifetime electricity counter independently recorded.
 
+### Energy mode drives trip costing (BladeWatch-reml)
+
+`getEnergyMode` (1 = EV, 3 = HEV; `DriveState`, BladeWatch-os88) was first only the Dashboard's EV/HEV
+chip. Since v1.4.1.5 it also decides how a trip is costed: `TripAnalyticsManager` reads it from
+`BydDataCollector.data.energyMode` every 5 s during a trip, and `EnergyModeSegments` cuts the trip
+at every change. EV segments carry kWh and no litres, HEV segments litres and no kWh. An unknown
+reading carries the last known mode forward; a trip whose mode was never known is EV on a car
+without a tank, and on a plug-in hybrid HEV only when the fuel counter rose by more than 0.05 L (a
+planning choice, since nothing else can tell the two apart). The kWh of an EV segment follows
+`TripRecord.getEnergyUsedKwh`'s order: the net drop in remaining energy first (regeneration
+included, and a pack that ended fuller is 0), the metered lifetime counter only where that cannot
+answer. A trip with no HEV driving keeps its whole-trip figures exactly, so a battery-only car's
+history does not move.
+
 ## Polling and Listeners
 
 The collector combines initial reads, polling, and listeners.

@@ -26,6 +26,10 @@ import com.connectrpc.ResponseMessage
  *    GetTelemetry     GET    /api/trips/{id}/telemetry
  *    GetSimilarTrips  GET    /api/trips/{id}/similar
  *    GetGpsTrace      GET    /api/trips/{id}/gps
+ *    StartManualTrip  POST   /api/trips/manual/start
+ *    StopManualTrip   POST   /api/trips/manual/stop
+ *    GetActiveTrip    GET    /api/trips/active
+ *    AcknowledgeTripReminder POST /api/trips/manual/ack
  */
 public interface TripsServiceClientInterface {
   public suspend fun listTrips(request: ListTripsRequest, headers: Headers = emptyMap()): ResponseMessage<ListTripsResponse>
@@ -55,4 +59,16 @@ public interface TripsServiceClientInterface {
   public suspend fun getSimilarTrips(request: GetSimilarTripsRequest, headers: Headers = emptyMap()): ResponseMessage<GetSimilarTripsResponse>
 
   public suspend fun getGpsTrace(request: GetGpsTraceRequest, headers: Headers = emptyMap()): ResponseMessage<GetGpsTraceResponse>
+
+  /**
+   *  Manual trips (BladeWatch-gklt): the driver starts a trip with the Start Trip button; it ends
+   *  only via StopManualTrip (or a 7-day safety auto-stop), never on Park or ACC OFF.
+   */
+  public suspend fun startManualTrip(request: StartManualTripRequest, headers: Headers = emptyMap()): ResponseMessage<StartManualTripResponse>
+
+  public suspend fun stopManualTrip(request: StopManualTripRequest, headers: Headers = emptyMap()): ResponseMessage<StopManualTripResponse>
+
+  public suspend fun getActiveTrip(request: GetActiveTripRequest, headers: Headers = emptyMap()): ResponseMessage<GetActiveTripResponse>
+
+  public suspend fun acknowledgeTripReminder(request: AcknowledgeTripReminderRequest, headers: Headers = emptyMap()): ResponseMessage<AcknowledgeTripReminderResponse>
 }

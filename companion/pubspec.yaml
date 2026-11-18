@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.4.1+14104
+version: 1.4.1+14105
 
 environment:
   # Same floor as flutter_ui and bladewatch_rpc: the release workflow pins Flutter 3.44.4,
@@ -102,6 +102,9 @@ flutter:
   # (BladeWatch-rdtj.11; see lib/i18n.dart).
   assets:
     - assets/i18n/
+    # BladeWatch-sjz4: the logo of the animated launch intro: the same image the native
+    # splash shows (android drawable-xxxhdpi ic_launcher_foreground, 432 px = 108 dp).
+    - assets/brand/splash_logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

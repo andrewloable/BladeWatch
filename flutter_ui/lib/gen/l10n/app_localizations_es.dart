@@ -3083,4 +3083,73 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settings_lock_save_failed =>
       'No se pudo guardar. Inténtalo de nuevo.';
+
+  @override
+  String get dashboard_trip_start => 'Iniciar viaje';
+
+  @override
+  String get dashboard_trip_stop => 'Detener viaje';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Grabando viaje manual · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Viaje automático en curso. Iniciar un viaje manual lo termina y comienza uno nuevo.';
+
+  @override
+  String get dashboard_trip_error =>
+      'No se pudo contactar con el coche. Inténtalo de nuevo.';
+
+  @override
+  String get trip_reminder_title => 'El viaje sigue grabándose';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Apagaste el coche mientras tu viaje manual se estaba grabando ($elapsed hasta ahora).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'El coche lleva 30 minutos estacionado mientras tu viaje manual se estaba grabando ($elapsed hasta ahora).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Seguir grabando';
+
+  @override
+  String get trip_reminder_stop => 'Detener viaje';
+
+  @override
+  String get trips_manual_badge => 'Manual';
+
+  @override
+  String get trips_detail_ev_title => 'Conducción eléctrica (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Conducción híbrida (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Hasta ahora: electricidad $electric · combustible $fuel · total $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Hasta ahora: electricidad $electric';
+  }
 }

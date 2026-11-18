@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
+import 'package:bladewatch_theme/blade_intro.dart';
 import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:bladewatch_theme/hud_theme.dart';
 import 'package:bladewatch_theme/hud_widgets.dart';
@@ -61,6 +62,9 @@ class CompanionApp extends StatefulWidget {
 
 class CompanionAppState extends State<CompanionApp> {
   Tr? _tr;
+
+  /// BladeWatch-sjz4: the animated launch intro is showing (an overlay; the app starts underneath).
+  bool _introDone = false;
   CarSession? _session;
   AlertsController? _alerts;
   late final AppLifecycleListener _lifecycle;
@@ -170,7 +174,20 @@ class CompanionAppState extends State<CompanionApp> {
       darkTheme: BwHud.themeData(Brightness.dark),
       builder: (context, child) {
         final page = widget.tv ? DpadFieldExit(child: TvFocusRing(child: child!)) : child!;
-        return tr == null ? page : TrScope(tr: tr, child: page);
+        final app = tr == null ? page : TrScope(tr: tr, child: page);
+        // The animated intro over everything until it finishes. Its first frame matches the native
+        // splash (the 108 dp logo on black), so the handoff is invisible.
+        return Stack(
+          children: [
+            app,
+            if (!_introDone)
+              BladeIntro(
+                logo: const AssetImage('assets/brand/splash_logo.png'),
+                logoSize: 108,
+                onDone: () => setState(() => _introDone = true),
+              ),
+          ],
+        );
       },
       home: home,
     );

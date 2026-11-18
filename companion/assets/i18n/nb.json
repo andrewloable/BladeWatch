@@ -1559,6 +1559,14 @@
     "sync_database": "Synkroniser database"
   },
   "companion": {
+    "trip_ev_title": "Elektrisk kjøring (EV)",
+    "trip_hev_title": "Hybridkjøring (HEV)",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "l / 100 {unit}",
+    "manual_trip_recording": "Manuell tur tas opp",
+    "manual_trip_started": "Startet",
+    "manual_trip_elapsed": "Varighet",
+    "trip_manual_badge": "Manuell",
     "energy": "Energi",
     "looking": "Leter etter bilen din…",
     "looking_hint": "Over internett kan det ta opptil ett minutt. På bilens Wi-Fi går det raskere.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Ladefeil",
     "cat_trips_started": "Tur startet",
     "cat_trips_ended": "Tur avsluttet",
+    "cat_trips_manual_reminder": "Manuell tur tas fortsatt opp",
     "group_surveillance": "Overvåking",
     "group_vehicle": "Bil",
     "group_security": "Sikkerhet",

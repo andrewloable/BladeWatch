@@ -3074,6 +3074,75 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settings_lock_save_failed =>
       'Não foi possível guardar. Tente novamente.';
+
+  @override
+  String get dashboard_trip_start => 'Iniciar viagem';
+
+  @override
+  String get dashboard_trip_stop => 'Parar viagem';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Viagem manual em gravação · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Viagem automática em curso. Iniciar uma viagem manual termina-a e começa uma nova.';
+
+  @override
+  String get dashboard_trip_error =>
+      'Não foi possível contactar o carro. Tente novamente.';
+
+  @override
+  String get trip_reminder_title => 'A viagem ainda está a ser gravada';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Desligou o carro enquanto a sua viagem manual estava a ser gravada ($elapsed até agora).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'O carro está estacionado há 30 minutos enquanto a sua viagem manual estava a ser gravada ($elapsed até agora).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Continuar a gravar';
+
+  @override
+  String get trip_reminder_stop => 'Parar viagem';
+
+  @override
+  String get trips_manual_badge => 'Manual';
+
+  @override
+  String get trips_detail_ev_title => 'Condução elétrica (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Condução híbrida (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Até agora: eletricidade $electric · combustível $fuel · total $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Até agora: eletricidade $electric';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -6146,4 +6215,73 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get settings_lock_save_failed =>
       'Não foi possível salvar. Tente novamente.';
+
+  @override
+  String get dashboard_trip_start => 'Iniciar viagem';
+
+  @override
+  String get dashboard_trip_stop => 'Parar viagem';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Viagem manual em gravação · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Viagem automática em andamento. Iniciar uma viagem manual a encerra e começa uma nova.';
+
+  @override
+  String get dashboard_trip_error =>
+      'Não foi possível se conectar ao carro. Tente novamente.';
+
+  @override
+  String get trip_reminder_title => 'A viagem ainda está sendo gravada';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Você desligou o carro enquanto sua viagem manual estava sendo gravada ($elapsed até agora).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'O carro está estacionado há 30 minutos enquanto sua viagem manual estava sendo gravada ($elapsed até agora).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Continuar gravando';
+
+  @override
+  String get trip_reminder_stop => 'Parar viagem';
+
+  @override
+  String get trips_manual_badge => 'Manual';
+
+  @override
+  String get trips_detail_ev_title => 'Direção elétrica (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Direção híbrida (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Até agora: eletricidade $electric · combustível $fuel · total $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Até agora: eletricidade $electric';
+  }
 }

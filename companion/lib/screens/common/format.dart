@@ -16,6 +16,13 @@ abstract final class Fmt {
       ? '${(km / _kmPerMile).toStringAsFixed(decimals)}${nbsp}mi'
       : '${km.toStringAsFixed(decimals)}${nbsp}km';
 
+  /// [amount] per 100 distance units of [km] in the owner's unit (per 100 km, or per 100 mi), as
+  /// "x.x", or null when there is no distance to divide by.
+  static String? per100(double amount, double km, {String unit = 'km'}) {
+    final distance = unit == 'mi' ? km / _kmPerMile : km;
+    return distance > 0 ? (amount / distance * 100).toStringAsFixed(1) : null;
+  }
+
   /// In the owner's unit, as the in-car trip detail shows it: whole km/h or mph.
   static String speed(double kmh, {String unit = 'km'}) =>
       unit == 'mi' ? '${(kmh / _kmPerMile).toStringAsFixed(0)}${nbsp}mph' : '${kmh.toStringAsFixed(0)}${nbsp}km/h';

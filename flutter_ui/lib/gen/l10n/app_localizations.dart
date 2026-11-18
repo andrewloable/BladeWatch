@@ -5371,6 +5371,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save. Try again.'**
   String get settings_lock_save_failed;
+
+  /// Label of the dashboard button that starts a manual trip (shown in capitals).
+  ///
+  /// In en, this message translates to:
+  /// **'Start trip'**
+  String get dashboard_trip_start;
+
+  /// Label of the same button while a manual trip is recording; tapping it ends the trip.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop trip'**
+  String get dashboard_trip_stop;
+
+  /// Line under the Stop button: how long the manual trip has run and how far.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual trip recording · {elapsed} · {distance}'**
+  String dashboard_trip_manual_running(String elapsed, String distance);
+
+  /// Shown under the Start button while an automatically detected trip is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto trip in progress. Starting a manual trip ends it and begins a new one.'**
+  String get dashboard_trip_auto_running_hint;
+
+  /// Shown when starting or stopping a manual trip failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the car. Try again.'**
+  String get dashboard_trip_error;
+
+  /// Title of the dialog that reminds the driver a manual trip is still recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip still recording'**
+  String get trip_reminder_title;
+
+  /// Dialog body when the car was turned off while a manual trip was recording; {elapsed} is H:MM.
+  ///
+  /// In en, this message translates to:
+  /// **'You turned the car off while your manual trip was recording ({elapsed} so far).'**
+  String trip_reminder_body_acc_off(String elapsed);
+
+  /// Dialog body when the car has been parked 30 minutes during a manual trip; {elapsed} is H:MM.
+  ///
+  /// In en, this message translates to:
+  /// **'The car has been parked for 30 minutes while your manual trip was recording ({elapsed} so far).'**
+  String trip_reminder_body_parked(String elapsed);
+
+  /// Dialog button: dismiss the reminder and keep the trip recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep recording'**
+  String get trip_reminder_keep;
+
+  /// Dialog button: stop the manual trip now.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop trip'**
+  String get trip_reminder_stop;
+
+  /// Small badge on a trip the driver started with the Start Trip button.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get trips_manual_badge;
+
+  /// Title of the trip detail card for the part of a trip driven in EV mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric (EV) driving'**
+  String get trips_detail_ev_title;
+
+  /// Title of the trip detail card for the part of a trip driven in HEV mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Hybrid (HEV) driving'**
+  String get trips_detail_hev_title;
+
+  /// Label of the electric consumption rate, kilometres.
+  ///
+  /// In en, this message translates to:
+  /// **'kWh / 100 km'**
+  String get trips_detail_kwh_per_100km;
+
+  /// Label of the electric consumption rate, miles.
+  ///
+  /// In en, this message translates to:
+  /// **'kWh / 100 mi'**
+  String get trips_detail_kwh_per_100mi;
+
+  /// Label of the fuel consumption rate, kilometres.
+  ///
+  /// In en, this message translates to:
+  /// **'L / 100 km'**
+  String get trips_detail_l_per_100km;
+
+  /// Label of the fuel consumption rate, miles.
+  ///
+  /// In en, this message translates to:
+  /// **'L / 100 mi'**
+  String get trips_detail_l_per_100mi;
+
+  /// Line under the Start/Stop Trip button: what the open trip has cost so far.
+  ///
+  /// In en, this message translates to:
+  /// **'So far: electricity {electric} · fuel {fuel} · total {total}'**
+  String dashboard_trip_live_cost(String electric, String fuel, String total);
+
+  /// Line under the Start/Stop Trip button: what the open trip has cost so far.
+  ///
+  /// In en, this message translates to:
+  /// **'So far: electricity {electric}'**
+  String dashboard_trip_live_cost_ev(String electric);
 }
 
 class _AppLocalizationsDelegate

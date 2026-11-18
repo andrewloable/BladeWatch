@@ -277,6 +277,19 @@ killed the healthy daemon the next `start()` had built. That was 7 of the starts
 2026-09-24 with ACC off, every post-install start among them. With the fix, 10 consecutive starts
 ran clean. The CRITICAL line now carries the GL thread's stack.
 
+### A manual trip across restarts (BladeWatch-gklt)
+
+A restart of `byd_cam_daemon` (the watchdog after a crash or a GL stall, an install, a head-unit
+reboot) must not lose a manual trip that is still open. On a clean shutdown
+`TripAnalyticsManager.shutdown` flushes the recorder and saves the trip instead of finishing it;
+while it runs, the trip is also saved every 60 s, so a crash costs at most a minute of statistics.
+`initComponents` then reads `/storage/emulated/0/BladeWatch/data/active_manual_trip.json`, starts
+the recorder for the same trip (appending to the same `<startTime>.jsonl.gz`), re-opens the trip
+in `TripDetector` without announcing a new start, re-arms the seven-day safety net with the time
+left, and restores the reminder and EV/HEV state. A trip already past seven days ends at once.
+ACC OFF pauses the recorder and ACC ON resumes it; the trip itself stays open. An automatically
+detected trip is still ended at ACC OFF and at shutdown as before.
+
 ### SD-card unmounts: vold's SIGINT and the watchdog (BladeWatch-rdtj.65, rdtj.66)
 
 At ACC OFF, BYD broadcasts `ACTION_SHUTDOWN`, and vold unmounts the SD card. Any process still

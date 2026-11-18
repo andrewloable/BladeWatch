@@ -29,6 +29,10 @@ import com.connectrpc.StreamType
  *    GetTelemetry     GET    /api/trips/{id}/telemetry
  *    GetSimilarTrips  GET    /api/trips/{id}/similar
  *    GetGpsTrace      GET    /api/trips/{id}/gps
+ *    StartManualTrip  POST   /api/trips/manual/start
+ *    StopManualTrip   POST   /api/trips/manual/stop
+ *    GetActiveTrip    GET    /api/trips/active
+ *    AcknowledgeTripReminder POST /api/trips/manual/ack
  */
 public class TripsServiceClient(
   private val client: ProtocolClientInterface,
@@ -196,6 +200,58 @@ public class TripsServiceClient(
     "bladewatch.v1.TripsService/GetGpsTrace",
       net.bladewatch.app.grpc.v1.GetGpsTraceRequest::class,
       net.bladewatch.app.grpc.v1.GetGpsTraceResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  /**
+   *  Manual trips (BladeWatch-gklt): the driver starts a trip with the Start Trip button; it ends
+   *  only via StopManualTrip (or a 7-day safety auto-stop), never on Park or ACC OFF.
+   */
+  override suspend fun startManualTrip(request: StartManualTripRequest, headers: Headers): ResponseMessage<StartManualTripResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.TripsService/StartManualTrip",
+      net.bladewatch.app.grpc.v1.StartManualTripRequest::class,
+      net.bladewatch.app.grpc.v1.StartManualTripResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun stopManualTrip(request: StopManualTripRequest, headers: Headers): ResponseMessage<StopManualTripResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.TripsService/StopManualTrip",
+      net.bladewatch.app.grpc.v1.StopManualTripRequest::class,
+      net.bladewatch.app.grpc.v1.StopManualTripResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun getActiveTrip(request: GetActiveTripRequest, headers: Headers): ResponseMessage<GetActiveTripResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.TripsService/GetActiveTrip",
+      net.bladewatch.app.grpc.v1.GetActiveTripRequest::class,
+      net.bladewatch.app.grpc.v1.GetActiveTripResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun acknowledgeTripReminder(request: AcknowledgeTripReminderRequest, headers: Headers): ResponseMessage<AcknowledgeTripReminderResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.TripsService/AcknowledgeTripReminder",
+      net.bladewatch.app.grpc.v1.AcknowledgeTripReminderRequest::class,
+      net.bladewatch.app.grpc.v1.AcknowledgeTripReminderResponse::class,
       StreamType.UNARY,
     ),
   )

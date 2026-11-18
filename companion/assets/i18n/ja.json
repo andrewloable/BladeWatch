@@ -1559,6 +1559,14 @@
     "sync_database": "データベースを同期"
   },
   "companion": {
+    "trip_ev_title": "EV走行",
+    "trip_hev_title": "HEV走行",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "手動走行を記録中",
+    "manual_trip_started": "開始",
+    "manual_trip_elapsed": "経過時間",
+    "trip_manual_badge": "手動",
     "energy": "消費電力",
     "looking": "車を探しています…",
     "looking_hint": "インターネット経由では最大1分かかることがあります。車の Wi-Fi ならもっと速くつながります。",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "充電エラー",
     "cat_trips_started": "走行開始",
     "cat_trips_ended": "走行終了",
+    "cat_trips_manual_reminder": "手動走行を記録中",
     "group_surveillance": "監視",
     "group_vehicle": "車両",
     "group_security": "セキュリティ",

@@ -1559,6 +1559,14 @@
     "sync_database": "데이터베이스 동기화"
   },
   "companion": {
+    "trip_ev_title": "전기(EV) 주행",
+    "trip_hev_title": "하이브리드(HEV) 주행",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "수동 주행 기록 중",
+    "manual_trip_started": "시작",
+    "manual_trip_elapsed": "경과 시간",
+    "trip_manual_badge": "수동",
     "energy": "에너지",
     "looking": "차량을 찾는 중…",
     "looking_hint": "인터넷을 통하면 최대 1분이 걸릴 수 있습니다. 차량 Wi-Fi에서는 더 빠릅니다.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "충전 오류",
     "cat_trips_started": "주행 시작",
     "cat_trips_ended": "주행 종료",
+    "cat_trips_manual_reminder": "수동 주행이 아직 기록 중",
     "group_surveillance": "감시",
     "group_vehicle": "차량",
     "group_security": "보안",

@@ -2960,4 +2960,72 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => '保存できませんでした。もう一度お試しください。';
+
+  @override
+  String get dashboard_trip_start => '走行を開始';
+
+  @override
+  String get dashboard_trip_stop => '走行を停止';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return '手動走行を記録中 · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      '自動走行の記録中です。手動走行を開始すると、それを終了して新しい走行を始めます。';
+
+  @override
+  String get dashboard_trip_error => '車に接続できませんでした。もう一度お試しください。';
+
+  @override
+  String get trip_reminder_title => '走行を記録中です';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return '手動走行の記録中に車の電源を切りました（ここまで $elapsed）。';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return '手動走行の記録中に車が30分間駐車されています（ここまで $elapsed）。';
+  }
+
+  @override
+  String get trip_reminder_keep => '記録を続ける';
+
+  @override
+  String get trip_reminder_stop => '走行を停止';
+
+  @override
+  String get trips_manual_badge => '手動';
+
+  @override
+  String get trips_detail_ev_title => 'EV走行';
+
+  @override
+  String get trips_detail_hev_title => 'HEV走行';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'ここまで：電気 $electric · 燃料 $fuel · 合計 $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'ここまで：電気 $electric';
+  }
 }

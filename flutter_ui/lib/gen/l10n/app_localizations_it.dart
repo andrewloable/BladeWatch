@@ -3082,4 +3082,72 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => 'Salvataggio non riuscito. Riprova.';
+
+  @override
+  String get dashboard_trip_start => 'Avvia viaggio';
+
+  @override
+  String get dashboard_trip_stop => 'Termina viaggio';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Viaggio manuale in registrazione · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Viaggio automatico in corso. Avviare un viaggio manuale lo termina e ne inizia uno nuovo.';
+
+  @override
+  String get dashboard_trip_error => 'Impossibile raggiungere l’auto. Riprova.';
+
+  @override
+  String get trip_reminder_title => 'Viaggio ancora in registrazione';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Hai spento l’auto mentre il tuo viaggio manuale era in registrazione ($elapsed finora).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'L’auto è parcheggiata da 30 minuti mentre il tuo viaggio manuale era in registrazione ($elapsed finora).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Continua a registrare';
+
+  @override
+  String get trip_reminder_stop => 'Termina viaggio';
+
+  @override
+  String get trips_manual_badge => 'Manuale';
+
+  @override
+  String get trips_detail_ev_title => 'Guida elettrica (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Guida ibrida (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Finora: elettricità $electric · carburante $fuel · totale $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Finora: elettricità $electric';
+  }
 }

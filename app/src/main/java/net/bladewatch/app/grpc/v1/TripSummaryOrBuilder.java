@@ -189,4 +189,52 @@ public interface TripSummaryOrBuilder extends
    * @return The hasFuelData.
    */
   boolean getHasFuelData();
+
+  /**
+   * <pre>
+   * True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+   * </pre>
+   *
+   * <code>bool manual = 25 [json_name = "manual"];</code>
+   * @return The manual.
+   */
+  boolean getManual();
+
+  /**
+   * <pre>
+   * EV/HEV split (BladeWatch-reml). A BYD plug-in hybrid drives in EV or HEV energy mode and a trip
+   * can switch; each stretch is measured on its own. EV driving carries kWh and no litres; HEV
+   * driving carries litres and NO kWh (not even as information). All 0 on a trip recorded before
+   * the split existed, which has_energy_split tells apart from a trip that really drove 0 km in a
+   * mode. With HEV driving present, energy_per_km is kWh over the EV kilometres only.
+   * </pre>
+   *
+   * <code>double ev_km = 26 [json_name = "evKm"];</code>
+   * @return The evKm.
+   */
+  double getEvKm();
+
+  /**
+   * <code>double ev_kwh = 27 [json_name = "evKwh"];</code>
+   * @return The evKwh.
+   */
+  double getEvKwh();
+
+  /**
+   * <code>double hev_km = 28 [json_name = "hevKm"];</code>
+   * @return The hevKm.
+   */
+  double getHevKm();
+
+  /**
+   * <code>double hev_litres = 29 [json_name = "hevLitres"];</code>
+   * @return The hevLitres.
+   */
+  double getHevLitres();
+
+  /**
+   * <code>bool has_energy_split = 30 [json_name = "hasEnergySplit"];</code>
+   * @return The hasEnergySplit.
+   */
+  boolean getHasEnergySplit();
 }

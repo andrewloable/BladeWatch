@@ -1559,6 +1559,14 @@
     "sync_database": "Datenbank abgleichen"
   },
   "companion": {
+    "trip_ev_title": "Elektrisches Fahren (EV)",
+    "trip_hev_title": "Hybridfahren (HEV)",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "l / 100 {unit}",
+    "manual_trip_recording": "Manuelle Fahrt wird aufgezeichnet",
+    "manual_trip_started": "Gestartet",
+    "manual_trip_elapsed": "Dauer",
+    "trip_manual_badge": "Manuell",
     "energy": "Energie",
     "looking": "Suche nach Ihrem Auto…",
     "looking_hint": "Über das Internet kann das bis zu einer Minute dauern. Im WLAN des Autos geht es schneller.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Ladefehler",
     "cat_trips_started": "Fahrt begonnen",
     "cat_trips_ended": "Fahrt beendet",
+    "cat_trips_manual_reminder": "Manuelle Fahrt wird noch aufgezeichnet",
     "group_surveillance": "Überwachung",
     "group_vehicle": "Fahrzeug",
     "group_security": "Sicherheit",

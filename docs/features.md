@@ -227,6 +227,51 @@ Trip functionality includes:
 - Trip config.
 - Trip storage management.
 - PHEV fuel leg: litres burned, fuel cost, and a dual-leg trip cost.
+- **Manual trips: Start Trip / Stop Trip** (BladeWatch-gklt, v1.4.1.5). One large button, the first
+  block under the in-car Dashboard's title, starts a *manual trip* that records until the same
+  button stops it. A manual trip does not end when the car is parked, turned off or restarted
+  (the daemon saves it and picks it up again), and it is never discarded for being short or
+  slow. Pressing it while an automatically detected trip is open ends that trip through the
+  normal rules (it may be discarded) and starts a fresh manual one. Left open for seven days it
+  is ended automatically. With the car off, telemetry sampling pauses and resumes at ACC ON, so
+  the file stays free of parked-GPS drift. If the button is never pressed, trips are detected
+  exactly as before. The companion shows that a manual trip is recording (when it started, how
+  long it has run) and marks manual trips with a Manual badge in its trip list; it has no start
+  or stop control, and the in-car list marks them too.
+- **Cost so far, while a trip runs.** Under the Start/Stop button the in-car Dashboard shows what
+  the open trip has cost so far, `So far: electricity $0.42 · fuel $1.10 · total $1.52`: EV driving
+  so far at the electricity rate plus HEV driving so far at the fuel price, updated with the
+  2-second status poll and for automatic trips as well as manual ones. With no fuel price set only
+  the electricity is shown, and with no rate configured nothing is shown (not a cost of zero). The
+  figure comes from the same EV/HEV tracker as the final cost and ends at roughly the trip's final
+  cost; it can lag by a few seconds, and the pack's remaining-energy reading moves in coarse steps.
+  The companion does not show it.
+- **Reminder to stop a manual trip.** When ACC goes OFF, or the car has sat in Park for 30
+  minutes with ACC ON, while a manual trip is still recording, the car raises a reminder, once per
+  stop: it re-arms only after the car drives again. It reaches the driver two ways. The companion
+  gets an alert (category `trips.manual_reminder`, on by default, warning severity, subject to the
+  companion's quiet hours) through the usual store-and-forward inbox, and the in-car app shows a
+  "Trip still recording" dialog the next time it is on screen, whichever page that is, with **Stop
+  trip** and **Keep recording**. The car is normally off when this happens, so the app polls the
+  daemon (every 15 s and when it returns to the foreground) instead of waiting for a push, and
+  each reminder is acknowledged to the daemon so it is shown once.
+- **EV and HEV driving are costed separately** (BladeWatch-reml, v1.4.1.5). The car reports its
+  energy mode (EV or HEV, see byd-integrations.md); the daemon samples it every 5 s during a trip
+  and cuts the trip at every change, measuring each stretch on its own. EV driving is costed from
+  kWh only, with no fuel cost; HEV driving from fuel only, with no electricity use or cost, and
+  its kWh is not shown anywhere. A trip that switches is the sum of its segments. The same split
+  drives the efficiency score (the electric leg only; an all-HEV trip scores neutral), the range
+  learning (kWh/km from EV kilometres, litres/km from HEV kilometres) and the weekly and monthly
+  totals. A trip with no HEV driving, in particular every battery-only car's trip, is costed
+  exactly as before. The trip detail, in the car and in the companion, shows an Electric (EV)
+  driving section (distance, kWh, kWh per 100 km or mi, electricity cost) and a Hybrid (HEV)
+  driving section (distance, litres, litres per 100 km or mi, fuel cost), each only when the trip
+  has that kind of driving.
+- **Trip history is cleared once, on the first start of v1.4.1.5.** Older trips were costed on
+  both electricity and fuel over the whole drive and carry no EV/HEV split, so they cannot be
+  re-costed correctly: every stored trip, its telemetry file, the weekly and monthly totals, the
+  saved routes and the learned consumption figures are deleted one time. Prices, currency and
+  units are kept, and the wipe never runs again.
 - Period costs (BladeWatch-39d2, -mgi9, -c149): the fuel, electric and total cost of a period's
   trips, on the dashboard's THIS WEEK card (in-car and companion, under the trip count, distance
   and drive time), on the Trips Stats tab under Personalized Range, and in the Period Summary.

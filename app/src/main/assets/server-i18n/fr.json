@@ -125,7 +125,10 @@
     "trip_started": "Trajet commencé",
     "trip_ended": "Trajet terminé",
     "trip_summary_km": "{0} km · {1} min",
-    "trip_summary_mi": "{0} mi · {1} min"
+    "trip_summary_mi": "{0} mi · {1} min",
+    "manual_trip_reminder_title": "Trajet toujours en cours d’enregistrement",
+    "manual_trip_reminder_acc_off": "Vous avez éteint la voiture, mais votre trajet manuel est toujours en cours d’enregistrement. Ouvrez BladeWatch et touchez Arrêter le trajet si vous avez terminé.",
+    "manual_trip_reminder_parked": "La voiture est à l’arrêt depuis 30 minutes et votre trajet manuel est toujours en cours d’enregistrement. Touchez Arrêter le trajet si vous avez terminé."
   },
   "vehicle_control": {
     "cloud_required": "Connectez un compte BYD dans les paramètres pour utiliser ce contrôle",

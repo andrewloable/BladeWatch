@@ -2,11 +2,15 @@ package net.bladewatch.app.trips
 
 import android.content.Context
 import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
+import net.bladewatch.app.byd.BydDataCollector
 import net.bladewatch.app.logging.DaemonLogger
 import net.bladewatch.app.monitor.GearMonitor
 import net.bladewatch.app.monitor.VehicleDataMonitor
@@ -33,6 +37,32 @@ class TripAnalyticsManager {
     private var rangeEstimator: RangeEstimator? = null
 
     private var telemetryDataCollector: TelemetryDataCollector? = null
+
+    /** Durable copy of the open manual trip (BladeWatch-gklt.2); null until components are up. */
+    private var manualStore: ManualTripStore? = null
+
+    /** One thread for the minute tick that saves the open manual trip. */
+    private var manualScheduler: ScheduledExecutorService? = null
+
+    /**
+     * Other features' state for the open manual trip; saved and restored with it.
+     *
+     * A [JSONObject] is not thread-safe, and the minute tick, the ACC callbacks and the RPC
+     * threads all touch it, so EVERY read or write of it (and every save that serialises it)
+     * holds [manualLock].
+     */
+    @Volatile
+    private var manualExtras = JSONObject()
+    private val manualLock = Any()
+
+    /** EV/HEV split of the trip in progress (BladeWatch-reml.1). Fed every [ENERGY_SAMPLE_SECONDS]. */
+    private val segments = EnergyModeSegments()
+
+    /** When to remind the driver to stop an open manual trip. See [ManualTripReminder]. */
+    private val reminder = ManualTripReminder(
+        clock = System::currentTimeMillis,
+        fire = ::onReminderFired,
+    )
 
     @Volatile
     private var enabled = false
@@ -81,7 +111,18 @@ class TripAnalyticsManager {
     fun shutdown() {
         logger.info("Shutting down TripAnalyticsManager")
 
-        detector?.finalizeActiveTrip()
+        // An open manual trip must survive a daemon restart, so only an auto trip is finalized.
+        // The manual one is flushed and saved instead.
+        manualScheduler?.shutdownNow()
+        manualScheduler = null
+        detector?.let {
+            if (it.isManualTripActive()) {
+                recorder?.flushNow()
+                saveManualState()
+            } else {
+                it.finalizeActiveTrip()
+            }
+        }
         database?.close()
 
         enabled = false
@@ -94,22 +135,31 @@ class TripAnalyticsManager {
 
     /** Forward a gear change to the detector if enabled. */
     fun onGearChanged(newGear: Int) {
-        if (enabled) detector?.onGearChanged(newGear)
+        if (!enabled) return
+        detector?.onGearChanged(newGear)
+        if (detector?.isManualTripActive() == true) {
+            reminder.onGear(newGear)
+            persistReminder()
+        }
     }
 
     // ==================== ACC LIFECYCLE ====================
 
     /**
-     * Called when ACC goes OFF (car powering down / entering sentry mode). Finalizes any
-     * active trip immediately — the gear change to P may not fire reliably during power-down,
-     * so this is a safety net.
+     * Called when ACC goes OFF (car powering down / entering sentry mode). Finalizes an active
+     * AUTO trip immediately — the gear change to P may not fire reliably during power-down, so
+     * this is a safety net. A manual trip (BladeWatch-gklt) stays open.
      */
     fun onAccOff() {
         if (!enabled) return
+        // The detector decides: an auto trip ends now, a manual trip stays open.
         val d = detector ?: return
-        if (d.isTripActive()) {
-            logger.info("ACC OFF — finalizing active trip")
-            d.finalizeActiveTrip()
+        d.onAccOff()
+        if (d.isManualTripActive()) {
+            // Nobody is driving: stop sampling (GPS drift, flat-zero rows) but keep the trip.
+            recorder?.pause()
+            reminder.onAcc(false)
+            persistReminder()
         }
     }
 
@@ -122,6 +172,12 @@ class TripAnalyticsManager {
     fun onAccOn() {
         if (!enabled) return
         logger.info("ACC ON — trip detection ready (waiting for gear D/R)")
+
+        if (detector?.isManualTripActive() == true) {
+            recorder?.resume()
+            reminder.onAcc(true)
+            persistReminder()
+        }
 
         try {
             val currentGear = GearMonitor.getInstance().currentGear
@@ -191,6 +247,96 @@ class TripAnalyticsManager {
     /** Whether a trip is currently being tracked (ACTIVE or PARK_PENDING). */
     fun isTripActive(): Boolean = enabled && detector?.isTripActive() == true
 
+    /** Start a manual trip (Start Trip button), or null when trip analytics is not running. */
+    fun startManualTrip(): TripRecord? {
+        if (!enabled) return null
+        val d = detector ?: return null
+        val alreadyOpen = d.isManualTripActive()
+        val trip = d.startManualTrip()
+        // A NEW manual trip starts with a clean slate; an idempotent repeat keeps its state.
+        if (!alreadyOpen) {
+            synchronized(manualLock) { manualExtras = JSONObject() }
+            val gear = try { GearMonitor.getInstance().currentGear } catch (e: Exception) { null }
+            // The driver just pressed the button, so the car is on.
+            reminder.onManualTripStarted(gear, accOn = true)
+            persistReminder()
+        } else {
+            saveManualState()
+        }
+        return trip
+    }
+
+    /**
+     * End the open manual trip. False when none is open or trip analytics is not running. The
+     * saved state is removed when the trip is persisted (see [handleTripEnded]).
+     */
+    fun stopManualTrip(): Boolean = enabled && detector?.stopManualTrip() == true
+
+    /** Whether a manual trip is open. */
+    fun isManualTripActive(): Boolean = enabled && detector?.isManualTripActive() == true
+
+    /**
+     * The trip in progress as the wire message ActiveTripStatus (camelCase proto3 JSON). Safe to
+     * call when no trip is open: everything is then zero/false/empty.
+     */
+    fun activeTripStatus(): JSONObject {
+        val json = JSONObject()
+        val trip = if (enabled) detector?.getActiveTrip() else null
+        val open = trip != null && detector?.isTripActive() == true
+        val manual = open && trip!!.isManual
+        val (reminder, ackedSeq) = synchronized(manualLock) {
+            // Copy out under the lock: the objects are mutated by other threads.
+            val r = manualExtras.optJSONObject("reminder")
+            Pair(r?.let { JSONObject(it.toString()) }, manualExtras.optLong("reminderAckedSeq", 0L))
+        }
+        json.put("active", open)
+        json.put("manual", manual)
+        json.put("startTimeMs", if (open) trip!!.startTime else 0L)
+        json.put("distanceKm", if (open) (recorder?.totalDistanceKm ?: 0.0) else 0.0)
+        json.put(
+            "autoStopAtMs",
+            if (manual) trip!!.startTime + TripDetector.MANUAL_MAX_DURATION_MS else 0L
+        )
+        json.put("reminderSeq", if (manual) reminder?.optLong("seq", 0L) ?: 0L else 0L)
+        json.put("reminderReason", if (manual) reminder?.optString("lastReason", "") ?: "" else "")
+        json.put("reminderAckedSeq", if (manual) ackedSeq else 0L)
+        json.put("telemetryPaused", manual && recorder?.isPaused == true)
+        putLiveCost(json, open)
+        return json
+    }
+
+    /**
+     * What the open trip has cost so far, from the tracker's latest reading (no extra HAL read per
+     * poll). EV driving so far x the electricity rate, HEV driving so far x the fuel price; "not
+     * available" with no trip or with neither rate configured, never a made-up zero.
+     */
+    private fun putLiveCost(json: JSONObject, open: Boolean) {
+        val cfg = config
+        val live = if (open) segments.live() else null
+        val rate = cfg?.getElectricityRate() ?: 0.0
+        val price = cfg?.getFuelPricePerL() ?: 0.0
+        val available = live != null && (rate > 0 || price > 0)
+        json.put("liveCostAvailable", available)
+        json.put("liveElectricCost", if (available && rate > 0) live!!.evKwh * rate else 0.0)
+        json.put("liveFuelCost", if (available && price > 0) live!!.hevLitres * price else 0.0)
+        json.put("liveCurrency", if (available) cfg?.getCurrency() ?: "" else "")
+        json.put("liveHasFuel", available && price > 0)
+    }
+
+    /**
+     * Record that the in-car dialog for reminder [seq] has been shown, so it is never shown again.
+     * Keeps the highest value: a late or repeated acknowledgement can never re-arm an older one.
+     */
+    fun acknowledgeReminder(seq: Long) {
+        if (!isManualTripActive()) return
+        synchronized(manualLock) {
+            if (seq > manualExtras.optLong("reminderAckedSeq", 0L)) {
+                manualExtras.put("reminderAckedSeq", seq)
+                saveManualState()
+            }
+        }
+    }
+
     /** The active trip record, or null if no trip is active. */
     fun getActiveTrip(): TripRecord? = detector?.getActiveTrip()
 
@@ -198,9 +344,36 @@ class TripAnalyticsManager {
      * Update the TelemetryDataCollector reference after late initialization. Called by
      * CameraDaemon once the collector is ready (after the GPU init delay).
      */
+    /** Test seam: run with a prebuilt detector/recorder, skipping the database and HAL wiring. */
+    internal fun attachForTest(
+        detector: TripDetector,
+        recorder: TripTelemetryRecorder?,
+        store: ManualTripStore? = null,
+        config: TripConfig? = null,
+    ) {
+        this.detector = detector
+        this.recorder = recorder
+        this.manualStore = store
+        this.config = config
+        enabled = true
+    }
+
+    /** Test seam: the EV/HEV tracker, so a test can drive what the live cost reads. */
+    internal fun energySegments(): EnergyModeSegments = segments
+
     fun setTelemetryDataCollector(collector: TelemetryDataCollector?) {
+        val first = telemetryDataCollector == null && collector != null
         telemetryDataCollector = collector
         recorder?.telemetryDataCollector = collector
+        // A trip restored (or started) before the collector existed has not asked it to poll,
+        // so its samples would all read zero. handleTripEnded releases the reference.
+        if (first && detector?.isTripActive() == true) {
+            try {
+                collector?.startPolling()
+            } catch (e: Exception) {
+                logger.warn("Failed to start polling for the open trip: " + e.message)
+            }
+        }
     }
 
     // ==================== SYNC / RECONCILE ====================
@@ -232,6 +405,10 @@ class TripAnalyticsManager {
             val removed = db.deleteTripsWithMissingTelemetry()
 
             val known = HashSet(db.getAllTelemetryPaths())
+            // The telemetry file of a trip that is still open has no row yet: indexing it now
+            // would store a half-trip and the real one would then be saved a second time. A
+            // manual trip can stay open for days, so this is no longer a theoretical race.
+            val openTripFile = detector?.getActiveTrip()?.let { "${it.startTime}.jsonl.gz" }
             var added = 0
             for (dir in StorageManager.getInstance().allTripsDirs) {
                 if (!dir.exists() || !dir.canRead()) continue
@@ -239,6 +416,7 @@ class TripAnalyticsManager {
                 for (f in files) {
                     if (!f.canRead() || f.length() <= 0) continue
                     if (known.contains(f.absolutePath)) continue
+                    if (f.name == openTripFile) continue
                     val samples = TelemetryStore.readFromFile(f)
                     if (samples.isNullOrEmpty()) continue
                     if (samples.size == 1) {
@@ -337,6 +515,15 @@ class TripAnalyticsManager {
         db.init()
         database = db
 
+        // BladeWatch-reml.3: wipe the pre-EV/HEV trip history once. FIRST, before anything reads
+        // trips, and sparing only the telemetry file of a manual trip that is still open.
+        val store = ManualTripStore(File(MANUAL_STATE_PATH))
+        val openTripFile = store.load()?.let { "${it.startTime}.jsonl.gz" }
+        db.wipeTripHistoryOnce(
+            StorageManager.getInstance().allTripsDirs,
+            if (openTripFile != null) setOf(openTripFile) else emptySet(),
+        )
+
         // Clean up orphaned trips from previous daemon crashes (no end_time, older than 24h).
         try {
             val cutoff = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
@@ -352,7 +539,19 @@ class TripAnalyticsManager {
         val d = TripDetector()
         d.addListener(object : TripDetector.TripListener {
             override fun onTripStarted(trip: TripRecord) = handleTripStarted(trip)
-            override fun onTripEnded(trip: TripRecord) = handleTripEnded(trip)
+            override fun onTripEnded(trip: TripRecord) {
+                try {
+                    handleTripEnded(trip)
+                } finally {
+                    // Saved state describes an OPEN trip; once it is persisted it must go, or the
+                    // next daemon start would resurrect a trip that already ended.
+                    if (trip.isManual) {
+                        manualStore?.clear()
+                        reminder.onManualTripEnded()
+                        synchronized(manualLock) { manualExtras = JSONObject() }
+                    }
+                }
+            }
             override fun onTripDiscarded(trip: TripRecord, reason: String) =
                 handleTripDiscarded(trip, reason)
         })
@@ -367,8 +566,173 @@ class TripAnalyticsManager {
         scoreEngine = TripScoreEngine()
         rangeEstimator = RangeEstimator(db, config)
 
+        manualStore = store
         enabled = true
+        restoreManualTrip()
+        startManualTick()
         logger.info("Trip analytics components initialized")
+    }
+
+    // ==================== MANUAL TRIP STATE (BladeWatch-gklt.2) ====================
+
+    /** Build the persisted state of the open manual trip from the live detector and recorder. */
+    private fun currentManualState(): ManualTripStore.State? {
+        val d = detector ?: return null
+        val r = recorder ?: return null
+        val t = d.getActiveTrip() ?: return null
+        if (!t.isManual) return null
+        return ManualTripStore.State(
+            startTime = t.startTime,
+            socStart = t.socStart,
+            kwhStart = t.kwhStart,
+            fuelPctStart = t.fuelPctStart,
+            fuelConStart = t.fuelConStart,
+            elecConStart = t.elecConStart,
+            startLat = t.startLat,
+            startLon = t.startLon,
+            extTempC = t.extTempC,
+            startOdometerKm = d.getStartOdometerKm(),
+            stats = r.statsSnapshot(),
+            telemetryPaused = r.isPaused,
+            extras = manualExtras,
+        )
+    }
+
+    /**
+     * Change the extras of the open manual trip under the lock, then save. This is the ONLY way
+     * other features (reminder state, per-mode energy segments) may modify the extras.
+     */
+    internal fun updateExtras(block: (JSONObject) -> Unit) {
+        synchronized(manualLock) {
+            block(manualExtras)
+            saveManualState()
+        }
+    }
+
+    /** Save the reminder's state with the open manual trip. */
+    private fun persistReminder() {
+        updateExtras {
+            it.put("reminder", reminder.toJson())
+            it.put("energySegments", segments.toJson())
+        }
+    }
+
+    /** One reading of the car for the EV/HEV split. Every field falls back to unavailable (-1). */
+    private fun readEnergySnapshot(): EnergyModeSegments.Snapshot {
+        fun counter(v: Double) = if (v.isFinite() && v >= 0) v else -1.0
+        val vdm = try { VehicleDataMonitor.getInstance() } catch (t: Throwable) { null }
+        val mode = try {
+            val c = BydDataCollector.getInstance()
+            if (c.isInitialized) c.data?.energyMode ?: -1 else -1
+        } catch (t: Throwable) {
+            -1
+        }
+        val odometer = try { OdometerReader.getInstance().readOdometerKm() } catch (t: Throwable) { -1.0 }
+        return EnergyModeSegments.Snapshot(
+            timeMs = System.currentTimeMillis(),
+            modeRaw = mode,
+            odometerKm = if (odometer > 0) odometer else -1.0,
+            elecConKwh = counter(try { vdm?.getTotalElecCon() ?: Double.NaN } catch (t: Throwable) { Double.NaN }),
+            kwhRemaining = counter(try { vdm?.getBatteryRemainPowerKwh() ?: Double.NaN } catch (t: Throwable) { Double.NaN }),
+            fuelConL = counter(try { vdm?.getTotalFuelCon() ?: Double.NaN } catch (t: Throwable) { Double.NaN }),
+            gpsDistanceKm = recorder?.totalDistanceKm ?: -1.0,
+        )
+    }
+
+    /** Feed the open trip's EV/HEV tracker (the sampler thread, every few seconds). */
+    private fun sampleEnergy() {
+        if (detector?.isTripActive() == true && segments.isTracking()) {
+            segments.onSnapshot(readEnergySnapshot())
+        }
+    }
+
+    /** Close the split and copy the per-mode figures onto [trip]. */
+    private fun applyEnergySegments(trip: TripRecord) {
+        if (!segments.isTracking()) return
+        val isPhev = try { BydDataCollector.getInstance().isPhevVehicle() } catch (t: Throwable) { false }
+        val r = segments.finish(readEnergySnapshot(), isPhev)
+        trip.evKm = r.evKm
+        trip.evKwh = r.evKwh
+        trip.hevKm = r.hevKm
+        trip.hevLitres = r.hevLitres
+        trip.energySegmentsJson = r.segmentsJson
+        logger.info(
+            "Energy split: EV ${"%.2f".format(r.evKm)} km / ${"%.2f".format(r.evKwh)} kWh, " +
+                "HEV ${"%.2f".format(r.hevKm)} km / ${"%.2f".format(r.hevLitres)} L"
+        )
+    }
+
+    /** The reminder rules decided to remind: tell the companion (the in-car dialog polls). */
+    private fun onReminderFired(reason: String) {
+        val start = detector?.getActiveTrip()?.startTime ?: 0L
+        logger.info("Manual trip reminder: $reason")
+        try {
+            net.bladewatch.app.notifications.TripEventNotifier.getInstance()
+                .onManualTripReminder(reason, start)
+        } catch (t: Throwable) {
+            logger.warn("Manual trip reminder notification failed: " + t.message)
+        }
+    }
+
+    /**
+     * Write the open manual trip to disk. A no-op (true) when there is none; false when the
+     * write failed. Holds [manualLock] so the extras are not mutated while being serialised.
+     */
+    internal fun saveManualState(): Boolean = synchronized(manualLock) {
+        val state = currentManualState() ?: return true
+        manualStore?.save(state) ?: true
+    }
+
+    /**
+     * Re-open a manual trip that was open when the daemon last stopped. The recorder is restored
+     * FIRST so that a trip already past its 7-day limit (which the detector then ends at once)
+     * finds a running recorder to stop.
+     */
+    private fun restoreManualTrip() {
+        val state = manualStore?.load() ?: return
+        val d = detector ?: return
+        val r = recorder ?: return
+        logger.info("Restoring open manual trip started at ${state.startTime}")
+        synchronized(manualLock) { manualExtras = state.extras }
+        reminder.restore(state.extras.optJSONObject("reminder"))
+        segments.restore(state.extras.optJSONObject("energySegments"))
+        // A state saved before the split existed: track from now rather than not at all.
+        if (!segments.isTracking()) segments.start(readEnergySnapshot())
+        telemetryDataCollector?.let {
+            try {
+                it.startPolling()
+            } catch (e: Exception) {
+                logger.warn("Failed to start TelemetryDataCollector polling: " + e.message)
+            }
+        }
+        r.restoreRecording(state.startTime, state.stats, state.telemetryPaused)
+        d.restoreManualTrip(state.toTripRecord(), state.startOdometerKm)
+    }
+
+    /** Save the open manual trip every minute, so a crash loses at most a minute of stats. */
+    private fun startManualTick() {
+        val exec = Executors.newSingleThreadScheduledExecutor { r ->
+            Thread(r, "ManualTrip-Tick").apply { isDaemon = true }
+        }
+        manualScheduler = exec
+        exec.scheduleWithFixedDelay({
+            try {
+                if (detector?.isManualTripActive() == true) {
+                    reminder.tick()
+                    persistReminder()
+                }
+            } catch (t: Throwable) {
+                // Never let one failed tick cancel the schedule.
+                logger.warn("Manual trip tick failed: " + t.message)
+            }
+        }, TICK_SECONDS, TICK_SECONDS, TimeUnit.SECONDS)
+        exec.scheduleWithFixedDelay({
+            try {
+                sampleEnergy()
+            } catch (t: Throwable) {
+                logger.warn("Energy sample failed: " + t.message)
+            }
+        }, ENERGY_SAMPLE_SECONDS, ENERGY_SAMPLE_SECONDS, TimeUnit.SECONDS)
     }
 
     /**
@@ -390,6 +754,7 @@ class TripAnalyticsManager {
         }
 
         recorder?.startRecording(trip.startTime)
+        segments.start(readEnergySnapshot())
     }
 
     /**
@@ -412,6 +777,9 @@ class TripAnalyticsManager {
             rec.samplesForScoring
         }
 
+        // 1b. Close the EV/HEV split with a last reading, now the recorder's GPS distance is final.
+        applyEnergySegments(trip)
+
         // 2. Resolve trip energy (kWh) BEFORE scoring, and assign energyPerKm from it.
         //
         // ORDER IS THE FIX, not an optimisation. energyPerKm is what the UI shows as
@@ -426,14 +794,15 @@ class TripAnalyticsManager {
             logger.warn("Nominal capacity not available for energy estimation: " + e.message)
             0.0
         }
-        val energyUsed = resolveTripEnergyKwh(trip, nominalKwh)
-        if (trip.distanceKm > 0) {
-            // Assigned UNCONDITIONALLY, including 0. This resolution is authoritative and
-            // supersedes the provisional rate the detector computed at finalize time; leaving
-            // a stale value in place when this resolves to 0 would let a reading that the
-            // plausibility gate rejected survive into the rollups and the efficiency score.
-            trip.energyPerKm = energyUsed / trip.distanceKm
-        }
+        // The ELECTRIC leg: kWh over the km driven in EV mode. A trip with no HEV driving (every BEV
+        // trip) is its whole trip, resolved exactly as before; HEV driving is not part of it.
+        val leg = electricLeg(trip, nominalKwh)
+        val energyUsed = leg.kwh
+        // Assigned UNCONDITIONALLY, including 0. This resolution is authoritative and supersedes the
+        // provisional rate the detector computed at finalize time; leaving a stale value in place when
+        // this resolves to 0 would let a reading that the plausibility gate rejected survive into the
+        // rollups and the efficiency score. A trip with no electric leg (all HEV) has no kWh/km.
+        trip.energyPerKm = if (leg.km > 0) energyUsed / leg.km else 0.0
 
         // 3. Compute scores, now that energyPerKm is on a single, settled unit axis.
         val engine = scoreEngine
@@ -544,6 +913,9 @@ class TripAnalyticsManager {
     private fun handleTripDiscarded(trip: TripRecord, reason: String) {
         logger.info("Trip discarded: $reason")
 
+        // Nothing to record for a discarded trip: drop the EV/HEV tracker.
+        if (segments.isTracking()) segments.finish(readEnergySnapshot(), false)
+
         // Release the telemetry polling ref acquired in handleTripStarted.
         telemetryDataCollector?.stopPolling()
 
@@ -566,6 +938,19 @@ class TripAnalyticsManager {
 
     companion object {
         private val logger = DaemonLogger.getInstance("TripAnalyticsManager")
+
+        /**
+         * Where the open manual trip is saved: next to the trip database, which already lives on
+         * shared storage (never under /data/local/tmp, which the app UID cannot create files in).
+         */
+        private const val MANUAL_STATE_PATH =
+            "/storage/emulated/0/BladeWatch/data/active_manual_trip.json"
+
+        private const val TICK_SECONDS = 60L
+
+        /** How often the EV/HEV tracker is fed. Slower than the 5 Hz telemetry on purpose: it only
+         * needs to notice a mode change, and each reading takes the HAL lock. */
+        private const val ENERGY_SAMPLE_SECONDS = 5L
 
         private fun haversineKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
             val earthRadiusKm = 6371.0
@@ -608,6 +993,25 @@ class TripAnalyticsManager {
          * @param nominalKwh pack capacity for the SoC tier, or 0 when unknown. BladeWatch has
          *   no SoH source, so the pack is used at face value.
          */
+        /** The electric leg a trip is costed and scored on: kWh over the km driven in EV mode. */
+        internal data class ElectricLeg(val kwh: Double, val km: Double)
+
+        /**
+         * The electric leg of [trip] (BladeWatch-reml.2).
+         *
+         *  - **No HEV driving** (a BEV, or an all-EV trip): the whole trip, with the energy resolved
+         *    by [resolveTripEnergyKwh] exactly as before. This is the BEV parity guarantee.
+         *  - **HEV driving present**: only the EV segments' kWh and km. HEV driving contributes no
+         *    electricity at all (owner decision), and a trip with no EV driving has no electric leg.
+         */
+        @JvmStatic
+        internal fun electricLeg(trip: TripRecord, nominalKwh: Double): ElectricLeg =
+            if (trip.hasHevLeg()) {
+                ElectricLeg(trip.evKwh, trip.evKm)
+            } else {
+                ElectricLeg(resolveTripEnergyKwh(trip, nominalKwh), trip.distanceKm)
+            }
+
         @JvmStatic
         internal fun resolveTripEnergyKwh(trip: TripRecord, nominalKwh: Double): Double {
             // Reject a metered delta no battery could have supplied over this distance
@@ -707,12 +1111,21 @@ class TripAnalyticsManager {
             }
 
             // ---- fuel leg ----
-            // Both ends must be real readings (-1 means never read). A counter that went
-            // BACKWARDS is a HAL reset or an overflow, not negative consumption, so it yields 0
-            // rather than a negative that would subtract from the trip cost.
-            if (trip.fuelConStart >= 0 && trip.fuelConEnd >= 0 &&
+            // A trip with the EV/HEV split (every trip recorded since BladeWatch-reml.1) burned fuel
+            // ONLY while in HEV mode, so its litres are the HEV segments' and nothing else: EV
+            // driving is costed by kWh alone, even if the engine's lifetime counter moved. A trip
+            // without the split (a legacy record) keeps the whole-trip counter delta below.
+            if (trip.hasEnergySplit()) {
+                trip.litresUsed = trip.hevLitres
+                if (trip.fuelPricePerL > 0) {
+                    trip.fuelCost = trip.litresUsed * trip.fuelPricePerL
+                }
+            } else if (trip.fuelConStart >= 0 && trip.fuelConEnd >= 0 &&
                 trip.fuelConEnd >= trip.fuelConStart
             ) {
+                // Both ends must be real readings (-1 means never read). A counter that went
+                // BACKWARDS is a HAL reset or an overflow, not negative consumption, so it yields 0
+                // rather than a negative that would subtract from the trip cost.
                 trip.litresUsed = trip.fuelConEnd - trip.fuelConStart
                 // A litresUsed of 0 is a VALID result — a PHEV leg driven entirely on
                 // electricity — and is stored as such. The litres were burned whether or not

@@ -230,7 +230,13 @@ class _TripListState extends State<_TripList> with LoadersState {
                           Fmt.duration(t.durationSeconds),
                           if (t.tripCost > 0 && t.currency.isNotEmpty) Fmt.money(t.tripCost, t.currency),
                         ].join(' · '),
-                        trailing: t.overallScore > 0 ? _ScoreBadge(t.overallScore, hud) : null,
+                        trailing: t.manual || t.overallScore > 0
+                            ? Row(mainAxisSize: MainAxisSize.min, children: [
+                                if (t.manual) _ManualBadge(key: ValueKey('trip.${t.id}.manual'), label: tr('companion.trip_manual_badge'), hud: hud),
+                                if (t.manual && t.overallScore > 0) const SizedBox(width: 8),
+                                if (t.overallScore > 0) _ScoreBadge(t.overallScore, hud),
+                              ])
+                            : null,
                         onTap: () async {
                           final deleted = await Navigator.of(context).push<bool>(MaterialPageRoute(
                             builder: (_) => TrScope(tr: tr, child: SessionScope(session: context.session, child: TripDetailScreen(id: t.id))),
@@ -247,6 +253,29 @@ class _TripListState extends State<_TripList> with LoadersState {
       ),
     );
   }
+}
+
+/// The kWh a trip used, as the detail shows it. A trip with HEV driving reports its EV segments' kWh
+/// (energyPerKm is then over the EV kilometres only, so energyPerKm x the whole distance would
+/// overstate it); a trip without HEV driving, and every trip recorded before the split, is
+/// energyPerKm x distance exactly as before.
+double _energyKwh(TripSummary s) => s.hasEnergySplit && (s.hevKm > 0 || s.hevLitres > 0) ? s.evKwh : s.energyPerKm * s.distanceKm;
+
+/// Marks a trip the driver started with the in-car Start Trip button (BladeWatch-gklt.7).
+class _ManualBadge extends StatelessWidget {
+  const _ManualBadge({super.key, required this.label, required this.hud});
+
+  final String label;
+  final BwHud hud;
+
+  @override
+  Widget build(BuildContext context) => HudPanel(
+        color: hud.panel,
+        borderColor: hud.accent,
+        radius: BwHud.radiusSmall,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(label.toUpperCase(), style: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700)),
+      );
 }
 
 /// A trip's overall score, coloured by its real band as the in-car Trips does: 70 and up the accent, 40 and up amber,
@@ -362,15 +391,17 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
               InfoRow(tr('trips.distance'), Fmt.distance(s.distanceKm, unit: v.unit)),
               InfoRow(tr('trips.duration'), Fmt.duration(s.durationSeconds)),
               // Energy per km x distance, as the in-car detail works it out (the RPC carries no total).
-              if (s.energyPerKm * s.distanceKm > 0)
-                InfoRow(tr('companion.energy'), '${(s.energyPerKm * s.distanceKm).toStringAsFixed(1)}${Fmt.nbsp}kWh'),
+              // With HEV driving the figure is the EV segments' own kWh instead: energyPerKm is then kWh
+              // over the EV kilometres only, and HEV driving reports no kWh at all (BladeWatch-reml.4).
+              if (_energyKwh(s) > 0) InfoRow(tr('companion.energy'), '${_energyKwh(s).toStringAsFixed(1)}${Fmt.nbsp}kWh'),
               InfoRow(tr('trips.avg_speed'), Fmt.speed(s.avgSpeedKmh, unit: v.unit)),
               InfoRow(tr('trips.max_speed'), Fmt.speed(s.maxSpeedKmh.toDouble(), unit: v.unit)),
               InfoRow(tr('trips.soc'), '${s.socStart.toStringAsFixed(0)}% → ${s.socEnd.toStringAsFixed(0)}%'),
               if (s.tripCost > 0) InfoRow(tr('trips.cost'), Fmt.money(s.tripCost, s.currency)),
               // Which tank the money came out of (BladeWatch-rdtj.48): the two halves of the cost
               // above, on a trip that recorded the fuel counter.
-              if (s.hasFuelData) ...[
+              // Not for a trip with the EV/HEV split: its fuel and electricity are shown per mode below.
+              if (s.hasFuelData && !s.hasEnergySplit) ...[
                 InfoRow(tr('trips.fuel_cost'), Fmt.money(s.fuelCost, s.currency)),
                 InfoRow(tr('trips.electric_cost'), Fmt.money(s.electricCost, s.currency)),
                 InfoRow(tr('trips.fuel_used'), '${s.litresUsed.toStringAsFixed(1)} ${tr('trips.litres_short')}'),
@@ -378,6 +409,24 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
               if (s.extTempC != 0) InfoRow(tr('trips.ext_temp'), '${s.extTempC} °C'),
               if (d.elevationGainM > 0) InfoRow(tr('trips.elev_gain'), '+${d.elevationGainM.toStringAsFixed(0)} m'),
             ]),
+            // EV and HEV driving, each with only its own figures (BladeWatch-reml.4): kWh and the
+            // electricity cost for EV, litres and the fuel cost for HEV, and no kWh for HEV.
+            if (s.hasEnergySplit && s.evKm > 0)
+              Section(key: const ValueKey('trip.evSection'), title: tr('companion.trip_ev_title'), children: [
+                InfoRow(tr('trips.distance'), Fmt.distance(s.evKm, unit: v.unit)),
+                InfoRow(tr('companion.energy'), '${s.evKwh.toStringAsFixed(1)}${Fmt.nbsp}kWh'),
+                if (Fmt.per100(s.evKwh, s.evKm, unit: v.unit) case final rate?)
+                  InfoRow(tr('companion.trip_kwh_per_100', {'unit': v.unit}), rate),
+                InfoRow(tr('trips.electric_cost'), Fmt.money(s.electricCost, s.currency)),
+              ]),
+            if (s.hasEnergySplit && (s.hevKm > 0 || s.hevLitres > 0))
+              Section(key: const ValueKey('trip.hevSection'), title: tr('companion.trip_hev_title'), children: [
+                InfoRow(tr('trips.distance'), Fmt.distance(s.hevKm, unit: v.unit)),
+                InfoRow(tr('trips.fuel_used'), '${s.hevLitres.toStringAsFixed(1)} ${tr('trips.litres_short')}'),
+                if (Fmt.per100(s.hevLitres, s.hevKm, unit: v.unit) case final rate?)
+                  InfoRow(tr('companion.trip_l_per_100', {'unit': v.unit}), rate),
+                InfoRow(tr('trips.fuel_cost'), Fmt.money(s.fuelCost, s.currency)),
+              ]),
             // The in-car detail's score bars, coloured by band; the overall score stays on top.
             if (s.overallScore > 0)
               Section(title: tr('trips.driving_scores'), children: [

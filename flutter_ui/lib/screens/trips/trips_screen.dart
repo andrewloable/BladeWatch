@@ -353,6 +353,22 @@ class _TripRow extends StatelessWidget {
               Row(
                 children: [
                   Expanded(child: Text(trip.formattedDate, style: theme.textTheme.bodyMedium)),
+                  if (trip.manual)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Container(
+                        key: ValueKey('trips.row.${trip.id}.manual'),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.colorScheme.primary),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          l10n.trips_manual_badge,
+                          style: TextStyle(color: theme.colorScheme.primary, fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
                   if (trip.overallScore > 0)
                     Text(
                       l10n.trips_score_label(trip.overallScore),

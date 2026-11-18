@@ -1559,6 +1559,14 @@
     "sync_database": "डेटाबेस सिंक करें"
   },
   "companion": {
+    "trip_ev_title": "इलेक्ट्रिक (EV) ड्राइविंग",
+    "trip_hev_title": "हाइब्रिड (HEV) ड्राइविंग",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "मैन्युअल यात्रा रिकॉर्ड हो रही है",
+    "manual_trip_started": "शुरू हुई",
+    "manual_trip_elapsed": "अवधि",
+    "trip_manual_badge": "मैन्युअल",
     "energy": "ऊर्जा",
     "looking": "आपकी कार खोजी जा रही है…",
     "looking_hint": "इंटरनेट पर इसमें एक मिनट तक लग सकता है। कार के वाई-फ़ाई पर यह जल्दी होता है।",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "चार्जिंग में खराबी",
     "cat_trips_started": "यात्रा शुरू",
     "cat_trips_ended": "यात्रा समाप्त",
+    "cat_trips_manual_reminder": "मैन्युअल यात्रा अभी भी रिकॉर्ड हो रही है",
     "group_surveillance": "निगरानी",
     "group_vehicle": "वाहन",
     "group_security": "सुरक्षा",

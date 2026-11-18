@@ -125,7 +125,10 @@
     "trip_started": "Tur startet",
     "trip_ended": "Tur avsluttet",
     "trip_summary_km": "{0} km · {1} min",
-    "trip_summary_mi": "{0} mi · {1} min"
+    "trip_summary_mi": "{0} mi · {1} min",
+    "manual_trip_reminder_title": "Turen tas fortsatt opp",
+    "manual_trip_reminder_acc_off": "Du slo av bilen, men den manuelle turen tas fortsatt opp. Åpne BladeWatch og trykk på Stopp tur hvis du er ferdig.",
+    "manual_trip_reminder_parked": "Bilen har stått parkert i 30 minutter, og den manuelle turen tas fortsatt opp. Trykk på Stopp tur hvis du er ferdig."
   },
   "vehicle_control": {
     "cloud_required": "Koble en BYD konto i innstillinger for å bruke denne kontrollen",

@@ -198,6 +198,7 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
         tripCost: t.tripCost,
         currency: t.currency,
         energyKwh: 0.0, // proto TripSummary has energyPerKm, not energyUsedKwh — see trips_models.dart
+        manual: t.manual,
       );
 
   static TripsSummary _toSummary(GetSummaryResponse resp) {

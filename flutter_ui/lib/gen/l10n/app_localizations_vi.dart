@@ -3048,4 +3048,72 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => 'Không thể lưu. Hãy thử lại.';
+
+  @override
+  String get dashboard_trip_start => 'Bắt đầu chuyến đi';
+
+  @override
+  String get dashboard_trip_stop => 'Dừng chuyến đi';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Đang ghi chuyến đi thủ công · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Chuyến đi tự động đang diễn ra. Bắt đầu chuyến đi thủ công sẽ kết thúc nó và bắt đầu chuyến mới.';
+
+  @override
+  String get dashboard_trip_error => 'Không thể kết nối với xe. Hãy thử lại.';
+
+  @override
+  String get trip_reminder_title => 'Chuyến đi vẫn đang được ghi';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Bạn đã tắt xe trong khi chuyến đi thủ công đang được ghi (đến nay $elapsed).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'Xe đã đỗ 30 phút trong khi chuyến đi thủ công đang được ghi (đến nay $elapsed).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Tiếp tục ghi';
+
+  @override
+  String get trip_reminder_stop => 'Dừng chuyến đi';
+
+  @override
+  String get trips_manual_badge => 'Thủ công';
+
+  @override
+  String get trips_detail_ev_title => 'Lái xe điện (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Lái xe hybrid (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Đến nay: điện $electric · nhiên liệu $fuel · tổng $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Đến nay: điện $electric';
+  }
 }

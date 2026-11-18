@@ -49,6 +49,14 @@ abstract class TripsServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.GetSimilarTripsRequest request);
   $async.Future<$0.GetGpsTraceResponse> getGpsTrace(
       $pb.ServerContext ctx, $0.GetGpsTraceRequest request);
+  $async.Future<$0.StartManualTripResponse> startManualTrip(
+      $pb.ServerContext ctx, $0.StartManualTripRequest request);
+  $async.Future<$0.StopManualTripResponse> stopManualTrip(
+      $pb.ServerContext ctx, $0.StopManualTripRequest request);
+  $async.Future<$0.GetActiveTripResponse> getActiveTrip(
+      $pb.ServerContext ctx, $0.GetActiveTripRequest request);
+  $async.Future<$0.AcknowledgeTripReminderResponse> acknowledgeTripReminder(
+      $pb.ServerContext ctx, $0.AcknowledgeTripReminderRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -80,6 +88,14 @@ abstract class TripsServiceBase extends $pb.GeneratedService {
         return $0.GetSimilarTripsRequest();
       case 'GetGpsTrace':
         return $0.GetGpsTraceRequest();
+      case 'StartManualTrip':
+        return $0.StartManualTripRequest();
+      case 'StopManualTrip':
+        return $0.StopManualTripRequest();
+      case 'GetActiveTrip':
+        return $0.GetActiveTripRequest();
+      case 'AcknowledgeTripReminder':
+        return $0.AcknowledgeTripReminderRequest();
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -116,6 +132,15 @@ abstract class TripsServiceBase extends $pb.GeneratedService {
         return getSimilarTrips(ctx, request as $0.GetSimilarTripsRequest);
       case 'GetGpsTrace':
         return getGpsTrace(ctx, request as $0.GetGpsTraceRequest);
+      case 'StartManualTrip':
+        return startManualTrip(ctx, request as $0.StartManualTripRequest);
+      case 'StopManualTrip':
+        return stopManualTrip(ctx, request as $0.StopManualTripRequest);
+      case 'GetActiveTrip':
+        return getActiveTrip(ctx, request as $0.GetActiveTripRequest);
+      case 'AcknowledgeTripReminder':
+        return acknowledgeTripReminder(
+            ctx, request as $0.AcknowledgeTripReminderRequest);
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }

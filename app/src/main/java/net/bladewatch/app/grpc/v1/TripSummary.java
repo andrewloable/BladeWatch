@@ -421,6 +421,84 @@ private static final long serialVersionUID = 0L;
     return hasFuelData_;
   }
 
+  public static final int MANUAL_FIELD_NUMBER = 25;
+  private boolean manual_ = false;
+  /**
+   * <pre>
+   * True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+   * </pre>
+   *
+   * <code>bool manual = 25 [json_name = "manual"];</code>
+   * @return The manual.
+   */
+  @java.lang.Override
+  public boolean getManual() {
+    return manual_;
+  }
+
+  public static final int EV_KM_FIELD_NUMBER = 26;
+  private double evKm_ = 0D;
+  /**
+   * <pre>
+   * EV/HEV split (BladeWatch-reml). A BYD plug-in hybrid drives in EV or HEV energy mode and a trip
+   * can switch; each stretch is measured on its own. EV driving carries kWh and no litres; HEV
+   * driving carries litres and NO kWh (not even as information). All 0 on a trip recorded before
+   * the split existed, which has_energy_split tells apart from a trip that really drove 0 km in a
+   * mode. With HEV driving present, energy_per_km is kWh over the EV kilometres only.
+   * </pre>
+   *
+   * <code>double ev_km = 26 [json_name = "evKm"];</code>
+   * @return The evKm.
+   */
+  @java.lang.Override
+  public double getEvKm() {
+    return evKm_;
+  }
+
+  public static final int EV_KWH_FIELD_NUMBER = 27;
+  private double evKwh_ = 0D;
+  /**
+   * <code>double ev_kwh = 27 [json_name = "evKwh"];</code>
+   * @return The evKwh.
+   */
+  @java.lang.Override
+  public double getEvKwh() {
+    return evKwh_;
+  }
+
+  public static final int HEV_KM_FIELD_NUMBER = 28;
+  private double hevKm_ = 0D;
+  /**
+   * <code>double hev_km = 28 [json_name = "hevKm"];</code>
+   * @return The hevKm.
+   */
+  @java.lang.Override
+  public double getHevKm() {
+    return hevKm_;
+  }
+
+  public static final int HEV_LITRES_FIELD_NUMBER = 29;
+  private double hevLitres_ = 0D;
+  /**
+   * <code>double hev_litres = 29 [json_name = "hevLitres"];</code>
+   * @return The hevLitres.
+   */
+  @java.lang.Override
+  public double getHevLitres() {
+    return hevLitres_;
+  }
+
+  public static final int HAS_ENERGY_SPLIT_FIELD_NUMBER = 30;
+  private boolean hasEnergySplit_ = false;
+  /**
+   * <code>bool has_energy_split = 30 [json_name = "hasEnergySplit"];</code>
+   * @return The hasEnergySplit.
+   */
+  @java.lang.Override
+  public boolean getHasEnergySplit() {
+    return hasEnergySplit_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -506,6 +584,24 @@ private static final long serialVersionUID = 0L;
     }
     if (hasFuelData_ != false) {
       output.writeBool(24, hasFuelData_);
+    }
+    if (manual_ != false) {
+      output.writeBool(25, manual_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(evKm_) != 0) {
+      output.writeDouble(26, evKm_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(evKwh_) != 0) {
+      output.writeDouble(27, evKwh_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(hevKm_) != 0) {
+      output.writeDouble(28, hevKm_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(hevLitres_) != 0) {
+      output.writeDouble(29, hevLitres_);
+    }
+    if (hasEnergySplit_ != false) {
+      output.writeBool(30, hasEnergySplit_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -604,6 +700,30 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeBoolSize(24, hasFuelData_);
     }
+    if (manual_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(25, manual_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(evKm_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(26, evKm_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(evKwh_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(27, evKwh_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(hevKm_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(28, hevKm_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(hevLitres_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(29, hevLitres_);
+    }
+    if (hasEnergySplit_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(30, hasEnergySplit_);
+    }
     return size;
   }
   @java.lang.Override
@@ -689,6 +809,22 @@ private static final long serialVersionUID = 0L;
             other.getElectricCost())) return false;
     if (getHasFuelData()
         != other.getHasFuelData()) return false;
+    if (getManual()
+        != other.getManual()) return false;
+    if (java.lang.Double.doubleToLongBits(getEvKm())
+        != java.lang.Double.doubleToLongBits(
+            other.getEvKm())) return false;
+    if (java.lang.Double.doubleToLongBits(getEvKwh())
+        != java.lang.Double.doubleToLongBits(
+            other.getEvKwh())) return false;
+    if (java.lang.Double.doubleToLongBits(getHevKm())
+        != java.lang.Double.doubleToLongBits(
+            other.getHevKm())) return false;
+    if (java.lang.Double.doubleToLongBits(getHevLitres())
+        != java.lang.Double.doubleToLongBits(
+            other.getHevLitres())) return false;
+    if (getHasEnergySplit()
+        != other.getHasEnergySplit()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -765,6 +901,24 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + HAS_FUEL_DATA_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
         getHasFuelData());
+    hash = (37 * hash) + MANUAL_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getManual());
+    hash = (37 * hash) + EV_KM_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getEvKm()));
+    hash = (37 * hash) + EV_KWH_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getEvKwh()));
+    hash = (37 * hash) + HEV_KM_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getHevKm()));
+    hash = (37 * hash) + HEV_LITRES_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getHevLitres()));
+    hash = (37 * hash) + HAS_ENERGY_SPLIT_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getHasEnergySplit());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -924,6 +1078,12 @@ private static final long serialVersionUID = 0L;
       fuelCost_ = 0D;
       electricCost_ = 0D;
       hasFuelData_ = false;
+      manual_ = false;
+      evKm_ = 0D;
+      evKwh_ = 0D;
+      hevKm_ = 0D;
+      hevLitres_ = 0D;
+      hasEnergySplit_ = false;
       return this;
     }
 
@@ -1029,6 +1189,24 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00800000) != 0)) {
         result.hasFuelData_ = hasFuelData_;
       }
+      if (((from_bitField0_ & 0x01000000) != 0)) {
+        result.manual_ = manual_;
+      }
+      if (((from_bitField0_ & 0x02000000) != 0)) {
+        result.evKm_ = evKm_;
+      }
+      if (((from_bitField0_ & 0x04000000) != 0)) {
+        result.evKwh_ = evKwh_;
+      }
+      if (((from_bitField0_ & 0x08000000) != 0)) {
+        result.hevKm_ = hevKm_;
+      }
+      if (((from_bitField0_ & 0x10000000) != 0)) {
+        result.hevLitres_ = hevLitres_;
+      }
+      if (((from_bitField0_ & 0x20000000) != 0)) {
+        result.hasEnergySplit_ = hasEnergySplit_;
+      }
     }
 
     @java.lang.Override
@@ -1120,6 +1298,24 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getHasFuelData() != false) {
         setHasFuelData(other.getHasFuelData());
+      }
+      if (other.getManual() != false) {
+        setManual(other.getManual());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getEvKm()) != 0) {
+        setEvKm(other.getEvKm());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getEvKwh()) != 0) {
+        setEvKwh(other.getEvKwh());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getHevKm()) != 0) {
+        setHevKm(other.getHevKm());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getHevLitres()) != 0) {
+        setHevLitres(other.getHevLitres());
+      }
+      if (other.getHasEnergySplit() != false) {
+        setHasEnergySplit(other.getHasEnergySplit());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1267,6 +1463,36 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00800000;
               break;
             } // case 192
+            case 200: {
+              manual_ = input.readBool();
+              bitField0_ |= 0x01000000;
+              break;
+            } // case 200
+            case 209: {
+              evKm_ = input.readDouble();
+              bitField0_ |= 0x02000000;
+              break;
+            } // case 209
+            case 217: {
+              evKwh_ = input.readDouble();
+              bitField0_ |= 0x04000000;
+              break;
+            } // case 217
+            case 225: {
+              hevKm_ = input.readDouble();
+              bitField0_ |= 0x08000000;
+              break;
+            } // case 225
+            case 233: {
+              hevLitres_ = input.readDouble();
+              bitField0_ |= 0x10000000;
+              break;
+            } // case 233
+            case 240: {
+              hasEnergySplit_ = input.readBool();
+              bitField0_ |= 0x20000000;
+              break;
+            } // case 240
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -2222,6 +2448,234 @@ private static final long serialVersionUID = 0L;
     public Builder clearHasFuelData() {
       bitField0_ = (bitField0_ & ~0x00800000);
       hasFuelData_ = false;
+      onChanged();
+      return this;
+    }
+
+    private boolean manual_ ;
+    /**
+     * <pre>
+     * True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+     * </pre>
+     *
+     * <code>bool manual = 25 [json_name = "manual"];</code>
+     * @return The manual.
+     */
+    @java.lang.Override
+    public boolean getManual() {
+      return manual_;
+    }
+    /**
+     * <pre>
+     * True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+     * </pre>
+     *
+     * <code>bool manual = 25 [json_name = "manual"];</code>
+     * @param value The manual to set.
+     * @return This builder for chaining.
+     */
+    public Builder setManual(boolean value) {
+
+      manual_ = value;
+      bitField0_ |= 0x01000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+     * </pre>
+     *
+     * <code>bool manual = 25 [json_name = "manual"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearManual() {
+      bitField0_ = (bitField0_ & ~0x01000000);
+      manual_ = false;
+      onChanged();
+      return this;
+    }
+
+    private double evKm_ ;
+    /**
+     * <pre>
+     * EV/HEV split (BladeWatch-reml). A BYD plug-in hybrid drives in EV or HEV energy mode and a trip
+     * can switch; each stretch is measured on its own. EV driving carries kWh and no litres; HEV
+     * driving carries litres and NO kWh (not even as information). All 0 on a trip recorded before
+     * the split existed, which has_energy_split tells apart from a trip that really drove 0 km in a
+     * mode. With HEV driving present, energy_per_km is kWh over the EV kilometres only.
+     * </pre>
+     *
+     * <code>double ev_km = 26 [json_name = "evKm"];</code>
+     * @return The evKm.
+     */
+    @java.lang.Override
+    public double getEvKm() {
+      return evKm_;
+    }
+    /**
+     * <pre>
+     * EV/HEV split (BladeWatch-reml). A BYD plug-in hybrid drives in EV or HEV energy mode and a trip
+     * can switch; each stretch is measured on its own. EV driving carries kWh and no litres; HEV
+     * driving carries litres and NO kWh (not even as information). All 0 on a trip recorded before
+     * the split existed, which has_energy_split tells apart from a trip that really drove 0 km in a
+     * mode. With HEV driving present, energy_per_km is kWh over the EV kilometres only.
+     * </pre>
+     *
+     * <code>double ev_km = 26 [json_name = "evKm"];</code>
+     * @param value The evKm to set.
+     * @return This builder for chaining.
+     */
+    public Builder setEvKm(double value) {
+
+      evKm_ = value;
+      bitField0_ |= 0x02000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * EV/HEV split (BladeWatch-reml). A BYD plug-in hybrid drives in EV or HEV energy mode and a trip
+     * can switch; each stretch is measured on its own. EV driving carries kWh and no litres; HEV
+     * driving carries litres and NO kWh (not even as information). All 0 on a trip recorded before
+     * the split existed, which has_energy_split tells apart from a trip that really drove 0 km in a
+     * mode. With HEV driving present, energy_per_km is kWh over the EV kilometres only.
+     * </pre>
+     *
+     * <code>double ev_km = 26 [json_name = "evKm"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearEvKm() {
+      bitField0_ = (bitField0_ & ~0x02000000);
+      evKm_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double evKwh_ ;
+    /**
+     * <code>double ev_kwh = 27 [json_name = "evKwh"];</code>
+     * @return The evKwh.
+     */
+    @java.lang.Override
+    public double getEvKwh() {
+      return evKwh_;
+    }
+    /**
+     * <code>double ev_kwh = 27 [json_name = "evKwh"];</code>
+     * @param value The evKwh to set.
+     * @return This builder for chaining.
+     */
+    public Builder setEvKwh(double value) {
+
+      evKwh_ = value;
+      bitField0_ |= 0x04000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double ev_kwh = 27 [json_name = "evKwh"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearEvKwh() {
+      bitField0_ = (bitField0_ & ~0x04000000);
+      evKwh_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double hevKm_ ;
+    /**
+     * <code>double hev_km = 28 [json_name = "hevKm"];</code>
+     * @return The hevKm.
+     */
+    @java.lang.Override
+    public double getHevKm() {
+      return hevKm_;
+    }
+    /**
+     * <code>double hev_km = 28 [json_name = "hevKm"];</code>
+     * @param value The hevKm to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHevKm(double value) {
+
+      hevKm_ = value;
+      bitField0_ |= 0x08000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double hev_km = 28 [json_name = "hevKm"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHevKm() {
+      bitField0_ = (bitField0_ & ~0x08000000);
+      hevKm_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double hevLitres_ ;
+    /**
+     * <code>double hev_litres = 29 [json_name = "hevLitres"];</code>
+     * @return The hevLitres.
+     */
+    @java.lang.Override
+    public double getHevLitres() {
+      return hevLitres_;
+    }
+    /**
+     * <code>double hev_litres = 29 [json_name = "hevLitres"];</code>
+     * @param value The hevLitres to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHevLitres(double value) {
+
+      hevLitres_ = value;
+      bitField0_ |= 0x10000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double hev_litres = 29 [json_name = "hevLitres"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHevLitres() {
+      bitField0_ = (bitField0_ & ~0x10000000);
+      hevLitres_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private boolean hasEnergySplit_ ;
+    /**
+     * <code>bool has_energy_split = 30 [json_name = "hasEnergySplit"];</code>
+     * @return The hasEnergySplit.
+     */
+    @java.lang.Override
+    public boolean getHasEnergySplit() {
+      return hasEnergySplit_;
+    }
+    /**
+     * <code>bool has_energy_split = 30 [json_name = "hasEnergySplit"];</code>
+     * @param value The hasEnergySplit to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHasEnergySplit(boolean value) {
+
+      hasEnergySplit_ = value;
+      bitField0_ |= 0x20000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool has_energy_split = 30 [json_name = "hasEnergySplit"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHasEnergySplit() {
+      bitField0_ = (bitField0_ & ~0x20000000);
+      hasEnergySplit_ = false;
       onChanged();
       return this;
     }

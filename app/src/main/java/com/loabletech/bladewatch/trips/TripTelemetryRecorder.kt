@@ -53,6 +53,10 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
     // Trip state
     @Volatile
     private var recording = false
+
+    /** Sampling suspended (manual trip, ACC OFF); the trip and its file stay open. */
+    @Volatile
+    private var paused = false
     private var currentTripId = -1L
     private var outputFile: File? = null
 
@@ -76,10 +80,30 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
     // failure vs. UI bug).
     private var sampleCountTotal = 0L
     private var sampleCountWithGps = 0L
+    private var scoringCapLogged = false
 
     /** Average speed recorded during this trip. */
     val avgSpeedKmh: Double
         get() = if (speedSampleCount > 0) speedSumKmh.toDouble() / speedSampleCount else 0.0
+
+    /**
+     * Running statistics of the recording, persisted for an open manual trip so a daemon restart
+     * resumes them instead of restarting from zero (BladeWatch-gklt.2).
+     */
+    data class Stats(
+        val distanceKm: Double,
+        val maxSpeedKmh: Int,
+        val speedSumKmh: Long,
+        val speedSampleCount: Long,
+    )
+
+    /** The current running statistics. */
+    fun statsSnapshot(): Stats =
+        Stats(totalDistanceKm, maxSpeedKmh, speedSumKmh, speedSampleCount)
+
+    /** Whether sampling is currently suspended by [pause]. */
+    val isPaused: Boolean
+        get() = paused
 
     /** All captured 5Hz samples, for score computation (before downsampling). */
     val samplesForScoring: List<TelemetrySample>
@@ -89,7 +113,19 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
      * Start recording telemetry for the given trip. Starts the 5Hz sampling timer and the periodic
      * flush timer.
      */
-    fun startRecording(tripId: Long) {
+    @Synchronized
+    fun startRecording(tripId: Long) = begin(tripId, null, false)
+
+    /**
+     * Resume recording an open manual trip after a daemon restart. New samples are APPENDED to
+     * the trip's existing telemetry file (the flush opens it in append mode), and the running
+     * statistics continue from [stats]. With [startPaused] no sampling starts until [resume].
+     */
+    @Synchronized
+    fun restoreRecording(tripId: Long, stats: Stats, startPaused: Boolean) =
+        begin(tripId, stats, startPaused)
+
+    private fun begin(tripId: Long, seed: Stats?, startPaused: Boolean) {
         if (recording) {
             logger.warn("Already recording trip $currentTripId, ignoring start for $tripId")
             return
@@ -97,10 +133,11 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
 
         currentTripId = tripId
         outputFile = File(StorageManager.getInstance().tripsDir, "$tripId.jsonl.gz")
-        maxSpeedKmh = 0
-        speedSumKmh = 0
-        speedSampleCount = 0
-        totalDistanceKm = 0.0
+        maxSpeedKmh = seed?.maxSpeedKmh ?: 0
+        speedSumKmh = seed?.speedSumKmh ?: 0
+        speedSampleCount = seed?.speedSampleCount ?: 0
+        totalDistanceKm = seed?.distanceKm ?: 0.0
+        scoringCapLogged = false
         lastLat = 0.0
         lastLon = 0.0
         hasLastGps = false
@@ -116,16 +153,19 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
         }
 
         recording = true
+        paused = startPaused
 
         val exec = Executors.newSingleThreadScheduledExecutor { r ->
             Thread(r, "TripTelemetry-$tripId").apply { isDaemon = true }
         }
         executor = exec
 
-        // 5Hz sampling
-        sampleFuture = exec.scheduleAtFixedRate(
-            ::sample, 0, SAMPLE_INTERVAL_MS, TimeUnit.MILLISECONDS
-        )
+        // 5Hz sampling (not while a restored trip starts paused)
+        if (!startPaused) {
+            sampleFuture = exec.scheduleAtFixedRate(
+                ::sample, 0, SAMPLE_INTERVAL_MS, TimeUnit.MILLISECONDS
+            )
+        }
 
         // Periodic flush every 60s
         flushFuture = exec.scheduleAtFixedRate(
@@ -140,6 +180,7 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
      *
      * @return the telemetry file path, or null if not recording
      */
+    @Synchronized
     fun stopRecording(): String? {
         if (!recording) {
             logger.warn("Not recording, ignoring stop")
@@ -147,6 +188,7 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
         }
 
         recording = false
+        paused = false
         logger.info("Stopping recording for trip $currentTripId")
 
         // Cancel scheduled tasks
@@ -193,6 +235,41 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
 
         return path
     }
+
+    /**
+     * Suspend sampling but keep the trip and its file open (a manual trip while ACC is OFF).
+     * Flushes what is buffered first, so the file on disk is complete while paused.
+     */
+    @Synchronized
+    fun pause() {
+        if (!recording || paused) return
+        paused = true
+        sampleFuture?.cancel(false)
+        sampleFuture = null
+        flushBuffer()
+        logger.info("Recording paused for trip $currentTripId")
+    }
+
+    /**
+     * Continue sampling after [pause]. The GPS chain is broken on purpose: the car may have
+     * moved while off, and a straight line from the parked spot to the first new fix is not
+     * distance driven.
+     */
+    @Synchronized
+    fun resume() {
+        if (!recording || !paused) return
+        paused = false
+        hasLastGps = false
+        executor?.let {
+            sampleFuture = it.scheduleAtFixedRate(
+                ::sample, 0, SAMPLE_INTERVAL_MS, TimeUnit.MILLISECONDS
+            )
+        }
+        logger.info("Recording resumed for trip $currentTripId")
+    }
+
+    /** Write whatever is buffered to the file now (before a daemon shutdown or a state save). */
+    fun flushNow() = flushBuffer()
 
     /** The file path for a given trip ID. */
     fun getTelemetryFilePath(tripId: Long): String =
@@ -267,7 +344,14 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
 
             // Add to scoring buffer (all 5Hz samples)
             synchronized(allSamplesLock) {
-                allSamples.add(sample)
+                // A manual trip can run for hours. Scoring needs the samples in memory, so cap
+                // them: a multi-day trip would otherwise grow the daemon heap without bound.
+                if (allSamples.size < MAX_SCORING_SAMPLES) {
+                    allSamples.add(sample)
+                } else if (!scoringCapLogged) {
+                    scoringCapLogged = true
+                    logger.warn("Scoring sample cap reached ($MAX_SCORING_SAMPLES); later samples are recorded to file only")
+                }
             }
 
             // Add to flush buffer
@@ -421,6 +505,9 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
         /** 60s. */
         private const val FLUSH_INTERVAL_MS = 60_000L
         private const val MAX_BUFFER_BYTES = (10 * 1024 * 1024).toLong()
+
+        /** 8 hours of 5Hz samples (about 10 MB): the in-memory share used for DNA scoring. */
+        internal const val MAX_SCORING_SAMPLES = 5 * 3600 * 8
 
         /** Haversine formula: distance between two GPS coordinates, in km. */
         private fun haversineKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

@@ -10,6 +10,7 @@ import '../../theme/hud_theme.dart';
 import '../../widgets/hud_widgets.dart';
 import 'dashboard_controller.dart';
 import 'dashboard_models.dart';
+import '../../util/currency.dart';
 import '../trips/trip_costs_view.dart';
 import '../trips/trips_models.dart' show formatDistance;
 import 'vehicle_dialog_controller.dart';
@@ -114,6 +115,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700, em: 0.1),
         ),
       ),
+      // The Start Trip / Stop Trip button (BladeWatch-gklt.5): first thing under the title, so the
+      // driver sees it without scrolling.
+      Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: _ManualTripCard(controller: c, l10n: l10n, hud: hud),
+      ),
       Padding(
         padding: const EdgeInsets.only(bottom: 20),
         // The trip hero takes the full width: the connect card that sat beside it (tunnel QR, device id,
@@ -174,6 +181,129 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Whatever the dialog did (saved, reset, or just closed), refresh the
     // vehicle tile so it reflects the daemon's current state.
     unawaited(widget.controller.refresh());
+  }
+}
+
+/// The Start Trip / Stop Trip control (BladeWatch-gklt.5).
+///
+/// One large button that flips between the two. While a MANUAL trip is open it shows how long it
+/// has been running and how far; while an AUTO trip is open it says that starting a manual trip
+/// ends the auto one and begins a new one. A 72 dp minimum height: this is a head unit used at
+/// arm's length, often with one hand.
+class _ManualTripCard extends StatefulWidget {
+  final DashboardController controller;
+  final AppLocalizations l10n;
+  final BwHud hud;
+
+  const _ManualTripCard({required this.controller, required this.l10n, required this.hud});
+
+  @override
+  State<_ManualTripCard> createState() => _ManualTripCardState();
+}
+
+class _ManualTripCardState extends State<_ManualTripCard> {
+  Timer? _clock;
+
+  @override
+  void initState() {
+    super.initState();
+    // The elapsed time moves every second; the controller only notifies when the status changes.
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && widget.controller.activeTrip.manual) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _clock?.cancel();
+    super.dispose();
+  }
+
+  /// `H:MM:SS` since [startMs], never negative (the car's clock may differ from the head unit's).
+  static String _elapsed(int startMs) {
+    final seconds = math.max(0, DateTime.now().millisecondsSinceEpoch - startMs) ~/ 1000;
+    final h = seconds ~/ 3600;
+    final m = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.controller;
+    final l10n = widget.l10n;
+    final hud = widget.hud;
+    final trip = c.activeTrip;
+    final running = trip.manual;
+    final autoOnly = trip.active && !trip.manual;
+    final fill = running ? hud.warning : hud.accent;
+    final label = (running ? l10n.dashboard_trip_stop : l10n.dashboard_trip_start).toUpperCase();
+
+    final String? detail = running
+        ? l10n.dashboard_trip_manual_running(
+            _elapsed(trip.startTimeMs.toInt()),
+            '${trip.distanceKm.toStringAsFixed(1)} km',
+          )
+        : autoOnly
+        ? l10n.dashboard_trip_auto_running_hint
+        : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton.icon(
+          key: const ValueKey('dashboard.manualTrip.button'),
+          onPressed: c.tripBusy ? null : c.toggleManualTrip,
+          icon: Icon(running ? Icons.stop_circle_outlined : Icons.play_circle_outline, size: 36),
+          label: Text(label),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(72),
+            backgroundColor: fill,
+            foregroundColor: hud.pageBackground,
+            disabledBackgroundColor: fill.withValues(alpha: 0.45),
+            disabledForegroundColor: hud.pageBackground.withValues(alpha: 0.7),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwHud.radiusPanel)),
+            textStyle: hudText(22, hud.pageBackground, lineHeight: 28, weight: FontWeight.w800, em: 0.1),
+          ),
+        ),
+        if (detail != null) ...[
+          const SizedBox(height: 10),
+          Text(
+            detail,
+            key: const ValueKey('dashboard.manualTrip.detail'),
+            textAlign: TextAlign.center,
+            style: hudText(14, hud.textPrimary, lineHeight: 20, weight: FontWeight.w600, em: 0.05),
+          ),
+        ],
+        // What the open trip has cost so far (BladeWatch-reml): electricity for EV driving, fuel for HEV
+        // driving, and the total. Only when a rate is configured; a car with no fuel price shows the
+        // electricity alone.
+        if (trip.liveCostAvailable) ...[
+          const SizedBox(height: 6),
+          Text(
+            trip.liveHasFuel
+                ? l10n.dashboard_trip_live_cost(
+                    Currency.format(trip.liveElectricCost, trip.liveCurrency),
+                    Currency.format(trip.liveFuelCost, trip.liveCurrency),
+                    Currency.format(trip.liveElectricCost + trip.liveFuelCost, trip.liveCurrency),
+                  )
+                : l10n.dashboard_trip_live_cost_ev(Currency.format(trip.liveElectricCost, trip.liveCurrency)),
+            key: const ValueKey('dashboard.manualTrip.liveCost'),
+            textAlign: TextAlign.center,
+            style: hudText(14, hud.accent, lineHeight: 20, weight: FontWeight.w700, em: 0.05),
+          ),
+        ],
+        if (c.tripError) ...[
+          const SizedBox(height: 10),
+          Text(
+            l10n.dashboard_trip_error,
+            key: const ValueKey('dashboard.manualTrip.error'),
+            textAlign: TextAlign.center,
+            style: hudText(14, hud.magenta, lineHeight: 20, weight: FontWeight.w600, em: 0.05),
+          ),
+        ],
+      ],
+    );
   }
 }
 

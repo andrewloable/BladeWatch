@@ -125,7 +125,10 @@
     "trip_started": "Chuyến đi bắt đầu",
     "trip_ended": "Chuyến đi kết thúc",
     "trip_summary_km": "{0} km · {1} phút",
-    "trip_summary_mi": "{0} mi · {1} phút"
+    "trip_summary_mi": "{0} mi · {1} phút",
+    "manual_trip_reminder_title": "Chuyến đi vẫn đang được ghi",
+    "manual_trip_reminder_acc_off": "Bạn đã tắt xe nhưng chuyến đi thủ công vẫn đang được ghi. Mở BladeWatch và nhấn Dừng chuyến đi nếu bạn đã xong.",
+    "manual_trip_reminder_parked": "Xe đã đỗ 30 phút và chuyến đi thủ công vẫn đang được ghi. Nhấn Dừng chuyến đi nếu bạn đã xong."
   },
   "vehicle_control": {
     "cloud_required": "Kết nối tài khoản BYD trong Cài đặt để sử dụng điều khiển này",

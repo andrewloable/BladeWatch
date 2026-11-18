@@ -3030,4 +3030,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => 'Could not save. Try again.';
+
+  @override
+  String get dashboard_trip_start => 'Start trip';
+
+  @override
+  String get dashboard_trip_stop => 'Stop trip';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Manual trip recording · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Auto trip in progress. Starting a manual trip ends it and begins a new one.';
+
+  @override
+  String get dashboard_trip_error => 'Could not reach the car. Try again.';
+
+  @override
+  String get trip_reminder_title => 'Trip still recording';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'You turned the car off while your manual trip was recording ($elapsed so far).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'The car has been parked for 30 minutes while your manual trip was recording ($elapsed so far).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Keep recording';
+
+  @override
+  String get trip_reminder_stop => 'Stop trip';
+
+  @override
+  String get trips_manual_badge => 'Manual';
+
+  @override
+  String get trips_detail_ev_title => 'Electric (EV) driving';
+
+  @override
+  String get trips_detail_hev_title => 'Hybrid (HEV) driving';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'So far: electricity $electric · fuel $fuel · total $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'So far: electricity $electric';
+  }
 }

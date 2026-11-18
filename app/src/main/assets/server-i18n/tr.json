@@ -125,7 +125,10 @@
     "trip_started": "Yolculuk başladı",
     "trip_ended": "Yolculuk sona erdi",
     "trip_summary_km": "{0} km · {1} dk",
-    "trip_summary_mi": "{0} mi · {1} dk"
+    "trip_summary_mi": "{0} mi · {1} dk",
+    "manual_trip_reminder_title": "Yolculuk hâlâ kaydediliyor",
+    "manual_trip_reminder_acc_off": "Aracı kapattınız ancak manuel yolculuğunuz hâlâ kaydediliyor. Bitirdiyseniz BladeWatch’ı açıp Yolculuğu Durdur’a dokunun.",
+    "manual_trip_reminder_parked": "Araç 30 dakikadır park halinde ve manuel yolculuğunuz hâlâ kaydediliyor. Bitirdiyseniz Yolculuğu Durdur’a dokunun."
   },
   "vehicle_control": {
     "cloud_required": "Bu kontrolü kullanmak için Ayarlarda BYD hesabını bağlayın",

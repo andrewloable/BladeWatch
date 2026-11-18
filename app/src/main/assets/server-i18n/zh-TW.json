@@ -125,7 +125,10 @@
     "trip_started": "行程已開始",
     "trip_ended": "行程已結束",
     "trip_summary_km": "{0} km · {1} 分鐘",
-    "trip_summary_mi": "{0} 英哩 · {1} 分鐘"
+    "trip_summary_mi": "{0} 英哩 · {1} 分鐘",
+    "manual_trip_reminder_title": "行程仍在記錄",
+    "manual_trip_reminder_acc_off": "您已關閉車輛，但手動行程仍在記錄。如已結束，請開啟 BladeWatch 並點選「停止行程」。",
+    "manual_trip_reminder_parked": "車輛已停放 30 分鐘，但手動行程仍在記錄。如已結束，請點選「停止行程」。"
   },
   "vehicle_control": {
     "cloud_required": "在設定中連接BYD帳戶,",

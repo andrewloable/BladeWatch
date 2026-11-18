@@ -51,6 +51,13 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
                 path == "/api/trips/dna" && method == "GET" -> handleGetDna(q)
                 path == "/api/trips/range" && method == "GET" -> handleGetRange()
 
+                // Manual trips (BladeWatch-gklt). Exact paths, so they sit before routeById, which
+                // would otherwise try to read "active" or "manual" as a trip id.
+                path == "/api/trips/active" && method == "GET" -> statusResponse()
+                path == "/api/trips/manual/start" && method == "POST" -> handleStartManualTrip()
+                path == "/api/trips/manual/stop" && method == "POST" -> handleStopManualTrip()
+                path == "/api/trips/manual/ack" && method == "POST" -> handleAckReminder(body)
+
                 path == "/api/trips/config" && method == "GET" -> handleGetConfig()
                 path == "/api/trips/config" && method == "POST" -> handlePostConfig(body)
 
@@ -96,6 +103,39 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
             }
         }
         return null
+    }
+
+    // ==================== MANUAL TRIPS ====================
+
+    /** `{success, status: ActiveTripStatus}` for the trip in progress (if any). */
+    private fun statusResponse(): JSONObject = JSONObject().apply {
+        put("success", true)
+        put("status", manager.activeTripStatus())
+    }
+
+    /** POST /api/trips/manual/start. Idempotent: a manual trip already open is returned as is. */
+    private fun handleStartManualTrip(): JSONObject {
+        if (manager.startManualTrip() == null) {
+            return errorResponse("Trip analytics is not running", 503)
+        }
+        return statusResponse()
+    }
+
+    /** POST /api/trips/manual/stop. `stopped` is false when no manual trip was open. */
+    private fun handleStopManualTrip(): JSONObject = JSONObject().apply {
+        put("success", true)
+        put("stopped", manager.stopManualTrip())
+    }
+
+    /** POST /api/trips/manual/ack with `{reminderSeq}` (int64 may arrive as a string). */
+    private fun handleAckReminder(body: String?): JSONObject {
+        val seq = try {
+            JSONObject(body ?: "{}").optLong("reminderSeq", 0L)
+        } catch (e: org.json.JSONException) {
+            return errorResponse("Invalid request body", 400)
+        }
+        manager.acknowledgeReminder(seq)
+        return statusResponse()
     }
 
     // ==================== ENDPOINT HANDLERS ====================
@@ -675,6 +715,9 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
          * parasitic draw, and only an unmistakable drop may override the meter.
          */
         internal fun shouldEnrichEnergy(trip: TripRecord): Boolean {
+            // A trip with the EV/HEV split carries authoritative figures per mode. Enriching an HEV
+            // trip from its SoC would invent electricity use and cost (BladeWatch-reml.2).
+            if (trip.hasEnergySplit()) return false
             if (trip.getEnergyUsedKwh() > 0) return false
             if (trip.socStart <= 0 || trip.socEnd <= 0 || trip.socStart <= trip.socEnd) return false
             if (trip.hasMeteredEnergy() &&

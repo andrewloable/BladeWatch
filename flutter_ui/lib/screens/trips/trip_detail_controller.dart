@@ -82,7 +82,9 @@ class TripDetailController extends ChangeNotifier with DisposedSafeNotifier {
       // energyUsedKwh internally; see TripScoreEngine's own kWh-preferred efficiency
       // computation). Native hardcoded this to 0.0 reasoning the field "doesn't exist" and
       // the Flutter port faithfully reproduced that — this is the fix, not a port gap.
-      energyUsedKwh: s.energyPerKm * s.distanceKm,
+      // With HEV driving energyPerKm is kWh over the EV kilometres only, so the whole-distance product
+      // would overstate it: the EV segments' own kWh is the figure (BladeWatch-reml.4).
+      energyUsedKwh: s.hasEnergySplit && (s.hevKm > 0 || s.hevLitres > 0) ? s.evKwh : s.energyPerKm * s.distanceKm,
       efficiencySocPerKm: 0.0,
       currency: s.currency,
       tripCost: s.tripCost,
@@ -101,6 +103,11 @@ class TripDetailController extends ChangeNotifier with DisposedSafeNotifier {
       litresUsed: s.litresUsed,
       fuelCost: s.fuelCost,
       electricCost: s.electricCost,
+      hasEnergySplit: s.hasEnergySplit,
+      evKm: s.evKm,
+      evKwh: s.evKwh,
+      hevKm: s.hevKm,
+      hevLitres: s.hevLitres,
     );
   }
 
