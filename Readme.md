@@ -8,7 +8,7 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
-**Contents:** [What's new](#whats-new-in-v1415) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
+**Contents:** [What's new](#whats-new-in-v1416) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
 
@@ -21,7 +21,15 @@ They share one Android UID, which is what lets the UI talk to the daemons over l
 
 A third app, the **companion** (`net.bladewatch.companionapp`), goes on your phone or computer, never on the car. It is optional, and it is how you reach the car remotely: see [Install the companion app](#install-the-companion-app).
 
-## What's new in v1.4.1.5
+## What's new in v1.4.1.6
+
+- **flutter_pear 0.4.12** (was 0.4.9) in the companion and in the car's Pear peer. Remote access
+  works as before: pairing, the relay key and saved cars are unchanged.
+- **The Windows companion is back.** v1.4.1.5 shipped without it, because a compiler update on the
+  build machines broke one of its plugins.
+- **One version everywhere:** 1.4.1.6.
+
+### v1.4.1.5
 
 Record a trip on purpose, and a trip that is costed by how the car was actually driven.
 
@@ -511,7 +519,7 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
   ```bash
   cd companion
   flutter build ios --release --no-codesign
-  V=$(plutil -extract CFBundleShortVersionString raw ios/Runner/Info.plist)   # 1.4.1.5
+  V=$(plutil -extract CFBundleShortVersionString raw ios/Runner/Info.plist)   # 1.4.1.6
   rm -rf build/ipa && mkdir -p build/ipa/Payload
   cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
   (cd build/ipa && zip -qry "BladeWatch-$V.ipa" Payload && zip -q "BladeWatch-$V-sidestore.zip" "BladeWatch-$V.ipa" && rm -rf Payload "BladeWatch-$V.ipa")

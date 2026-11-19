@@ -376,7 +376,7 @@ directory belongs here, never under `flutter_ui/`. It never runs on the head uni
   TV with `adb shell input keyevent 19/20/21/22/23/4`. Mind the TV's screensaver: keys sent while it is
   up drive Google TV's own settings panel, not the app.
 
-- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.9`) — never a caret; before 1.0 its
+- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.12`) — never a caret; before 1.0 its
   minor versions may break the API.
 - Android ships arm64-v8a, armeabi-v7a (Android TV, since flutter_pear 0.4.8) and x86_64, and
   releases ship **one APK per ABI**: `abiFilters` follows `--target-platform`

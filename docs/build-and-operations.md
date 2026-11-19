@@ -57,7 +57,7 @@ melos run test
 `melos bootstrap` writes a `pubspec_overrides.yaml` into each app; it is gitignored and
 regenerated every time. IDE-file generation is off in `melos.yaml`.
 
-**flutter_pear is pinned exactly** (`flutter_pear: 0.4.9`, `flutter_pear_test: 0.4.9`), never
+**flutter_pear is pinned exactly** (`flutter_pear: 0.4.12`, `flutter_pear_test: 0.4.12`), never
 with a caret: before 1.0 its minor versions may break the API. Its per-platform wiring is in
 place and is not optional — `minSdk = 29` on Android (the manifest merger fails below 29), and
 exactly the ABIs flutter_pear ships native code for: `arm64-v8a`, `x86_64`, and since 0.4.8
@@ -148,7 +148,7 @@ Important build settings:
 - NDK: `26.1.10909125`.
 - Java and Kotlin target: `11`.
 - `applicationId` / `namespace`: `net.bladewatch.app` (the source package is `com.loabletech.bladewatch`).
-- Version: `versionName = "1.4.1.5"`, `versionCode = 14105`.
+- Version: `versionName = "1.4.1.6"`, `versionCode = 14106`.
 - ABI split: `arm64-v8a` only, no universal APK. The debug output is `app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk`, with any `/` in the branch name turned into `-`.
 - Native build: CMake `3.22.1`, `-std=c++17`.
 
@@ -209,6 +209,13 @@ Important asset groups:
 - Server-side i18n under `app/src/main/assets/server-i18n/` (17 locales, used by the daemon for its localized error and notification text).
 - AI models under `app/src/main/assets/models/` (e.g. `yolo11n.tflite`).
 - The Pear worklet under `app/src/main/assets/pear/pear-end.bundle` — flutter_pear's pear-end bundle, committed byte-identical to the pinned flutter_pear release.
+  **Its native addons move with it.** The bundle loads addons by exact versioned file name
+  (`linked:librocksdb-native.3.19.3.so`), and the car ships them from
+  `app/src/main/jniLibs/arm64-v8a/`, a copy of `android/src/main/jniLibs/arm64-v8a/` from the
+  `flutter_pear_bare` release with the same version. When you bump flutter_pear, replace the
+  bundle AND that addon set together (leave `libbare-kit.so` and `libc++_shared.so`, which Gradle
+  fetches). Bumping only the bundle builds and passes every test, then `pear_daemon` aborts on the
+  car at startup with `AddonError: CANNOT_LOAD` (seen on the 0.4.9 → 0.4.12 bump, 2026-11-19).
 
 Runtime extraction paths:
 

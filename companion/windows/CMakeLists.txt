@@ -52,6 +52,11 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
+# ponytail: local_auth_windows 2.0.2 (latest) still builds with /await +
+# <experimental/coroutine>, which MSVC 14.51 (VS 18, GitHub's windows-latest since
+# 2026-11) turns into hard error STL1011. The error names this switch. Drop it once
+# local_auth_windows moves to C++20 <coroutine>; MSVC says the header goes away "SOON".
+add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
