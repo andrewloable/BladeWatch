@@ -33,6 +33,9 @@ class TripItem {
   // looks like a bug, don't silently change displayed behaviour).
   final double energyKwh;
 
+  /// Started with the Start Trip button (BladeWatch-gklt.7).
+  final bool manual;
+
   const TripItem({
     required this.id,
     required this.startTime,
@@ -43,6 +46,7 @@ class TripItem {
     required this.tripCost,
     required this.currency,
     required this.energyKwh,
+    this.manual = false,
   });
 
   String get formattedDate => DateFormat('MMM d, yyyy HH:mm').format(startTime);
@@ -100,6 +104,19 @@ class TripDetailData {
   final double fuelCost;
   final double electricCost;
 
+  /// The EV/HEV split of this trip (BladeWatch-reml.4). EV driving carries kWh and no litres; HEV
+  /// driving carries litres and NO kWh. [hasEnergySplit] is false for a trip recorded before the
+  /// split existed, which then renders exactly as it always did.
+  final bool hasEnergySplit;
+  final double evKm;
+  final double evKwh;
+  final double hevKm;
+  final double hevLitres;
+
+  /// Any electric driving, and any hybrid driving. Each drives its own section of the detail.
+  bool get hasEvLeg => hasEnergySplit && evKm > 0;
+  bool get hasHevLeg => hasEnergySplit && (hevKm > 0 || hevLitres > 0);
+
   const TripDetailData({
     required this.id,
     required this.startTime,
@@ -129,6 +146,11 @@ class TripDetailData {
     this.litresUsed = 0,
     this.fuelCost = 0,
     this.electricCost = 0,
+    this.hasEnergySplit = false,
+    this.evKm = 0,
+    this.evKwh = 0,
+    this.hevKm = 0,
+    this.hevLitres = 0,
   });
 
   String get formattedDateTitle => DateFormat('EEEE, MMMM d').format(startTime);
@@ -362,6 +384,13 @@ String formatDistance(double km, String unit, {int decimals = 1}) => unit == 'mi
 
 /// Formats a speed in the user's chosen unit. Same [unit] values as
 /// [formatDistance].
+/// [amount] per 100 distance units of [km], in the user's unit (per 100 km, or per 100 mi), or null
+/// when there is no distance to divide by.
+double? per100(double amount, double km, String unit) {
+  final distance = unit == 'mi' ? km * kMilesPerKm : km;
+  return distance > 0 ? amount / distance * 100 : null;
+}
+
 String formatSpeed(double kmh, String unit, {int decimals = 0}) => unit == 'mi'
     ? '${(kmh * kMilesPerKm).toStringAsFixed(decimals)} mph'
     : '${kmh.toStringAsFixed(decimals)} km/h';

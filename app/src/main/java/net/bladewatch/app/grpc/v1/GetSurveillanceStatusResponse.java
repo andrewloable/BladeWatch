@@ -63,6 +63,11 @@ private static final long serialVersionUID = 0L;
   public static final int SURVEILLANCE_ACTIVE_FIELD_NUMBER = 2;
   private boolean surveillanceActive_ = false;
   /**
+   * <pre>
+   * The persisted user preference (surveillance.surveillanceEnabled). It does not mean
+   * armed; see armed.
+   * </pre>
+   *
    * <code>bool surveillance_active = 2 [json_name = "surveillanceActive"];</code>
    * @return The surveillanceActive.
    */
@@ -138,6 +143,23 @@ private static final long serialVersionUID = 0L;
     return nativeAppActive_;
   }
 
+  public static final int ARMED_FIELD_NUMBER = 7;
+  private boolean armed_ = false;
+  /**
+   * <pre>
+   * True only while the sentry engine is processing frames (pipeline in SURVEILLANCE mode
+   * and sentry active). False while waiting for the door-lock gate, while ACC is ON, and
+   * when suppressed by safe zone or schedule.
+   * </pre>
+   *
+   * <code>bool armed = 7 [json_name = "armed"];</code>
+   * @return The armed.
+   */
+  @java.lang.Override
+  public boolean getArmed() {
+    return armed_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -167,6 +189,9 @@ private static final long serialVersionUID = 0L;
     if (nativeAppActive_ != false) {
       output.writeBool(6, nativeAppActive_);
     }
+    if (armed_ != false) {
+      output.writeBool(7, armed_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -189,6 +214,10 @@ private static final long serialVersionUID = 0L;
     if (nativeAppActive_ != false) {
       size += com.google.protobuf.CodedOutputStream
         .computeBoolSize(6, nativeAppActive_);
+    }
+    if (armed_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(7, armed_);
     }
     return size;
   }
@@ -224,6 +253,8 @@ private static final long serialVersionUID = 0L;
         != other.getCameraYielded()) return false;
     if (getNativeAppActive()
         != other.getNativeAppActive()) return false;
+    if (getArmed()
+        != other.getArmed()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -249,6 +280,9 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + NATIVE_APP_ACTIVE_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
         getNativeAppActive());
+    hash = (37 * hash) + ARMED_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getArmed());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -385,6 +419,7 @@ private static final long serialVersionUID = 0L;
       error_ = "";
       cameraYielded_ = false;
       nativeAppActive_ = false;
+      armed_ = false;
       return this;
     }
 
@@ -433,6 +468,9 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000010) != 0)) {
         result.nativeAppActive_ = nativeAppActive_;
       }
+      if (((from_bitField0_ & 0x00000020) != 0)) {
+        result.armed_ = armed_;
+      }
     }
 
     @java.lang.Override
@@ -463,6 +501,9 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getNativeAppActive() != false) {
         setNativeAppActive(other.getNativeAppActive());
+      }
+      if (other.getArmed() != false) {
+        setArmed(other.getArmed());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -515,6 +556,11 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000010;
               break;
             } // case 48
+            case 56: {
+              armed_ = input.readBool();
+              bitField0_ |= 0x00000020;
+              break;
+            } // case 56
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -566,6 +612,11 @@ private static final long serialVersionUID = 0L;
 
     private boolean surveillanceActive_ ;
     /**
+     * <pre>
+     * The persisted user preference (surveillance.surveillanceEnabled). It does not mean
+     * armed; see armed.
+     * </pre>
+     *
      * <code>bool surveillance_active = 2 [json_name = "surveillanceActive"];</code>
      * @return The surveillanceActive.
      */
@@ -574,6 +625,11 @@ private static final long serialVersionUID = 0L;
       return surveillanceActive_;
     }
     /**
+     * <pre>
+     * The persisted user preference (surveillance.surveillanceEnabled). It does not mean
+     * armed; see armed.
+     * </pre>
+     *
      * <code>bool surveillance_active = 2 [json_name = "surveillanceActive"];</code>
      * @param value The surveillanceActive to set.
      * @return This builder for chaining.
@@ -586,6 +642,11 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     * <pre>
+     * The persisted user preference (surveillance.surveillanceEnabled). It does not mean
+     * armed; see armed.
+     * </pre>
+     *
      * <code>bool surveillance_active = 2 [json_name = "surveillanceActive"];</code>
      * @return This builder for chaining.
      */
@@ -746,6 +807,56 @@ private static final long serialVersionUID = 0L;
     public Builder clearNativeAppActive() {
       bitField0_ = (bitField0_ & ~0x00000010);
       nativeAppActive_ = false;
+      onChanged();
+      return this;
+    }
+
+    private boolean armed_ ;
+    /**
+     * <pre>
+     * True only while the sentry engine is processing frames (pipeline in SURVEILLANCE mode
+     * and sentry active). False while waiting for the door-lock gate, while ACC is ON, and
+     * when suppressed by safe zone or schedule.
+     * </pre>
+     *
+     * <code>bool armed = 7 [json_name = "armed"];</code>
+     * @return The armed.
+     */
+    @java.lang.Override
+    public boolean getArmed() {
+      return armed_;
+    }
+    /**
+     * <pre>
+     * True only while the sentry engine is processing frames (pipeline in SURVEILLANCE mode
+     * and sentry active). False while waiting for the door-lock gate, while ACC is ON, and
+     * when suppressed by safe zone or schedule.
+     * </pre>
+     *
+     * <code>bool armed = 7 [json_name = "armed"];</code>
+     * @param value The armed to set.
+     * @return This builder for chaining.
+     */
+    public Builder setArmed(boolean value) {
+
+      armed_ = value;
+      bitField0_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * True only while the sentry engine is processing frames (pipeline in SURVEILLANCE mode
+     * and sentry active). False while waiting for the door-lock gate, while ACC is ON, and
+     * when suppressed by safe zone or schedule.
+     * </pre>
+     *
+     * <code>bool armed = 7 [json_name = "armed"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearArmed() {
+      bitField0_ = (bitField0_ & ~0x00000020);
+      armed_ = false;
       onChanged();
       return this;
     }

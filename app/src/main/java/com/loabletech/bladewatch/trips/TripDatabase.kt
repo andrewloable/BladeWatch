@@ -314,6 +314,12 @@ class TripDatabase {
                 stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS fuel_price_per_l DOUBLE PRECISION DEFAULT 0")
                 stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS fuel_cost DOUBLE PRECISION DEFAULT 0")
                 stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS electric_cost DOUBLE PRECISION DEFAULT 0")
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS is_manual BOOLEAN DEFAULT FALSE")
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS ev_km DOUBLE PRECISION DEFAULT 0")
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS ev_kwh DOUBLE PRECISION DEFAULT 0")
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS hev_km DOUBLE PRECISION DEFAULT 0")
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS hev_litres DOUBLE PRECISION DEFAULT 0")
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS energy_segments CLOB")
             } catch (e: Exception) {
                 // Columns already exist, or the H2 version does not support IF NOT EXISTS.
                 logger.debug("trips column migration: " + e.message)
@@ -408,6 +414,80 @@ class TripDatabase {
                     "sum_squared_kwh_per_km REAL DEFAULT 0" +
                     ")"
             )
+
+            // One-time data changes, recorded in the database itself (never in a marker file
+            // beside it), so a restored backup of the database restores its own flags too.
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS schema_flags (" +
+                    "name VARCHAR(64) PRIMARY KEY," +
+                    "applied_at BIGINT NOT NULL" +
+                    ")"
+            )
+        }
+    }
+
+    /**
+     * Delete ALL stored trip history, once (BladeWatch-reml.3).
+     *
+     * Owner decision: trips recorded before EV/HEV-aware costing were costed on both legs over the
+     * whole trip and carry no per-mode figures, so they cannot be re-costed correctly. The
+     * learned consumption buckets go with them: they averaged whole-trip kWh over whole-trip
+     * distance, which folds HEV kilometres into the electric rate.
+     *
+     * Wipes ONLY the trips, routes, weekly_rollups, monthly_rollups and consumption_buckets tables
+     * and the `*.jsonl.gz` telemetry files in [telemetryDirs] (the files named in [keepFileNames]
+     * stay: the open manual trip's). Nothing else on the device is touched, and no table or
+     * column is dropped.
+     *
+     * Idempotent by a flag in `schema_flags`: the second call deletes nothing and returns 0. The
+     * files go FIRST and the rows plus the flag in ONE transaction after, because the other order
+     * is unsafe: a crash between "rows deleted" and "files deleted" would leave orphan telemetry
+     * files that the trip sync then re-indexes as trips, resurrecting exactly what was wiped.
+     *
+     * @return the number of trips deleted (0 when the wipe had already been done)
+     */
+    fun wipeTripHistoryOnce(telemetryDirs: List<File>, keepFileNames: Set<String>): Int {
+        if (!ensureConnection()) return 0
+        try {
+            val c = conn()
+            val done = c.prepareStatement("SELECT 1 FROM schema_flags WHERE name = ?").use { ps ->
+                ps.setString(1, WIPE_FLAG)
+                ps.executeQuery().use { it.next() }
+            }
+            if (done) return 0
+
+            var files = 0
+            for (dir in telemetryDirs) {
+                val list = dir.listFiles { f -> f.name.endsWith(".jsonl.gz") && f.name !in keepFileNames }
+                    ?: continue
+                for (f in list) if (f.delete()) files++
+            }
+
+            val wasAuto = c.autoCommit
+            c.autoCommit = false
+            val trips: Int
+            try {
+                trips = c.createStatement().use { it.executeUpdate("DELETE FROM trips") }
+                for (table in WIPED_TABLES) {
+                    c.createStatement().use { it.executeUpdate("DELETE FROM $table") }
+                }
+                c.prepareStatement("INSERT INTO schema_flags (name, applied_at) VALUES (?, ?)").use { ps ->
+                    ps.setString(1, WIPE_FLAG)
+                    ps.setLong(2, System.currentTimeMillis())
+                    ps.executeUpdate()
+                }
+                c.commit()
+            } catch (e: Exception) {
+                c.rollback()
+                throw e
+            } finally {
+                c.autoCommit = wasAuto
+            }
+            logger.info("One-time trip history wipe: $trips trips, $files telemetry files deleted")
+            return trips
+        } catch (e: Exception) {
+            logger.error("Trip history wipe failed (will retry on the next start): " + e.message)
+            return 0
         }
     }
 
@@ -429,7 +509,7 @@ class TripDatabase {
             // position, so this change cannot silently shift an old binding.
             FUEL_COLUMNS + ") " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
         try {
             conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { pstmt ->
@@ -469,7 +549,8 @@ class TripDatabase {
             "route_id=?, " +
             "fuel_pct_start=?, fuel_pct_end=?, fuel_con_start=?, fuel_con_end=?, " +
             "elec_con_start=?, elec_con_end=?, litres_used=?, fuel_price_per_l=?, " +
-            "fuel_cost=?, electric_cost=? " +
+            "fuel_cost=?, electric_cost=?, is_manual=?, " +
+            "ev_km=?, ev_kwh=?, hev_km=?, hev_litres=?, energy_segments=? " +
             "WHERE id=?"
 
         try {
@@ -477,7 +558,7 @@ class TripDatabase {
                 setTripParams(pstmt, trip)
                 pstmt.setObject(33, if (trip.routeId > 0) trip.routeId else null)
                 setFuelParams(pstmt, trip, 34)
-                pstmt.setLong(44, trip.id)
+                pstmt.setLong(50, trip.id)
                 pstmt.executeUpdate()
                 logger.debug("Updated trip id=${trip.id}")
             }
@@ -783,9 +864,9 @@ class TripDatabase {
                     pstmt.setDouble(2, existing.totalDistanceKm + trip.distanceKm)
                     pstmt.setInt(3, existing.totalDurationSeconds + trip.durationSeconds)
                     pstmt.setDouble(4, runningAvg(existing.avgEfficiency, oldCount, trip.efficiencySocPerKm))
-                    pstmt.setDouble(5, existing.totalEnergyKwh + trip.getEnergyUsedKwh())
+                    pstmt.setDouble(5, existing.totalEnergyKwh + trip.getElectricLegKwh())
                     pstmt.setDouble(6, existing.totalCost + trip.tripCost)
-                    pstmt.setDouble(7, runningAvg(existing.avgEnergyPerKm, oldCount, trip.energyPerKm))
+                    pstmt.setDouble(7, runningAvg(existing.avgEnergyPerKm, oldCount, electricKwhPerKm(trip, existing.avgEnergyPerKm)))
                     pstmt.setInt(8, runningAvg(existing.avgAnticipation.toDouble(), oldCount, trip.anticipationScore.toDouble()).toInt())
                     pstmt.setInt(9, runningAvg(existing.avgSmoothness.toDouble(), oldCount, trip.smoothnessScore.toDouble()).toInt())
                     pstmt.setInt(10, runningAvg(existing.avgSpeedDiscipline.toDouble(), oldCount, trip.speedDisciplineScore.toDouble()).toInt())
@@ -841,9 +922,9 @@ class TripDatabase {
                     pstmt.setDouble(2, existing.totalDistanceKm + trip.distanceKm)
                     pstmt.setInt(3, existing.totalDurationSeconds + trip.durationSeconds)
                     pstmt.setDouble(4, runningAvg(existing.avgEfficiency, oldCount, trip.efficiencySocPerKm))
-                    pstmt.setDouble(5, existing.totalEnergyKwh + trip.getEnergyUsedKwh())
+                    pstmt.setDouble(5, existing.totalEnergyKwh + trip.getElectricLegKwh())
                     pstmt.setDouble(6, existing.totalCost + trip.tripCost)
-                    pstmt.setDouble(7, runningAvg(existing.avgEnergyPerKm, oldCount, trip.energyPerKm))
+                    pstmt.setDouble(7, runningAvg(existing.avgEnergyPerKm, oldCount, electricKwhPerKm(trip, existing.avgEnergyPerKm)))
                     pstmt.setInt(8, runningAvg(existing.avgAnticipation.toDouble(), oldCount, trip.anticipationScore.toDouble()).toInt())
                     pstmt.setInt(9, runningAvg(existing.avgSmoothness.toDouble(), oldCount, trip.smoothnessScore.toDouble()).toInt())
                     pstmt.setInt(10, runningAvg(existing.avgSpeedDiscipline.toDouble(), oldCount, trip.speedDisciplineScore.toDouble()).toInt())
@@ -869,7 +950,7 @@ class TripDatabase {
         pstmt.setDouble(3, trip.distanceKm)
         pstmt.setInt(4, trip.durationSeconds)
         pstmt.setDouble(5, trip.efficiencySocPerKm)
-        pstmt.setDouble(6, trip.getEnergyUsedKwh())
+        pstmt.setDouble(6, trip.getElectricLegKwh())
         pstmt.setDouble(7, trip.tripCost)
         pstmt.setDouble(8, trip.energyPerKm)
         pstmt.setInt(9, trip.anticipationScore)
@@ -1196,6 +1277,17 @@ class TripDatabase {
         trip.fuelPricePerL = readOptionalDouble(rs, "fuel_price_per_l", 0.0)
         trip.fuelCost = readOptionalDouble(rs, "fuel_cost", 0.0)
         trip.electricCost = readOptionalDouble(rs, "electric_cost", 0.0)
+        // Absent on a database that predates manual trips: those were all auto-detected.
+        trip.isManual = try {
+            rs.getBoolean("is_manual")
+        } catch (e: Exception) {
+            false
+        }
+        trip.evKm = readOptionalDouble(rs, "ev_km", 0.0)
+        trip.evKwh = readOptionalDouble(rs, "ev_kwh", 0.0)
+        trip.hevKm = readOptionalDouble(rs, "hev_km", 0.0)
+        trip.hevLitres = readOptionalDouble(rs, "hev_litres", 0.0)
+        trip.energySegmentsJson = readOptionalString(rs, "energy_segments", "")?.ifEmpty { null }
         return trip
     }
 
@@ -1236,7 +1328,7 @@ class TripDatabase {
     }
 
     /**
-     * Bind the ten fuel / metered-energy parameters starting at [i].
+     * Bind the fuel / metered-energy parameters (ten), is_manual and the per-mode figures, starting at [i].
      *
      * Order must match [FUEL_COLUMNS] and the UPDATE SET list exactly.
      */
@@ -1251,6 +1343,12 @@ class TripDatabase {
         pstmt.setDouble(i + 7, trip.fuelPricePerL)
         pstmt.setDouble(i + 8, trip.fuelCost)
         pstmt.setDouble(i + 9, trip.electricCost)
+        pstmt.setBoolean(i + 10, trip.isManual)
+        pstmt.setDouble(i + 11, trip.evKm)
+        pstmt.setDouble(i + 12, trip.evKwh)
+        pstmt.setDouble(i + 13, trip.hevKm)
+        pstmt.setDouble(i + 14, trip.hevLitres)
+        pstmt.setString(i + 15, trip.energySegmentsJson)
     }
 
     /**
@@ -1345,6 +1443,14 @@ class TripDatabase {
     }
 
     /** Running average: `(oldAvg * oldCount + newValue) / (oldCount + 1)`. */
+    /**
+     * The kWh/km a trip adds to a rollup's running average. A trip with no electric leg (all HEV) has
+     * none, so it contributes the average already there and leaves it unchanged, instead of pulling
+     * it toward zero. Every trip with an electric leg (every BEV trip) contributes its own rate.
+     */
+    private fun electricKwhPerKm(trip: TripRecord, currentAvg: Double): Double =
+        if (trip.getElectricLegKm() > 0) trip.energyPerKm else currentAvg
+
     private fun runningAvg(oldAvg: Double, oldCount: Int, newValue: Double): Double =
         (oldAvg * oldCount + newValue) / (oldCount + 1)
 
@@ -1358,7 +1464,10 @@ class TripDatabase {
         if (!ensureConnection()) return 0
         try {
             conn().prepareStatement(
-                "DELETE FROM trips WHERE (end_time = 0 OR duration_seconds = 0) AND start_time < ?"
+                // A manual trip (BladeWatch-gklt) is never an orphan: one stopped within a second has
+            // duration 0 but was kept on purpose, so it must survive this sweep.
+            "DELETE FROM trips WHERE (end_time = 0 OR duration_seconds = 0) " +
+                "AND (is_manual IS NULL OR is_manual = FALSE) AND start_time < ?"
             ).use { pstmt ->
                 pstmt.setLong(1, olderThanMs)
                 val deleted = pstmt.executeUpdate()
@@ -1569,9 +1678,16 @@ class TripDatabase {
          */
         private val FUEL_KEY_PATTERN = FuelConsumption.FUEL_PREFIX.replace("_", "\\_") + "%"
 
+        /** The flag in schema_flags that records the one-time wipe of pre-EV/HEV trip history. */
+        internal const val WIPE_FLAG = "trips_wipe_energy_mode_v1"
+
+        /** The tables the wipe empties besides trips. Fixed, never derived from user input. */
+        private val WIPED_TABLES = listOf("routes", "weekly_rollups", "monthly_rollups", "consumption_buckets")
+
         private const val FUEL_COLUMNS =
             "fuel_pct_start, fuel_pct_end, fuel_con_start, fuel_con_end, " +
                 "elec_con_start, elec_con_end, litres_used, fuel_price_per_l, " +
-                "fuel_cost, electric_cost"
+                "fuel_cost, electric_cost, is_manual, " +
+                "ev_km, ev_kwh, hev_km, hev_litres, energy_segments"
     }
 }

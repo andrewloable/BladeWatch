@@ -210,5 +210,57 @@ void main() {
       expect(fake.calls.single.request, isA<GetGpsTraceRequest>());
     });
 
+
+    test('startManualTrip sends TripsService/StartManualTrip and decodes a real proto3Json response', () async {
+      fake.stubJson('TripsService', 'StartManualTrip', <String, dynamic>{'status': {'active': true, 'manual': true, 'startTimeMs': '1700000000123'}});
+
+      final result = await client.startManualTrip(StartManualTripRequest());
+
+      expect(result, isA<StartManualTripResponse>());
+      expect(fake.calls.single.service, 'TripsService');
+      expect(fake.calls.single.method, 'StartManualTrip');
+      expect(fake.calls.single.request, isA<StartManualTripRequest>());
+      expect(result.status.manual, isTrue);
+      expect(result.status.startTimeMs.toInt(), 1700000000123);
+    });
+
+    test('stopManualTrip sends TripsService/StopManualTrip and decodes a real proto3Json response', () async {
+      fake.stubJson('TripsService', 'StopManualTrip', <String, dynamic>{'stopped': true});
+
+      final result = await client.stopManualTrip(StopManualTripRequest());
+
+      expect(result, isA<StopManualTripResponse>());
+      expect(fake.calls.single.service, 'TripsService');
+      expect(fake.calls.single.method, 'StopManualTrip');
+      expect(fake.calls.single.request, isA<StopManualTripRequest>());
+      expect(result.stopped, isTrue);
+    });
+
+    test('getActiveTrip sends TripsService/GetActiveTrip and decodes a real proto3Json response', () async {
+      fake.stubJson('TripsService', 'GetActiveTrip', <String, dynamic>{'status': {'active': true, 'manual': true, 'reminderSeq': '2', 'reminderReason': 'acc_off', 'reminderAckedSeq': '1', 'telemetryPaused': true}});
+
+      final result = await client.getActiveTrip(GetActiveTripRequest());
+
+      expect(result, isA<GetActiveTripResponse>());
+      expect(fake.calls.single.service, 'TripsService');
+      expect(fake.calls.single.method, 'GetActiveTrip');
+      expect(fake.calls.single.request, isA<GetActiveTripRequest>());
+      expect(result.status.reminderSeq.toInt(), 2);
+      expect(result.status.reminderReason, 'acc_off');
+      expect(result.status.reminderAckedSeq.toInt(), 1);
+      expect(result.status.telemetryPaused, isTrue);
+    });
+
+    test('acknowledgeTripReminder sends TripsService/AcknowledgeTripReminder and decodes a real proto3Json response', () async {
+      fake.stubJson('TripsService', 'AcknowledgeTripReminder', <String, dynamic>{'status': {'reminderAckedSeq': '3'}});
+
+      final result = await client.acknowledgeTripReminder(AcknowledgeTripReminderRequest());
+
+      expect(result, isA<AcknowledgeTripReminderResponse>());
+      expect(fake.calls.single.service, 'TripsService');
+      expect(fake.calls.single.method, 'AcknowledgeTripReminder');
+      expect(fake.calls.single.request, isA<AcknowledgeTripReminderRequest>());
+      expect(result.status.reminderAckedSeq.toInt(), 3);
+    });
   });
 }

@@ -191,9 +191,10 @@ public class ConnectWireParityTest {
     public void surveillanceStatus_flatShapePopulates() throws Exception {
         // BladeWatch-dyp: impl reshapes the nested REST {status:{...}} to flat keys.
         GetSurveillanceStatusResponse.Builder b = GetSurveillanceStatusResponse.newBuilder();
-        PARSER.merge("{\"pipelineRunning\":true,\"surveillanceActive\":true}", b);
+        PARSER.merge("{\"pipelineRunning\":true,\"surveillanceActive\":true,\"armed\":true}", b);
         Assert.assertTrue(b.getPipelineRunning());
         Assert.assertTrue(b.getSurveillanceActive());
+        Assert.assertTrue(b.getArmed());
     }
 
     @Test

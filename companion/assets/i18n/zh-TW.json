@@ -1559,6 +1559,14 @@
     "sync_database": "同步資料庫"
   },
   "companion": {
+    "trip_ev_title": "純電（EV）行駛",
+    "trip_hev_title": "油電（HEV）行駛",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "正在記錄手動行程",
+    "manual_trip_started": "開始時間",
+    "manual_trip_elapsed": "已進行",
+    "trip_manual_badge": "手動",
     "energy": "能耗",
     "looking": "正在尋找您的車輛…",
     "looking_hint": "透過網際網路可能需要一分鐘。在車輛的 Wi-Fi 上會更快。",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "充電故障",
     "cat_trips_started": "行程開始",
     "cat_trips_ended": "行程結束",
+    "cat_trips_manual_reminder": "手動行程仍在記錄",
     "group_surveillance": "監控",
     "group_vehicle": "車輛",
     "group_security": "安全",

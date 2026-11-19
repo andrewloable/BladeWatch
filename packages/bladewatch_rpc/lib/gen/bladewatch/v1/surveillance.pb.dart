@@ -771,6 +771,7 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
     $core.String? error,
     $core.bool? cameraYielded,
     $core.bool? nativeAppActive,
+    $core.bool? armed,
   }) {
     final result = GetSurveillanceStatusResponse._();
     if (pipelineRunning != null) result.pipelineRunning = pipelineRunning;
@@ -779,6 +780,7 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
     if (error != null) result.error = error;
     if (cameraYielded != null) result.cameraYielded = cameraYielded;
     if (nativeAppActive != null) result.nativeAppActive = nativeAppActive;
+    if (armed != null) result.armed = armed;
     return result;
   }
 
@@ -800,6 +802,7 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
     ..aOS(4, _omitFieldNames ? '' : 'error')
     ..aOB(5, _omitFieldNames ? '' : 'cameraYielded')
     ..aOB(6, _omitFieldNames ? '' : 'nativeAppActive')
+    ..aOB(7, _omitFieldNames ? '' : 'armed')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -839,6 +842,8 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearPipelineRunning() => $_clearField(1);
 
+  /// The persisted user preference (surveillance.surveillanceEnabled). It does not mean
+  /// armed; see armed.
   @$pb.TagNumber(2)
   $core.bool get surveillanceActive => $_getBF(1);
   @$pb.TagNumber(2)
@@ -877,6 +882,18 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
   $core.bool hasNativeAppActive() => $_has(4);
   @$pb.TagNumber(6)
   void clearNativeAppActive() => $_clearField(6);
+
+  /// True only while the sentry engine is processing frames (pipeline in SURVEILLANCE mode
+  /// and sentry active). False while waiting for the door-lock gate, while ACC is ON, and
+  /// when suppressed by safe zone or schedule.
+  @$pb.TagNumber(7)
+  $core.bool get armed => $_getBF(5);
+  @$pb.TagNumber(7)
+  set armed($core.bool value) => $_setBool(5, value);
+  @$pb.TagNumber(7)
+  $core.bool hasArmed() => $_has(5);
+  @$pb.TagNumber(7)
+  void clearArmed() => $_clearField(7);
 }
 
 class EnableSurveillanceRequest extends $pb.GeneratedMessage {

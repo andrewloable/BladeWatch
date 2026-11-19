@@ -85,14 +85,16 @@ class RangeEstimator @JvmOverloads constructor(
 
                 var consumptionRate = 0.0
 
-                // Prefer kWh-based
-                val energyUsed = trip.getEnergyUsedKwh()
+                // Prefer kWh-based, over the electric leg only (see onTripCompleted)
+                val legKm = trip.getElectricLegKm()
+                if (legKm <= 0.5) continue
+                val energyUsed = trip.getElectricLegKwh()
                 if (energyUsed > 0) {
-                    consumptionRate = energyUsed / trip.distanceKm
+                    consumptionRate = energyUsed / legKm
                 } else if (trip.socStart > trip.socEnd && trip.socStart > 0) {
                     // Fallback: SoC-based
                     val socDelta = trip.socStart - trip.socEnd
-                    consumptionRate = (socDelta * nominalCapacityKwh() / 100.0) / trip.distanceKm
+                    consumptionRate = (socDelta * nominalCapacityKwh() / 100.0) / legKm
                 }
 
                 // Reject outliers
@@ -237,10 +239,19 @@ class RangeEstimator @JvmOverloads constructor(
         val consumptionRate: Double
         val source: String
 
+        // The ELECTRIC leg only (BladeWatch-reml.2): kWh/km learned from the EV segments, never from a
+        // trip's HEV kilometres. A trip with no HEV driving is its whole trip, as before. Fuel was
+        // learned above, from the HEV segments alone.
+        val legKm = trip.getElectricLegKm()
+        if (legKm <= 0.5) {
+            logger.debug("Skipping consumption update: electric leg is only ${legKm}km")
+            return
+        }
+
         // Prefer direct kWh measurement from BMS
-        val energyUsed = trip.getEnergyUsedKwh()
+        val energyUsed = trip.getElectricLegKwh()
         if (energyUsed > 0) {
-            consumptionRate = energyUsed / trip.distanceKm
+            consumptionRate = energyUsed / legKm
             source = "kWh=" + "%.2f".format(energyUsed)
         } else {
             // Fallback: derive from SoC delta x nominal capacity
@@ -249,7 +260,7 @@ class RangeEstimator @JvmOverloads constructor(
                 logger.debug("Skipping consumption update: non-positive SoC delta $socDelta")
                 return
             }
-            consumptionRate = (socDelta * nominalCapacityKwh() / 100.0) / trip.distanceKm
+            consumptionRate = (socDelta * nominalCapacityKwh() / 100.0) / legKm
             source = "SoC delta=" + "%.1f".format(socDelta) + "%"
         }
 
@@ -280,7 +291,9 @@ class RangeEstimator @JvmOverloads constructor(
      * [FuelConsumption.litresPerKm] returns null for exactly that case.
      */
     private fun learnFuelRate(trip: TripRecord, electricBucketKey: String) {
-        val litresPerKm = FuelConsumption.litresPerKm(trip.litresUsed, trip.distanceKm) ?: return
+        // Litres over the kilometres driven in HEV mode: a trip's EV kilometres burned nothing, so
+        // dividing by the whole distance would understate the fuel rate (BladeWatch-reml.2).
+        val litresPerKm = FuelConsumption.litresPerKm(trip.litresUsed, trip.getFuelLegKm()) ?: return
 
         val fuelKey = FuelConsumption.fuelBucketKey(electricBucketKey)
         database.updateConsumptionBucket(fuelKey, litresPerKm)

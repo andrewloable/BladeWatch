@@ -108,4 +108,31 @@ class TripsServiceClient {
         (json) => GetGpsTraceResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  Future<StartManualTripResponse> startManualTrip(StartManualTripRequest request) => _transport.call(
+        'TripsService',
+        'StartManualTrip',
+        request,
+        (json) => StartManualTripResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<StopManualTripResponse> stopManualTrip(StopManualTripRequest request) => _transport.call(
+        'TripsService',
+        'StopManualTrip',
+        request,
+        (json) => StopManualTripResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<GetActiveTripResponse> getActiveTrip(GetActiveTripRequest request) => _transport.call(
+        'TripsService',
+        'GetActiveTrip',
+        request,
+        (json) => GetActiveTripResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<AcknowledgeTripReminderResponse> acknowledgeTripReminder(AcknowledgeTripReminderRequest request) => _transport.call(
+        'TripsService',
+        'AcknowledgeTripReminder',
+        request,
+        (json) => AcknowledgeTripReminderResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
 }

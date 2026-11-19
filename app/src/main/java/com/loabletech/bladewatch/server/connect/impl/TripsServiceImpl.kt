@@ -31,6 +31,10 @@ import org.json.JSONObject
  *   GetTelemetry    → GET    /api/trips/{id}/telemetry
  *   GetSimilarTrips → GET    /api/trips/{id}/similar
  *   GetGpsTrace     → GET    /api/trips/{id}/gps
+ *   StartManualTrip → POST   /api/trips/manual/start
+ *   StopManualTrip  → POST   /api/trips/manual/stop
+ *   GetActiveTrip   → GET    /api/trips/active
+ *   AcknowledgeTripReminder → POST /api/trips/manual/ack
  */
 class TripsServiceImpl {
 
@@ -54,6 +58,12 @@ class TripsServiceImpl {
             "bladewatch.v1.TripsService", "GetSimilarTrips", this::handleGetSimilarTrips
         )
         dispatcher.register("bladewatch.v1.TripsService", "GetGpsTrace", this::handleGetGpsTrace)
+        dispatcher.register("bladewatch.v1.TripsService", "StartManualTrip", this::handleStartManualTrip)
+        dispatcher.register("bladewatch.v1.TripsService", "StopManualTrip", this::handleStopManualTrip)
+        dispatcher.register("bladewatch.v1.TripsService", "GetActiveTrip", this::handleGetActiveTrip)
+        dispatcher.register(
+            "bladewatch.v1.TripsService", "AcknowledgeTripReminder", this::handleAckTripReminder
+        )
     }
 
     /**
@@ -85,6 +95,22 @@ class TripsServiceImpl {
     @Throws(ConnectException::class)
     private fun invoke(method: String, uri: String, requestBody: String?): ConnectResponse =
         ConnectResponse.of(invokeJson(method, uri, requestBody).toString())
+
+    @Throws(ConnectException::class)
+    private fun handleStartManualTrip(req: String?, clientIdentity: String?): ConnectResponse =
+        invoke("POST", "/api/trips/manual/start", req)
+
+    @Throws(ConnectException::class)
+    private fun handleStopManualTrip(req: String?, clientIdentity: String?): ConnectResponse =
+        invoke("POST", "/api/trips/manual/stop", req)
+
+    @Throws(ConnectException::class)
+    private fun handleGetActiveTrip(req: String?, clientIdentity: String?): ConnectResponse =
+        invoke("GET", "/api/trips/active", req)
+
+    @Throws(ConnectException::class)
+    private fun handleAckTripReminder(req: String?, clientIdentity: String?): ConnectResponse =
+        invoke("POST", "/api/trips/manual/ack", req)
 
     @Throws(ConnectException::class)
     private fun handleListTrips(req: String?, clientIdentity: String?): ConnectResponse =

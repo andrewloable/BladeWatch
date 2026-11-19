@@ -12,15 +12,9 @@
     <color name="ic_launcher_background">#0B0F14</color>
 
     <!--
-      BladeWatch-ez0z: splash colours. The owner's requirement is a PLAIN WHITE
-      background in light mode and PLAIN BLACK in dark mode, NOT the M3 surface
-      tokens, so these are literal #FFFFFF / #000000 rather than a copy of
-      color_tokens.dart.
-
-      splash_foreground tints the wordmark (and nothing else). One white wordmark
-      PNG is shipped and tinted per mode, rather than two colour variants of the
-      same asset in drawable/ and drawable-night/.
+      BladeWatch-sjz4: the splash is plain BLACK in light and dark mode alike (the
+      owner's decision of 2026-11-19; before that it was white in light mode). A
+      literal, not a copy of the M3 surface tokens.
     -->
-    <color name="splash_background">#FFFFFF</color>
-    <color name="splash_foreground">#191C1D</color>
+    <color name="splash_background">#000000</color>
 </resources>

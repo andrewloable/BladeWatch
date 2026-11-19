@@ -45,6 +45,12 @@ class TripSummary extends $pb.GeneratedMessage {
     $core.double? fuelCost,
     $core.double? electricCost,
     $core.bool? hasFuelData,
+    $core.bool? manual,
+    $core.double? evKm,
+    $core.double? evKwh,
+    $core.double? hevKm,
+    $core.double? hevLitres,
+    $core.bool? hasEnergySplit,
   }) {
     final result = TripSummary._();
     if (id != null) result.id = id;
@@ -71,6 +77,12 @@ class TripSummary extends $pb.GeneratedMessage {
     if (fuelCost != null) result.fuelCost = fuelCost;
     if (electricCost != null) result.electricCost = electricCost;
     if (hasFuelData != null) result.hasFuelData = hasFuelData;
+    if (manual != null) result.manual = manual;
+    if (evKm != null) result.evKm = evKm;
+    if (evKwh != null) result.evKwh = evKwh;
+    if (hevKm != null) result.hevKm = hevKm;
+    if (hevLitres != null) result.hevLitres = hevLitres;
+    if (hasEnergySplit != null) result.hasEnergySplit = hasEnergySplit;
     return result;
   }
 
@@ -111,6 +123,12 @@ class TripSummary extends $pb.GeneratedMessage {
     ..aD(22, _omitFieldNames ? '' : 'fuelCost')
     ..aD(23, _omitFieldNames ? '' : 'electricCost')
     ..aOB(24, _omitFieldNames ? '' : 'hasFuelData')
+    ..aOB(25, _omitFieldNames ? '' : 'manual')
+    ..aD(26, _omitFieldNames ? '' : 'evKm')
+    ..aD(27, _omitFieldNames ? '' : 'evKwh')
+    ..aD(28, _omitFieldNames ? '' : 'hevKm')
+    ..aD(29, _omitFieldNames ? '' : 'hevLitres')
+    ..aOB(30, _omitFieldNames ? '' : 'hasEnergySplit')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -362,6 +380,66 @@ class TripSummary extends $pb.GeneratedMessage {
   $core.bool hasHasFuelData() => $_has(23);
   @$pb.TagNumber(24)
   void clearHasFuelData() => $_clearField(24);
+
+  /// True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+  @$pb.TagNumber(25)
+  $core.bool get manual => $_getBF(24);
+  @$pb.TagNumber(25)
+  set manual($core.bool value) => $_setBool(24, value);
+  @$pb.TagNumber(25)
+  $core.bool hasManual() => $_has(24);
+  @$pb.TagNumber(25)
+  void clearManual() => $_clearField(25);
+
+  /// EV/HEV split (BladeWatch-reml). A BYD plug-in hybrid drives in EV or HEV energy mode and a trip
+  /// can switch; each stretch is measured on its own. EV driving carries kWh and no litres; HEV
+  /// driving carries litres and NO kWh (not even as information). All 0 on a trip recorded before
+  /// the split existed, which has_energy_split tells apart from a trip that really drove 0 km in a
+  /// mode. With HEV driving present, energy_per_km is kWh over the EV kilometres only.
+  @$pb.TagNumber(26)
+  $core.double get evKm => $_getN(25);
+  @$pb.TagNumber(26)
+  set evKm($core.double value) => $_setDouble(25, value);
+  @$pb.TagNumber(26)
+  $core.bool hasEvKm() => $_has(25);
+  @$pb.TagNumber(26)
+  void clearEvKm() => $_clearField(26);
+
+  @$pb.TagNumber(27)
+  $core.double get evKwh => $_getN(26);
+  @$pb.TagNumber(27)
+  set evKwh($core.double value) => $_setDouble(26, value);
+  @$pb.TagNumber(27)
+  $core.bool hasEvKwh() => $_has(26);
+  @$pb.TagNumber(27)
+  void clearEvKwh() => $_clearField(27);
+
+  @$pb.TagNumber(28)
+  $core.double get hevKm => $_getN(27);
+  @$pb.TagNumber(28)
+  set hevKm($core.double value) => $_setDouble(27, value);
+  @$pb.TagNumber(28)
+  $core.bool hasHevKm() => $_has(27);
+  @$pb.TagNumber(28)
+  void clearHevKm() => $_clearField(28);
+
+  @$pb.TagNumber(29)
+  $core.double get hevLitres => $_getN(28);
+  @$pb.TagNumber(29)
+  set hevLitres($core.double value) => $_setDouble(28, value);
+  @$pb.TagNumber(29)
+  $core.bool hasHevLitres() => $_has(28);
+  @$pb.TagNumber(29)
+  void clearHevLitres() => $_clearField(29);
+
+  @$pb.TagNumber(30)
+  $core.bool get hasEnergySplit => $_getBF(29);
+  @$pb.TagNumber(30)
+  set hasEnergySplit($core.bool value) => $_setBool(29, value);
+  @$pb.TagNumber(30)
+  $core.bool hasHasEnergySplit() => $_has(29);
+  @$pb.TagNumber(30)
+  void clearHasEnergySplit() => $_clearField(30);
 }
 
 /// TripDetail extends TripSummary with Driving DNA scores and micro-moments.
@@ -3337,6 +3415,675 @@ class GetGpsTraceResponse extends $pb.GeneratedMessage {
   void clearError() => $_clearField(3);
 }
 
+/// ActiveTripStatus describes the trip in progress, if any.
+class ActiveTripStatus extends $pb.GeneratedMessage {
+  factory ActiveTripStatus({
+    $core.bool? active,
+    $core.bool? manual,
+    $fixnum.Int64? startTimeMs,
+    $core.double? distanceKm,
+    $fixnum.Int64? autoStopAtMs,
+    $fixnum.Int64? reminderSeq,
+    $core.String? reminderReason,
+    $fixnum.Int64? reminderAckedSeq,
+    $core.bool? telemetryPaused,
+    $core.bool? liveCostAvailable,
+    $core.double? liveElectricCost,
+    $core.double? liveFuelCost,
+    $core.String? liveCurrency,
+    $core.bool? liveHasFuel,
+  }) {
+    final result = ActiveTripStatus._();
+    if (active != null) result.active = active;
+    if (manual != null) result.manual = manual;
+    if (startTimeMs != null) result.startTimeMs = startTimeMs;
+    if (distanceKm != null) result.distanceKm = distanceKm;
+    if (autoStopAtMs != null) result.autoStopAtMs = autoStopAtMs;
+    if (reminderSeq != null) result.reminderSeq = reminderSeq;
+    if (reminderReason != null) result.reminderReason = reminderReason;
+    if (reminderAckedSeq != null) result.reminderAckedSeq = reminderAckedSeq;
+    if (telemetryPaused != null) result.telemetryPaused = telemetryPaused;
+    if (liveCostAvailable != null) result.liveCostAvailable = liveCostAvailable;
+    if (liveElectricCost != null) result.liveElectricCost = liveElectricCost;
+    if (liveFuelCost != null) result.liveFuelCost = liveFuelCost;
+    if (liveCurrency != null) result.liveCurrency = liveCurrency;
+    if (liveHasFuel != null) result.liveHasFuel = liveHasFuel;
+    return result;
+  }
+
+  ActiveTripStatus._();
+
+  factory ActiveTripStatus.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      ActiveTripStatus()..mergeFromBuffer(data, registry);
+  factory ActiveTripStatus.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      ActiveTripStatus()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ActiveTripStatus',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: ActiveTripStatus.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'active')
+    ..aOB(2, _omitFieldNames ? '' : 'manual')
+    ..aInt64(3, _omitFieldNames ? '' : 'startTimeMs')
+    ..aD(4, _omitFieldNames ? '' : 'distanceKm')
+    ..aInt64(5, _omitFieldNames ? '' : 'autoStopAtMs')
+    ..aInt64(6, _omitFieldNames ? '' : 'reminderSeq')
+    ..aOS(7, _omitFieldNames ? '' : 'reminderReason')
+    ..aInt64(8, _omitFieldNames ? '' : 'reminderAckedSeq')
+    ..aOB(9, _omitFieldNames ? '' : 'telemetryPaused')
+    ..aOB(10, _omitFieldNames ? '' : 'liveCostAvailable')
+    ..aD(11, _omitFieldNames ? '' : 'liveElectricCost')
+    ..aD(12, _omitFieldNames ? '' : 'liveFuelCost')
+    ..aOS(13, _omitFieldNames ? '' : 'liveCurrency')
+    ..aOB(14, _omitFieldNames ? '' : 'liveHasFuel')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ActiveTripStatus clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ActiveTripStatus copyWith(void Function(ActiveTripStatus) updates) =>
+      super.copyWith((message) => updates(message as ActiveTripStatus))
+          as ActiveTripStatus;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use ActiveTripStatus() / ActiveTripStatus.new instead')
+  static ActiveTripStatus create() => ActiveTripStatus._();
+  static $pb.GeneratedMessage $_createMessage() => ActiveTripStatus._();
+  @$core.override
+  ActiveTripStatus createEmptyInstance() => ActiveTripStatus._();
+  @$core.pragma('dart2js:noInline')
+  static ActiveTripStatus getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ActiveTripStatus>(
+          ActiveTripStatus.$_createMessage);
+  static ActiveTripStatus? _defaultInstance;
+
+  /// True while any trip (auto-detected or manual) is open.
+  @$pb.TagNumber(1)
+  $core.bool get active => $_getBF(0);
+  @$pb.TagNumber(1)
+  set active($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasActive() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearActive() => $_clearField(1);
+
+  /// True when the open trip was started with the Start Trip button.
+  @$pb.TagNumber(2)
+  $core.bool get manual => $_getBF(1);
+  @$pb.TagNumber(2)
+  set manual($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasManual() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearManual() => $_clearField(2);
+
+  /// Epoch ms the open trip started; 0 when no trip is open.
+  @$pb.TagNumber(3)
+  $fixnum.Int64 get startTimeMs => $_getI64(2);
+  @$pb.TagNumber(3)
+  set startTimeMs($fixnum.Int64 value) => $_setInt64(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasStartTimeMs() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearStartTimeMs() => $_clearField(3);
+
+  /// GPS distance recorded so far, in km.
+  @$pb.TagNumber(4)
+  $core.double get distanceKm => $_getN(3);
+  @$pb.TagNumber(4)
+  set distanceKm($core.double value) => $_setDouble(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasDistanceKm() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearDistanceKm() => $_clearField(4);
+
+  /// Epoch ms at which a manual trip is ended automatically (start + 7 days); 0 otherwise.
+  @$pb.TagNumber(5)
+  $fixnum.Int64 get autoStopAtMs => $_getI64(4);
+  @$pb.TagNumber(5)
+  set autoStopAtMs($fixnum.Int64 value) => $_setInt64(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasAutoStopAtMs() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearAutoStopAtMs() => $_clearField(5);
+
+  /// Reminder to stop an open manual trip. reminder_seq counts reminders raised for this trip
+  /// and is 0 until the first one; reminder_reason is "acc_off" or "parked_30m" (empty before the
+  /// first). The in-car app shows a dialog while reminder_seq > reminder_acked_seq and then calls
+  /// AcknowledgeTripReminder, so each reminder is shown once even across app restarts.
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get reminderSeq => $_getI64(5);
+  @$pb.TagNumber(6)
+  set reminderSeq($fixnum.Int64 value) => $_setInt64(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasReminderSeq() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearReminderSeq() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get reminderReason => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set reminderReason($core.String value) => $_setString(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasReminderReason() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearReminderReason() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  $fixnum.Int64 get reminderAckedSeq => $_getI64(7);
+  @$pb.TagNumber(8)
+  set reminderAckedSeq($fixnum.Int64 value) => $_setInt64(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasReminderAckedSeq() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearReminderAckedSeq() => $_clearField(8);
+
+  /// True while telemetry sampling is suspended because ACC is OFF (the trip stays open).
+  @$pb.TagNumber(9)
+  $core.bool get telemetryPaused => $_getBF(8);
+  @$pb.TagNumber(9)
+  set telemetryPaused($core.bool value) => $_setBool(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasTelemetryPaused() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearTelemetryPaused() => $_clearField(9);
+
+  /// What the open trip has cost SO FAR (BladeWatch-reml): EV driving so far x the electricity rate,
+  /// HEV driving so far x the fuel price. live_cost_available is false with no trip open or with
+  /// neither rate configured (not a cost of zero). live_has_fuel is true when a fuel price is set, so
+  /// a client can leave the fuel part out for an electricity-only owner.
+  @$pb.TagNumber(10)
+  $core.bool get liveCostAvailable => $_getBF(9);
+  @$pb.TagNumber(10)
+  set liveCostAvailable($core.bool value) => $_setBool(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasLiveCostAvailable() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearLiveCostAvailable() => $_clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.double get liveElectricCost => $_getN(10);
+  @$pb.TagNumber(11)
+  set liveElectricCost($core.double value) => $_setDouble(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasLiveElectricCost() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearLiveElectricCost() => $_clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.double get liveFuelCost => $_getN(11);
+  @$pb.TagNumber(12)
+  set liveFuelCost($core.double value) => $_setDouble(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasLiveFuelCost() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearLiveFuelCost() => $_clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.String get liveCurrency => $_getSZ(12);
+  @$pb.TagNumber(13)
+  set liveCurrency($core.String value) => $_setString(12, value);
+  @$pb.TagNumber(13)
+  $core.bool hasLiveCurrency() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearLiveCurrency() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.bool get liveHasFuel => $_getBF(13);
+  @$pb.TagNumber(14)
+  set liveHasFuel($core.bool value) => $_setBool(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasLiveHasFuel() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearLiveHasFuel() => $_clearField(14);
+}
+
+class StartManualTripRequest extends $pb.GeneratedMessage {
+  factory StartManualTripRequest() => StartManualTripRequest._();
+
+  StartManualTripRequest._();
+
+  factory StartManualTripRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StartManualTripRequest()..mergeFromBuffer(data, registry);
+  factory StartManualTripRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StartManualTripRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'StartManualTripRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: StartManualTripRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StartManualTripRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StartManualTripRequest copyWith(
+          void Function(StartManualTripRequest) updates) =>
+      super.copyWith((message) => updates(message as StartManualTripRequest))
+          as StartManualTripRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use StartManualTripRequest() / StartManualTripRequest.new instead')
+  static StartManualTripRequest create() => StartManualTripRequest._();
+  static $pb.GeneratedMessage $_createMessage() => StartManualTripRequest._();
+  @$core.override
+  StartManualTripRequest createEmptyInstance() => StartManualTripRequest._();
+  @$core.pragma('dart2js:noInline')
+  static StartManualTripRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StartManualTripRequest>(
+          StartManualTripRequest.$_createMessage);
+  static StartManualTripRequest? _defaultInstance;
+}
+
+class StartManualTripResponse extends $pb.GeneratedMessage {
+  factory StartManualTripResponse({
+    ActiveTripStatus? status,
+  }) {
+    final result = StartManualTripResponse._();
+    if (status != null) result.status = status;
+    return result;
+  }
+
+  StartManualTripResponse._();
+
+  factory StartManualTripResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StartManualTripResponse()..mergeFromBuffer(data, registry);
+  factory StartManualTripResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StartManualTripResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'StartManualTripResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: StartManualTripResponse.$_createMessage)
+    ..aOM<ActiveTripStatus>(1, _omitFieldNames ? '' : 'status',
+        subBuilder: ActiveTripStatus.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StartManualTripResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StartManualTripResponse copyWith(
+          void Function(StartManualTripResponse) updates) =>
+      super.copyWith((message) => updates(message as StartManualTripResponse))
+          as StartManualTripResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use StartManualTripResponse() / StartManualTripResponse.new instead')
+  static StartManualTripResponse create() => StartManualTripResponse._();
+  static $pb.GeneratedMessage $_createMessage() => StartManualTripResponse._();
+  @$core.override
+  StartManualTripResponse createEmptyInstance() => StartManualTripResponse._();
+  @$core.pragma('dart2js:noInline')
+  static StartManualTripResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StartManualTripResponse>(
+          StartManualTripResponse.$_createMessage);
+  static StartManualTripResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  ActiveTripStatus get status => $_getN(0);
+  @$pb.TagNumber(1)
+  set status(ActiveTripStatus value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasStatus() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStatus() => $_clearField(1);
+  @$pb.TagNumber(1)
+  ActiveTripStatus ensureStatus() => $_ensure(0);
+}
+
+class StopManualTripRequest extends $pb.GeneratedMessage {
+  factory StopManualTripRequest() => StopManualTripRequest._();
+
+  StopManualTripRequest._();
+
+  factory StopManualTripRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StopManualTripRequest()..mergeFromBuffer(data, registry);
+  factory StopManualTripRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StopManualTripRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'StopManualTripRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: StopManualTripRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StopManualTripRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StopManualTripRequest copyWith(
+          void Function(StopManualTripRequest) updates) =>
+      super.copyWith((message) => updates(message as StopManualTripRequest))
+          as StopManualTripRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use StopManualTripRequest() / StopManualTripRequest.new instead')
+  static StopManualTripRequest create() => StopManualTripRequest._();
+  static $pb.GeneratedMessage $_createMessage() => StopManualTripRequest._();
+  @$core.override
+  StopManualTripRequest createEmptyInstance() => StopManualTripRequest._();
+  @$core.pragma('dart2js:noInline')
+  static StopManualTripRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StopManualTripRequest>(
+          StopManualTripRequest.$_createMessage);
+  static StopManualTripRequest? _defaultInstance;
+}
+
+class StopManualTripResponse extends $pb.GeneratedMessage {
+  factory StopManualTripResponse({
+    $core.bool? stopped,
+  }) {
+    final result = StopManualTripResponse._();
+    if (stopped != null) result.stopped = stopped;
+    return result;
+  }
+
+  StopManualTripResponse._();
+
+  factory StopManualTripResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StopManualTripResponse()..mergeFromBuffer(data, registry);
+  factory StopManualTripResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      StopManualTripResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'StopManualTripResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: StopManualTripResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'stopped')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StopManualTripResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StopManualTripResponse copyWith(
+          void Function(StopManualTripResponse) updates) =>
+      super.copyWith((message) => updates(message as StopManualTripResponse))
+          as StopManualTripResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use StopManualTripResponse() / StopManualTripResponse.new instead')
+  static StopManualTripResponse create() => StopManualTripResponse._();
+  static $pb.GeneratedMessage $_createMessage() => StopManualTripResponse._();
+  @$core.override
+  StopManualTripResponse createEmptyInstance() => StopManualTripResponse._();
+  @$core.pragma('dart2js:noInline')
+  static StopManualTripResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StopManualTripResponse>(
+          StopManualTripResponse.$_createMessage);
+  static StopManualTripResponse? _defaultInstance;
+
+  /// False when no manual trip was open (an auto trip in progress is left alone).
+  @$pb.TagNumber(1)
+  $core.bool get stopped => $_getBF(0);
+  @$pb.TagNumber(1)
+  set stopped($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasStopped() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStopped() => $_clearField(1);
+}
+
+class GetActiveTripRequest extends $pb.GeneratedMessage {
+  factory GetActiveTripRequest() => GetActiveTripRequest._();
+
+  GetActiveTripRequest._();
+
+  factory GetActiveTripRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetActiveTripRequest()..mergeFromBuffer(data, registry);
+  factory GetActiveTripRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetActiveTripRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetActiveTripRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetActiveTripRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetActiveTripRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetActiveTripRequest copyWith(void Function(GetActiveTripRequest) updates) =>
+      super.copyWith((message) => updates(message as GetActiveTripRequest))
+          as GetActiveTripRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetActiveTripRequest() / GetActiveTripRequest.new instead')
+  static GetActiveTripRequest create() => GetActiveTripRequest._();
+  static $pb.GeneratedMessage $_createMessage() => GetActiveTripRequest._();
+  @$core.override
+  GetActiveTripRequest createEmptyInstance() => GetActiveTripRequest._();
+  @$core.pragma('dart2js:noInline')
+  static GetActiveTripRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetActiveTripRequest>(
+          GetActiveTripRequest.$_createMessage);
+  static GetActiveTripRequest? _defaultInstance;
+}
+
+class GetActiveTripResponse extends $pb.GeneratedMessage {
+  factory GetActiveTripResponse({
+    ActiveTripStatus? status,
+  }) {
+    final result = GetActiveTripResponse._();
+    if (status != null) result.status = status;
+    return result;
+  }
+
+  GetActiveTripResponse._();
+
+  factory GetActiveTripResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetActiveTripResponse()..mergeFromBuffer(data, registry);
+  factory GetActiveTripResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetActiveTripResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetActiveTripResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetActiveTripResponse.$_createMessage)
+    ..aOM<ActiveTripStatus>(1, _omitFieldNames ? '' : 'status',
+        subBuilder: ActiveTripStatus.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetActiveTripResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetActiveTripResponse copyWith(
+          void Function(GetActiveTripResponse) updates) =>
+      super.copyWith((message) => updates(message as GetActiveTripResponse))
+          as GetActiveTripResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetActiveTripResponse() / GetActiveTripResponse.new instead')
+  static GetActiveTripResponse create() => GetActiveTripResponse._();
+  static $pb.GeneratedMessage $_createMessage() => GetActiveTripResponse._();
+  @$core.override
+  GetActiveTripResponse createEmptyInstance() => GetActiveTripResponse._();
+  @$core.pragma('dart2js:noInline')
+  static GetActiveTripResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetActiveTripResponse>(
+          GetActiveTripResponse.$_createMessage);
+  static GetActiveTripResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  ActiveTripStatus get status => $_getN(0);
+  @$pb.TagNumber(1)
+  set status(ActiveTripStatus value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasStatus() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStatus() => $_clearField(1);
+  @$pb.TagNumber(1)
+  ActiveTripStatus ensureStatus() => $_ensure(0);
+}
+
+class AcknowledgeTripReminderRequest extends $pb.GeneratedMessage {
+  factory AcknowledgeTripReminderRequest({
+    $fixnum.Int64? reminderSeq,
+  }) {
+    final result = AcknowledgeTripReminderRequest._();
+    if (reminderSeq != null) result.reminderSeq = reminderSeq;
+    return result;
+  }
+
+  AcknowledgeTripReminderRequest._();
+
+  factory AcknowledgeTripReminderRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      AcknowledgeTripReminderRequest()..mergeFromBuffer(data, registry);
+  factory AcknowledgeTripReminderRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      AcknowledgeTripReminderRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'AcknowledgeTripReminderRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: AcknowledgeTripReminderRequest.$_createMessage)
+    ..aInt64(1, _omitFieldNames ? '' : 'reminderSeq')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AcknowledgeTripReminderRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AcknowledgeTripReminderRequest copyWith(
+          void Function(AcknowledgeTripReminderRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as AcknowledgeTripReminderRequest))
+          as AcknowledgeTripReminderRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use AcknowledgeTripReminderRequest() / AcknowledgeTripReminderRequest.new instead')
+  static AcknowledgeTripReminderRequest create() =>
+      AcknowledgeTripReminderRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      AcknowledgeTripReminderRequest._();
+  @$core.override
+  AcknowledgeTripReminderRequest createEmptyInstance() =>
+      AcknowledgeTripReminderRequest._();
+  @$core.pragma('dart2js:noInline')
+  static AcknowledgeTripReminderRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<AcknowledgeTripReminderRequest>(
+          AcknowledgeTripReminderRequest.$_createMessage);
+  static AcknowledgeTripReminderRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $fixnum.Int64 get reminderSeq => $_getI64(0);
+  @$pb.TagNumber(1)
+  set reminderSeq($fixnum.Int64 value) => $_setInt64(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasReminderSeq() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearReminderSeq() => $_clearField(1);
+}
+
+class AcknowledgeTripReminderResponse extends $pb.GeneratedMessage {
+  factory AcknowledgeTripReminderResponse({
+    ActiveTripStatus? status,
+  }) {
+    final result = AcknowledgeTripReminderResponse._();
+    if (status != null) result.status = status;
+    return result;
+  }
+
+  AcknowledgeTripReminderResponse._();
+
+  factory AcknowledgeTripReminderResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      AcknowledgeTripReminderResponse()..mergeFromBuffer(data, registry);
+  factory AcknowledgeTripReminderResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      AcknowledgeTripReminderResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'AcknowledgeTripReminderResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: AcknowledgeTripReminderResponse.$_createMessage)
+    ..aOM<ActiveTripStatus>(1, _omitFieldNames ? '' : 'status',
+        subBuilder: ActiveTripStatus.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AcknowledgeTripReminderResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AcknowledgeTripReminderResponse copyWith(
+          void Function(AcknowledgeTripReminderResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as AcknowledgeTripReminderResponse))
+          as AcknowledgeTripReminderResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use AcknowledgeTripReminderResponse() / AcknowledgeTripReminderResponse.new instead')
+  static AcknowledgeTripReminderResponse create() =>
+      AcknowledgeTripReminderResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      AcknowledgeTripReminderResponse._();
+  @$core.override
+  AcknowledgeTripReminderResponse createEmptyInstance() =>
+      AcknowledgeTripReminderResponse._();
+  @$core.pragma('dart2js:noInline')
+  static AcknowledgeTripReminderResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<AcknowledgeTripReminderResponse>(
+          AcknowledgeTripReminderResponse.$_createMessage);
+  static AcknowledgeTripReminderResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  ActiveTripStatus get status => $_getN(0);
+  @$pb.TagNumber(1)
+  set status(ActiveTripStatus value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasStatus() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStatus() => $_clearField(1);
+  @$pb.TagNumber(1)
+  ActiveTripStatus ensureStatus() => $_ensure(0);
+}
+
 /// TripsService manages trip analytics records, Driving DNA scores, and
 /// personalised range estimation.
 ///
@@ -3355,6 +4102,10 @@ class GetGpsTraceResponse extends $pb.GeneratedMessage {
 ///   GetTelemetry     GET    /api/trips/{id}/telemetry
 ///   GetSimilarTrips  GET    /api/trips/{id}/similar
 ///   GetGpsTrace      GET    /api/trips/{id}/gps
+///   StartManualTrip  POST   /api/trips/manual/start
+///   StopManualTrip   POST   /api/trips/manual/stop
+///   GetActiveTrip    GET    /api/trips/active
+///   AcknowledgeTripReminder POST /api/trips/manual/ack
 class TripsServiceApi {
   final $pb.RpcClient _client;
 
@@ -3416,6 +4167,29 @@ class TripsServiceApi {
           $pb.ClientContext? ctx, GetGpsTraceRequest request) =>
       _client.invoke<GetGpsTraceResponse>(
           ctx, 'TripsService', 'GetGpsTrace', request, GetGpsTraceResponse());
+
+  /// Manual trips (BladeWatch-gklt): the driver starts a trip with the Start Trip button; it ends
+  /// only via StopManualTrip (or a 7-day safety auto-stop), never on Park or ACC OFF.
+  $async.Future<StartManualTripResponse> startManualTrip(
+          $pb.ClientContext? ctx, StartManualTripRequest request) =>
+      _client.invoke<StartManualTripResponse>(ctx, 'TripsService',
+          'StartManualTrip', request, StartManualTripResponse());
+  $async.Future<StopManualTripResponse> stopManualTrip(
+          $pb.ClientContext? ctx, StopManualTripRequest request) =>
+      _client.invoke<StopManualTripResponse>(ctx, 'TripsService',
+          'StopManualTrip', request, StopManualTripResponse());
+  $async.Future<GetActiveTripResponse> getActiveTrip(
+          $pb.ClientContext? ctx, GetActiveTripRequest request) =>
+      _client.invoke<GetActiveTripResponse>(ctx, 'TripsService',
+          'GetActiveTrip', request, GetActiveTripResponse());
+  $async.Future<AcknowledgeTripReminderResponse> acknowledgeTripReminder(
+          $pb.ClientContext? ctx, AcknowledgeTripReminderRequest request) =>
+      _client.invoke<AcknowledgeTripReminderResponse>(
+          ctx,
+          'TripsService',
+          'AcknowledgeTripReminder',
+          request,
+          AcknowledgeTripReminderResponse());
 }
 
 const $core.bool _omitFieldNames =

@@ -2963,4 +2963,72 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => '저장하지 못했습니다. 다시 시도하세요.';
+
+  @override
+  String get dashboard_trip_start => '주행 시작';
+
+  @override
+  String get dashboard_trip_stop => '주행 중지';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return '수동 주행 기록 중 · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      '자동 주행이 진행 중입니다. 수동 주행을 시작하면 이를 종료하고 새 주행을 시작합니다.';
+
+  @override
+  String get dashboard_trip_error => '차량에 연결할 수 없습니다. 다시 시도하세요.';
+
+  @override
+  String get trip_reminder_title => '주행이 아직 기록 중입니다';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return '수동 주행을 기록하는 동안 차량 전원을 껐습니다(현재까지 $elapsed).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return '수동 주행을 기록하는 동안 차량이 30분간 주차되어 있습니다(현재까지 $elapsed).';
+  }
+
+  @override
+  String get trip_reminder_keep => '계속 기록';
+
+  @override
+  String get trip_reminder_stop => '주행 중지';
+
+  @override
+  String get trips_manual_badge => '수동';
+
+  @override
+  String get trips_detail_ev_title => '전기(EV) 주행';
+
+  @override
+  String get trips_detail_hev_title => '하이브리드(HEV) 주행';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return '지금까지: 전기 $electric · 연료 $fuel · 합계 $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return '지금까지: 전기 $electric';
+  }
 }

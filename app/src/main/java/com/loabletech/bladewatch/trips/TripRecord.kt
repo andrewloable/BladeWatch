@@ -93,6 +93,46 @@ class TripRecord {
     @JvmField var telemetryFilePath: String? = null  // Path to .jsonl.gz
     @JvmField var routeId: Long = -1                 // Route cluster ID for similar-trip lookups
 
+    /**
+     * True when the driver started this trip with the Start Trip button (BladeWatch-gklt).
+     * A manual trip ends only via Stop Trip (or the 7-day safety auto-stop), and is never
+     * discarded for being short.
+     */
+    @JvmField var isManual: Boolean = false
+
+    // ── Per-mode figures (BladeWatch-reml). EV driving carries kWh and no litres; HEV driving
+    // carries litres and NO kWh. 0 on a trip recorded before the split existed. ──
+    @JvmField var evKm: Double = 0.0
+    @JvmField var evKwh: Double = 0.0
+    @JvmField var hevKm: Double = 0.0
+    @JvmField var hevLitres: Double = 0.0
+
+    /** The EV/HEV timeline as a JSON array, for the trip detail view; null when not recorded. */
+    @JvmField var energySegmentsJson: String? = null
+
+    // ── EV/HEV-aware figures (BladeWatch-reml.2). A trip is costed by mode: EV driving by kWh only,
+    // HEV driving by fuel only. These say which legs a trip has, and give the electric leg that
+    // costing, efficiency, scoring, range learning and rollups all use. A trip with NO hybrid
+    // driving (a BEV, or an all-EV trip) returns exactly the whole-trip figures it always did. ──
+
+    /** Whether the EV/HEV split was recorded for this trip. */
+    fun hasEnergySplit(): Boolean = energySegmentsJson != null
+
+    /** Any distance or litres driven in HEV mode. */
+    fun hasHevLeg(): Boolean = hasEnergySplit() && (hevKm > 0 || hevLitres > 0)
+
+    /**
+     * kWh of the ELECTRIC leg. With HEV driving that is the EV segments' kWh only (HEV driving
+     * reports no electricity at all); otherwise the whole-trip [getEnergyUsedKwh], unchanged.
+     */
+    fun getElectricLegKwh(): Double = if (hasHevLeg()) evKwh else getEnergyUsedKwh()
+
+    /** Kilometres of the electric leg: the EV segments' with HEV driving, else the whole trip. */
+    fun getElectricLegKm(): Double = if (hasHevLeg()) evKm else distanceKm
+
+    /** Kilometres the fuel was burned over: the HEV segments' with HEV driving, else the whole trip. */
+    fun getFuelLegKm(): Double = if (hasHevLeg()) hevKm else distanceKm
+
     /** Overall Driving DNA score: the mean of the five axis scores. */
     fun getOverallScore(): Int = Math.round(
         (anticipationScore + smoothnessScore + speedDisciplineScore
@@ -196,6 +236,7 @@ class TripRecord {
             putCommon(json)
             json.put("microMomentsJson", microMomentsJson ?: "")
             json.put("telemetryFilePath", telemetryFilePath ?: "")
+            json.put("energySegmentsJson", energySegmentsJson ?: "")
             // Raw lifetime counters belong only in the full detail view.
             json.put("fuelPctStart", fuelPctStart)
             json.put("fuelPctEnd", fuelPctEnd)
@@ -242,7 +283,7 @@ class TripRecord {
         json.put("socEnd", socEnd)
         json.put("kwhStart", kwhStart)
         json.put("kwhEnd", kwhEnd)
-        json.put("energyUsedKwh", getEnergyUsedKwh())
+        json.put("energyUsedKwh", getElectricLegKwh())
         json.put("efficiencySocPerKm", efficiencySocPerKm)
         json.put("energyPerKm", energyPerKm)
         json.put("electricityRate", electricityRate)
@@ -272,6 +313,12 @@ class TripRecord {
         json.put("efficiencyScore", efficiencyScore)
         json.put("consistencyScore", consistencyScore)
         json.put("overallScore", getOverallScore())
+        json.put("manual", isManual)
+        json.put("evKm", evKm)
+        json.put("evKwh", evKwh)
+        json.put("hevKm", hevKm)
+        json.put("hevLitres", hevLitres)
+        json.put("hasEnergySplit", hasEnergySplit())
     }
 
     private companion object {

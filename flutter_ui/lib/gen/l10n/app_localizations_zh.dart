@@ -2939,6 +2939,73 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings_lock_save_failed => '保存失败，请重试。';
+
+  @override
+  String get dashboard_trip_start => '开始行程';
+
+  @override
+  String get dashboard_trip_stop => '停止行程';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return '正在记录手动行程 · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint => '自动行程进行中。开始手动行程会结束它并开始新的行程。';
+
+  @override
+  String get dashboard_trip_error => '无法连接到车辆。请重试。';
+
+  @override
+  String get trip_reminder_title => '行程仍在记录';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return '您在手动行程记录期间关闭了车辆（目前 $elapsed）。';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return '手动行程记录期间车辆已停放 30 分钟（目前 $elapsed）。';
+  }
+
+  @override
+  String get trip_reminder_keep => '继续记录';
+
+  @override
+  String get trip_reminder_stop => '停止行程';
+
+  @override
+  String get trips_manual_badge => '手动';
+
+  @override
+  String get trips_detail_ev_title => '纯电（EV）行驶';
+
+  @override
+  String get trips_detail_hev_title => '混动（HEV）行驶';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return '目前：电费 $electric · 燃油 $fuel · 合计 $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return '目前：电费 $electric';
+  }
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -5876,6 +5943,73 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get settings_lock_save_failed => '保存失败，请重试。';
+
+  @override
+  String get dashboard_trip_start => '开始行程';
+
+  @override
+  String get dashboard_trip_stop => '停止行程';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return '正在记录手动行程 · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint => '自动行程进行中。开始手动行程会结束它并开始新的行程。';
+
+  @override
+  String get dashboard_trip_error => '无法连接到车辆。请重试。';
+
+  @override
+  String get trip_reminder_title => '行程仍在记录';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return '您在手动行程记录期间关闭了车辆（目前 $elapsed）。';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return '手动行程记录期间车辆已停放 30 分钟（目前 $elapsed）。';
+  }
+
+  @override
+  String get trip_reminder_keep => '继续记录';
+
+  @override
+  String get trip_reminder_stop => '停止行程';
+
+  @override
+  String get trips_manual_badge => '手动';
+
+  @override
+  String get trips_detail_ev_title => '纯电（EV）行驶';
+
+  @override
+  String get trips_detail_hev_title => '混动（HEV）行驶';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return '目前：电费 $electric · 燃油 $fuel · 合计 $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return '目前：电费 $electric';
+  }
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -8814,4 +8948,71 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get settings_lock_save_failed => '儲存失敗，請重試。';
+
+  @override
+  String get dashboard_trip_start => '開始行程';
+
+  @override
+  String get dashboard_trip_stop => '停止行程';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return '正在記錄手動行程 · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint => '自動行程進行中。開始手動行程會結束它並開始新的行程。';
+
+  @override
+  String get dashboard_trip_error => '無法連線到車輛。請重試。';
+
+  @override
+  String get trip_reminder_title => '行程仍在記錄';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return '您在手動行程記錄期間關閉了車輛（目前 $elapsed）。';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return '手動行程記錄期間車輛已停放 30 分鐘（目前 $elapsed）。';
+  }
+
+  @override
+  String get trip_reminder_keep => '繼續記錄';
+
+  @override
+  String get trip_reminder_stop => '停止行程';
+
+  @override
+  String get trips_manual_badge => '手動';
+
+  @override
+  String get trips_detail_ev_title => '純電（EV）行駛';
+
+  @override
+  String get trips_detail_hev_title => '油電（HEV）行駛';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return '目前：電費 $electric · 燃油 $fuel · 合計 $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return '目前：電費 $electric';
+  }
 }

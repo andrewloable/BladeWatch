@@ -114,6 +114,17 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         _RouteCard(telemetry: c.telemetry),
         const SizedBox(height: 12),
         _SummaryCard(trip: trip, distanceUnit: distUnit),
+        // The EV and HEV driving of this trip, each with only its own figures (BladeWatch-reml.4):
+        // EV driving shows kWh and the electricity it cost, HEV driving shows litres and the fuel it
+        // cost, and HEV driving shows no kWh at all.
+        if (trip.hasEvLeg) ...[
+          const SizedBox(height: 12),
+          _ModeCard(key: const ValueKey('tripDetail.evCard'), trip: trip, distanceUnit: distUnit, hev: false),
+        ],
+        if (trip.hasHevLeg) ...[
+          const SizedBox(height: 12),
+          _ModeCard(key: const ValueKey('tripDetail.hevCard'), trip: trip, distanceUnit: distUnit, hev: true),
+        ],
         const SizedBox(height: 12),
         _ScoresCard(trip: trip),
       ],
@@ -237,6 +248,8 @@ class _SummaryCard extends StatelessWidget {
     final distStr = formatDistance(trip.distanceKm, distanceUnit);
     final avgSpd = formatSpeed(trip.avgSpeedKmh, distanceUnit);
     final maxSpd = formatSpeed(trip.maxSpeedKmh, distanceUnit);
+    // With HEV driving the energy cell is the EV segments' kWh; a trip with no electric driving has none
+    // to show, and HEV driving never reports kWh (BladeWatch-reml.4).
     final energyStr = trip.energyUsedKwh > 0 ? '${trip.energyUsedKwh.toStringAsFixed(1)} kWh' : '--';
     final costStr = trip.tripCost > 0 && trip.currency.isNotEmpty
         ? Currency.format(trip.tripCost, trip.currency)
@@ -261,7 +274,10 @@ class _SummaryCard extends StatelessWidget {
       // The cost cell above stays the TOTAL. These two are its halves and sum to it; without
       // them the driver can see what a trip cost but not which tank the money came out of,
       // which on a car that runs both is the whole question.
-      if (trip.hasFuelData) ...[
+      //
+      // Not for a trip with the EV/HEV split: its fuel and electricity are shown per mode below, and an
+      // EV trip must not show a fuel row at all.
+      if (trip.hasFuelData && !trip.hasEnergySplit) ...[
         (l10n.trips_detail_fuel_used, '${trip.litresUsed.toStringAsFixed(1)} L'),
         (l10n.trips_detail_fuel_cost, Currency.format(trip.fuelCost, trip.currency)),
         (l10n.trips_detail_electric_cost, Currency.format(trip.electricCost, trip.currency)),
@@ -278,6 +294,76 @@ class _SummaryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l10n.trips_detail_summary_title, style: theme.textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Wrap(
+              children: [
+                for (final (label, value) in cells)
+                  SizedBox(
+                    width: 120,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        children: [
+                          Text(value, style: theme.textTheme.titleMedium),
+                          Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One mode's share of a trip: the EV card (distance, kWh, kWh per 100, electricity cost) or the HEV
+/// card (distance, litres, litres per 100, fuel cost). The HEV card has no kWh anywhere.
+class _ModeCard extends StatelessWidget {
+  final TripDetailData trip;
+  final String distanceUnit;
+  final bool hev;
+  const _ModeCard({super.key, required this.trip, required this.distanceUnit, required this.hev});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final miles = distanceUnit == 'mi';
+    String rate(double? v, String unitLabel) => v == null ? '--' : '${v.toStringAsFixed(1)} $unitLabel';
+    String money(double v) => trip.tripCost > 0 || v > 0 ? Currency.format(v, trip.currency) : '--';
+
+    final cells = hev
+        ? [
+            (l10n.trips_detail_distance, formatDistance(trip.hevKm, distanceUnit)),
+            (l10n.trips_detail_fuel_used, '${trip.hevLitres.toStringAsFixed(1)} L'),
+            (
+              miles ? l10n.trips_detail_l_per_100mi : l10n.trips_detail_l_per_100km,
+              rate(per100(trip.hevLitres, trip.hevKm, distanceUnit), 'L'),
+            ),
+            (l10n.trips_detail_fuel_cost, money(trip.fuelCost)),
+          ]
+        : [
+            (l10n.trips_detail_distance, formatDistance(trip.evKm, distanceUnit)),
+            (l10n.trips_detail_energy, '${trip.evKwh.toStringAsFixed(1)} kWh'),
+            (
+              miles ? l10n.trips_detail_kwh_per_100mi : l10n.trips_detail_kwh_per_100km,
+              rate(per100(trip.evKwh, trip.evKm, distanceUnit), 'kWh'),
+            ),
+            (l10n.trips_detail_electric_cost, money(trip.electricCost)),
+          ];
+
+    return Card(
+      color: theme.colorScheme.surfaceContainer,
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(hev ? l10n.trips_detail_hev_title : l10n.trips_detail_ev_title, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             Wrap(
               children: [

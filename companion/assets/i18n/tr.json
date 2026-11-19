@@ -1559,6 +1559,14 @@
     "sync_database": "Veritabanını eşitle"
   },
   "companion": {
+    "trip_ev_title": "Elektrikli (EV) sürüş",
+    "trip_hev_title": "Hibrit (HEV) sürüş",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "Manuel yolculuk kaydediliyor",
+    "manual_trip_started": "Başlangıç",
+    "manual_trip_elapsed": "Süre",
+    "trip_manual_badge": "Manuel",
     "energy": "Enerji",
     "looking": "Aracınız aranıyor…",
     "looking_hint": "İnternet üzerinden bu bir dakikayı bulabilir. Aracın Wi-Fi ağında daha hızlıdır.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Şarj arızası",
     "cat_trips_started": "Yolculuk başladı",
     "cat_trips_ended": "Yolculuk bitti",
+    "cat_trips_manual_reminder": "Manuel yolculuk hâlâ kaydediliyor",
     "group_surveillance": "Gözetim",
     "group_vehicle": "Araç",
     "group_security": "Güvenlik",

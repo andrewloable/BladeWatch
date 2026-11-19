@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// BladeWatch-ez0z: the launch splash is Android resources, not Dart, so nothing
-/// in the Flutter build fails if it silently reverts. These read the actual files,
+/// BladeWatch-ez0z, BladeWatch-sjz4: the launch splash is Android resources, not Dart, so nothing
+/// in the Flutter build fails if it silently reverts. Since BladeWatch-sjz4 it is plain black in
+/// both modes with only the icon, the first frame of the animated intro (BladeIntro). These read the actual files,
 /// the same way `test/theme/color_tokens_test.dart` reads the Android colour XML.
 ///
 /// Three separate regressions are pinned here, and every one of them already
@@ -35,9 +36,14 @@ void main() {
 
       expect(xml, isNot(contains('You can insert your own image assets here')),
           reason: 'still the stock template — this is the blank white screen bug');
-      expect(xml, contains('@mipmap/ic_launcher'), reason: 'the app icon must be shown');
-      expect(xml, contains('@drawable/wordmark_bladewatch'),
-          reason: 'the BladeWatch wordmark must be shown');
+      // Checked on the markup, not the explanatory comment.
+      final code = xml.replaceAll(RegExp(r'<!--.*?-->', dotAll: true), '');
+      expect(code, contains('@mipmap/ic_launcher_foreground'), reason: 'the app icon must be shown');
+      // The intro reveals the wordmark; drawing it here too would make the handoff jump.
+      expect(code, isNot(contains('wordmark')), reason: 'the wordmark is the intro\'s, not the splash\'s');
+      // Centred with no insets: exactly where BladeIntro's first frame draws the icon.
+      expect(code, isNot(contains('android:top=')), reason: 'the icon must sit dead centre');
+      expect(code, isNot(contains('android:bottom=')), reason: 'the icon must sit dead centre');
       expect(xml, contains('@color/splash_background'),
           reason: 'the background must come from the day/night colour, not a literal');
     });
@@ -49,17 +55,13 @@ void main() {
               'so edits to drawable/ would have no effect');
     });
 
-    test('splash colours are defined for both light and dark', () {
-      final day = res('values/colors.xml').readAsStringSync();
-      final night = res('values-night/colors.xml').readAsStringSync();
-
-      // The owner's requirement: plain white in light mode, plain black in dark.
-      expect(day, contains('#FFFFFF'), reason: 'light mode splash must be white');
-      expect(night, contains('#000000'), reason: 'dark mode splash must be black');
-
-      for (final name in ['splash_background', 'splash_foreground']) {
-        expect(day, contains(name), reason: '$name missing from values/colors.xml');
-        expect(night, contains(name), reason: '$name missing from values-night/colors.xml');
+    test('the splash is black in light and dark mode', () {
+      // The owner's decision of 2026-11-19 (BladeWatch-sjz4): black in both modes. It was white
+      // in light mode before.
+      for (final dir in ['values', 'values-night']) {
+        final xml = res('$dir/colors.xml').readAsStringSync();
+        expect(RegExp(r'<color name="splash_background">#000000</color>').hasMatch(xml), isTrue,
+            reason: '$dir/colors.xml must define splash_background as black');
       }
     });
 
@@ -82,14 +84,6 @@ void main() {
           reason: '$dir must use the branded drawable for BOTH LaunchTheme and NormalTheme',
         );
         expect(xml, isNot(contains('?android:colorBackground')), reason: dir);
-      }
-    });
-
-    test('the wordmark ships at every density it claims', () {
-      for (final d in ['hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
-        final f = res('drawable-$d/wordmark_bladewatch.png');
-        expect(f.existsSync(), isTrue, reason: 'missing wordmark for $d');
-        expect(f.lengthSync(), greaterThan(0), reason: 'empty wordmark for $d');
       }
     });
 

@@ -125,7 +125,10 @@
     "trip_started": "Rit gestart",
     "trip_ended": "Rit beëindigd",
     "trip_summary_km": "{0} km · {1} min",
-    "trip_summary_mi": "{0} mi · {1} min"
+    "trip_summary_mi": "{0} mi · {1} min",
+    "manual_trip_reminder_title": "Rit wordt nog opgenomen",
+    "manual_trip_reminder_acc_off": "Je hebt de auto uitgezet, maar je handmatige rit wordt nog steeds opgenomen. Open BladeWatch en tik op Rit stoppen als je klaar bent.",
+    "manual_trip_reminder_parked": "De auto staat al 30 minuten geparkeerd en je handmatige rit wordt nog steeds opgenomen. Tik op Rit stoppen als je klaar bent."
   },
   "vehicle_control": {
     "cloud_required": "Verbind een BYD-account in Instellingen om deze bediening te gebruiken",

@@ -138,4 +138,32 @@ class TripRecordTest {
         assertTrue("summary exposes keys the full projection does not: $orphans", orphans.isEmpty())
         assertTrue("the full projection must be strictly richer", full.size > summary.size)
     }
+
+    @Test
+    fun `manual flag defaults to false and is serialised`() {
+        assertFalse(TripRecord().isManual)
+        assertFalse(TripRecord().toJson().getBoolean("manual"))
+        assertFalse(TripRecord().toSummaryJson().getBoolean("manual"))
+
+        val manual = TripRecord().apply { isManual = true }
+        assertTrue(manual.toJson().getBoolean("manual"))
+        assertTrue(manual.toSummaryJson().getBoolean("manual"))
+    }
+
+    @Test
+    fun `per mode figures are serialised in the list and the detail`() {
+        val t = TripRecord().apply {
+            evKm = 8.0; evKwh = 0.8; hevKm = 12.0; hevLitres = 1.0
+            energySegmentsJson = "[]"
+        }
+        for (j in listOf(t.toJson(), t.toSummaryJson())) {
+            assertEquals(8.0, j.getDouble("evKm"), 1e-9)
+            assertEquals(0.8, j.getDouble("evKwh"), 1e-9)
+            assertEquals(12.0, j.getDouble("hevKm"), 1e-9)
+            assertEquals(1.0, j.getDouble("hevLitres"), 1e-9)
+        }
+        assertEquals("[]", t.toJson().getString("energySegmentsJson"))
+        assertFalse("the timeline is detail-only", t.toSummaryJson().has("energySegmentsJson"))
+    }
 }
+

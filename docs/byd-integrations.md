@@ -193,6 +193,20 @@ Two consequences of the catalogue now being consulted, both intended:
   corrected on the first pass, 0 on the second, and trip 193's repaired 0.1236 kWh/km agrees
   to 0.2% with the 1.1 kWh its lifetime electricity counter independently recorded.
 
+### Energy mode drives trip costing (BladeWatch-reml)
+
+`getEnergyMode` (1 = EV, 3 = HEV; `DriveState`, BladeWatch-os88) was first only the Dashboard's EV/HEV
+chip. Since v1.4.1.5 it also decides how a trip is costed: `TripAnalyticsManager` reads it from
+`BydDataCollector.data.energyMode` every 5 s during a trip, and `EnergyModeSegments` cuts the trip
+at every change. EV segments carry kWh and no litres, HEV segments litres and no kWh. An unknown
+reading carries the last known mode forward; a trip whose mode was never known is EV on a car
+without a tank, and on a plug-in hybrid HEV only when the fuel counter rose by more than 0.05 L (a
+planning choice, since nothing else can tell the two apart). The kWh of an EV segment follows
+`TripRecord.getEnergyUsedKwh`'s order: the net drop in remaining energy first (regeneration
+included, and a pack that ended fuller is 0), the metered lifetime counter only where that cannot
+answer. A trip with no HEV driving keeps its whole-trip figures exactly, so a battery-only car's
+history does not move.
+
 ## Polling and Listeners
 
 The collector combines initial reads, polling, and listeners.
@@ -505,6 +519,8 @@ History note: an earlier change integrated a native **Filament** 3D engine for t
 
 `CameraDaemon` waits for the vehicle to be locked before arming surveillance after ACC turns off. Lock state is determined using the local BYD device SDK door-lock listener and periodic local door-lock polling only. A force-arm timeout fires after roughly 60 seconds if no lock event arrives.
 
+On the test head unit, `getDoorLockStatus(1)` returns 0 (`DOOR_STATE_INVALID`) and never LOCK or UNLOCK, so the initial probe and the poll never arm the gate. In practice the 60-second timeout is the arming path (BladeWatch-l55j). The gate state resets on every ACC ON, and again when the gate opens on ACC OFF. The timeout decision is `DoorLockArmGate.onTimeout` and depends only on ACC state, on whether the gate already armed, and on whether its gate session is still current, so a timeout from an earlier ACC OFF never arms a later session early. It does not read the daemon's surveillance-enabled flag. The timeout can also call `enableSurveillance()` when another path (UI enable, or a schedule change saved while ACC is off) has already enabled sentry; that re-initialises the motion baseline once and does not interrupt an in-progress clip.
+
 ## Safety and Maintenance Notes
 
 - Local BYD APIs are firmware-dependent and must be treated as unstable.
@@ -518,8 +534,8 @@ History note: an earlier change integrated a native **Filament** 3D engine for t
 - BYD manifest permissions: [AndroidManifest.xml:35](../app/src/main/AndroidManifest.xml#L35), [AndroidManifest.xml:120](../app/src/main/AndroidManifest.xml#L120), [AndroidManifest.xml:193](../app/src/main/AndroidManifest.xml#L193).
 - BYD SDK stub strategy and dependencies: [build.gradle.kts:413](../app/build.gradle.kts#L413), [build.gradle.kts:476](../app/build.gradle.kts#L476), [BYDAutoManager.java:1](../app/src/main/java/android/hardware/BYDAutoManager.java#L1).
 - Local telemetry collector and reflection-based device access: [BydDataCollector.kt:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L20), [BydDataCollector.kt:247](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L247), [BydDataCollector.kt:3907](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L3907).
-- ACC, gear, and event plumbing: [BydFeatureIds.kt](../app/src/main/java/com/loabletech/bladewatch/byd/BydFeatureIds.kt) (replaced `BydConstants.java`, removed in `8e98aaf`), [GearMonitor.kt:132](../app/src/main/java/com/loabletech/bladewatch/monitor/GearMonitor.kt#L132), [CameraDaemon.kt:1905](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1905), [CameraDaemon.kt:2206](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L2206).
-- Door lock and surveillance gating: [CameraDaemon.kt:1764](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1764), [CameraDaemon.kt:1439](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1439), [AccSentryDaemon.kt:1900](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.kt#L1900).
+- ACC, gear, and event plumbing: [BydFeatureIds.kt](../app/src/main/java/com/loabletech/bladewatch/byd/BydFeatureIds.kt) (replaced `BydConstants.java`, removed in `8e98aaf`), [GearMonitor.kt:132](../app/src/main/java/com/loabletech/bladewatch/monitor/GearMonitor.kt#L132), [CameraDaemon.kt:1918](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1918), [CameraDaemon.kt:2221](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L2221).
+- Door lock and surveillance gating: [CameraDaemon.kt:1777](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1777), [CameraDaemon.kt:1735](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1735), [CameraDaemon.kt:1757](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1757), [AccSentryDaemon.kt:1511](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.kt#L1511).
 - Vehicle control contract and routing: [vehicle.proto:32](../proto/bladewatch/v1/vehicle.proto#L32), [VehicleControlApiHandler.kt:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.kt#L43), [VehicleCommandRouter.kt:17](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L17), [VehicleCommandRouter.kt:315](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L315).
 - Local SDK control primitives: [BydDataCollector.kt:3839](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L3839), [BydDataCollector.kt:4803](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L4803), [BydDataCollector.kt:5064](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L5064).
 - GPS / location: [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51), [GpsApiHandler.kt:18](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L18), [GpsApiHandler.kt:24](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L24), [GpsMonitor.kt:23](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L23), [GpsMonitor.kt:84](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L84), [GpsMonitor.kt:253](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L253).

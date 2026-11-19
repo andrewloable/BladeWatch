@@ -3048,4 +3048,73 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get settings_lock_save_failed =>
       'सहेजा नहीं जा सका. फिर से कोशिश करें.';
+
+  @override
+  String get dashboard_trip_start => 'यात्रा शुरू करें';
+
+  @override
+  String get dashboard_trip_stop => 'यात्रा रोकें';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'मैन्युअल यात्रा रिकॉर्ड हो रही है · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'स्वचालित यात्रा जारी है। मैन्युअल यात्रा शुरू करने पर वह समाप्त हो जाती है और नई शुरू होती है।';
+
+  @override
+  String get dashboard_trip_error =>
+      'कार से संपर्क नहीं हो सका। फिर से प्रयास करें।';
+
+  @override
+  String get trip_reminder_title => 'यात्रा अभी भी रिकॉर्ड हो रही है';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'आपकी मैन्युअल यात्रा रिकॉर्ड होते समय आपने कार बंद कर दी ($elapsed अब तक)।';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'आपकी मैन्युअल यात्रा रिकॉर्ड होते समय कार 30 मिनट से पार्क है ($elapsed अब तक)।';
+  }
+
+  @override
+  String get trip_reminder_keep => 'रिकॉर्डिंग जारी रखें';
+
+  @override
+  String get trip_reminder_stop => 'यात्रा रोकें';
+
+  @override
+  String get trips_manual_badge => 'मैन्युअल';
+
+  @override
+  String get trips_detail_ev_title => 'इलेक्ट्रिक (EV) ड्राइविंग';
+
+  @override
+  String get trips_detail_hev_title => 'हाइब्रिड (HEV) ड्राइविंग';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'अब तक: बिजली $electric · ईंधन $fuel · कुल $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'अब तक: बिजली $electric';
+  }
 }

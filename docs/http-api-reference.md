@@ -121,7 +121,7 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | `AuthService` | `InvalidateAuthCache` | (TCP `auth_invalidate`) |
 | `SystemService` | `GetStatus`, `GetPerformance`, `PlayAudioTest`, `ListModels`, `DownloadModel`, `GetSelectedModel`, `SetSelectedModel`, `GetModelsManifest`, `GetSohNominal`/`SetSohNominal`, `GetSohStatus`, `ResetSoh`, `ResetPerformance`, `GetParkingDelta`, `GetLastCharge`, `PerformanceConnect`, `PerformanceHeartbeat`, `PerformanceDisconnect` | `/status`, `/api/performance*`, `/api/audio/test-avas`, `/api/models/*` |
 | `RecordingsService` | `ListRecordings`, `GetDates`, `GetStats`, `DeleteRecording`, `BatchDelete`, `SyncCatalog`, `GetInflightStatus`, `GetEventTimeline`, `MarkRecording` | `/api/recordings*`, `/api/events/*` |
-| `TripsService` | `ListTrips`, `GetTrip`, `DeleteTrip`, `GetSummary`, `GetDna`, `GetRange`, `GetConfig`/`SetConfig`, `GetStorage`/`SetStorage`, `SyncTrips`, `GetTelemetry`, `GetSimilarTrips`, `GetGpsTrace` | `/api/trips*` |
+| `TripsService` | `ListTrips`, `GetTrip`, `DeleteTrip`, `GetSummary`, `GetDna`, `GetRange`, `GetConfig`/`SetConfig`, `GetStorage`/`SetStorage`, `SyncTrips`, `GetTelemetry`, `GetSimilarTrips`, `GetGpsTrace`, `StartManualTrip`, `StopManualTrip`, `GetActiveTrip`, `AcknowledgeTripReminder` | `/api/trips*` |
 | `SurveillanceService` | `GetConfig`/`SetConfig`, `GetStatus`, `Enable`, `Disable`, `GetHeatmap`, `GetSnapshot`, `GetFilterLog`, `SyncCatalog` | `/api/surveillance/*` |
 | `SafeLocationsService` | `ListZones`, `AddZone`, `UpdateZone`, `DeleteZone`, `Toggle` | `/api/surveillance/safe-locations*` |
 | `StreamService` | `Enable`, `Disable`, `GetStatus`, `GetQuality`/`SetQuality`, `GetViewMode`/`SetViewMode` | `/api/stream/*` |
@@ -226,6 +226,22 @@ Safe locations (`SafeLocationApiHandler`, matched before the generic
 Connect mirrors: `SurveillanceService.{GetConfig,SetConfig,GetStatus,Enable,
 Disable,GetHeatmap,GetSnapshot,GetFilterLog,SyncCatalog}` and
 `SafeLocationsService.{ListZones,AddZone,UpdateZone,DeleteZone,Toggle}`.
+
+`SurveillanceService/GetStatus` returns a flat `GetSurveillanceStatusResponse`, and its
+fields come from different sources, so do not read them as one state (BladeWatch-nrwh):
+
+- `pipelineRunning`: the camera pipeline is running. This is also true during plain dashcam
+  recording while driving, so it does not mean sentry is watching.
+- `surveillanceActive`: the persisted user preference (`surveillance.surveillanceEnabled`). It
+  stays true while sentry waits for the door-lock gate or is stopped, and it does not mean armed.
+- `armed`: true while the sentry engine is enabled (pipeline in surveillance mode and sentry
+  active). While `cameraYielded` is true the native BYD app holds the camera and no frames flow,
+  so read `cameraYielded` alongside it.
+
+The REST `GET /api/surveillance/status` object keeps its `active` and `enabled` keys (`enabled`
+is the in-memory intent flag, not the persisted preference). It adds `armed` with the same meaning,
+but only once the GPU pipeline exists (`CameraDaemon.getSurveillanceStatus` puts it inside its
+`if (pipeline != null)` block). Before that, `SurveillanceService/GetStatus` reports `armed` false.
 
 ## Streaming
 
@@ -354,9 +370,47 @@ Handled by `TripApiHandler`:
   Empty body. Returns `{success:true, added, removed, total}` or
   `{success:false, error:...}`.
 
+Manual trips (BladeWatch-gklt). The driver starts a trip with the Start Trip button on the
+in-car dashboard; it ends ONLY through Stop Trip (or a 7-day safety auto-stop), never on Park or
+ACC OFF, and it is never discarded for being short. These are exact paths, matched before the
+`/api/trips/{id}` routes:
+
+- `GET /api/trips/active` — `{success, status}` where `status` is `ActiveTripStatus`: `active`,
+  `manual`, `startTimeMs`, `distanceKm`, `autoStopAtMs` (start + 7 days for a manual trip, else
+  0), `reminderSeq`, `reminderReason` (`acc_off` or `parked_30m`), `reminderAckedSeq`,
+  `telemetryPaused` (true while ACC is OFF). Everything is zero/false/empty with no trip open.
+  Cost so far (BladeWatch-reml): `liveCostAvailable`, `liveElectricCost`, `liveFuelCost`,
+  `liveCurrency` and `liveHasFuel`. EV driving so far x the electricity rate plus HEV driving so far
+  x the fuel price, taken from the EV/HEV tracker's latest reading (no extra HAL read per poll, at
+  most about 5 s old). `liveCostAvailable` is false with no trip open or with neither rate
+  configured, which is "no figure", not a cost of zero; `liveHasFuel` is true when a fuel price is
+  set, so a client can leave the fuel part out for an electricity-only owner.
+- `POST /api/trips/manual/start` — empty body; returns `{success, status}`. Idempotent: with a
+  manual trip already open it returns that trip. With an AUTO trip open, that trip is finalized
+  first (normal discard rules) and a fresh manual trip starts. `503` when trip analytics is not
+  running.
+- `POST /api/trips/manual/stop` — empty body; `{success, stopped}`. `stopped` is false when no
+  manual trip was open; an auto trip in progress is left alone.
+- `POST /api/trips/manual/ack` — `{reminderSeq}` (an int64 may arrive as a string); returns
+  `{success, status}`. The highest acknowledged value wins, so a late or repeated call can never
+  re-arm an older reminder. A no-op when no manual trip is open. `400` on a malformed body.
+
+Trip list rows and details carry `manual` (true for a trip started with the button).
+
 Connect mirror: `TripsService.{ListTrips,GetTrip,DeleteTrip,GetSummary,GetDna,
 GetRange,GetConfig,SetConfig,GetStorage,SetStorage,SyncTrips,GetTelemetry,
-GetSimilarTrips,GetGpsTrace}`.
+GetSimilarTrips,GetGpsTrace,StartManualTrip,StopManualTrip,GetActiveTrip,
+AcknowledgeTripReminder}`.
+
+### EV/HEV split on a trip (BladeWatch-reml)
+
+Trip list rows and details carry `evKm`, `evKwh`, `hevKm`, `hevLitres` and `hasEnergySplit`. EV
+driving carries kWh and no litres; HEV driving carries litres and NO kWh. `hasEnergySplit` is
+false for a trip recorded before the split existed, which then reads exactly as it did. With HEV
+driving present, `energyPerKm` is kWh over the EV kilometres only and `energyUsedKwh` is the EV
+segments' kWh, so a client must not multiply `energyPerKm` by the whole distance; the detail's
+`energySegmentsJson` is the EV/HEV timeline (detail only). `fuelCost`, `litresUsed`, `electricCost`
+and `tripCost` are the sums of the segments' own costs.
 
 ### PHEV fuel fields on a trip
 

@@ -1559,6 +1559,14 @@
     "sync_database": "Synchroniser la base"
   },
   "companion": {
+    "trip_ev_title": "Conduite électrique (EV)",
+    "trip_hev_title": "Conduite hybride (HEV)",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "Trajet manuel en cours",
+    "manual_trip_started": "Début",
+    "manual_trip_elapsed": "Durée",
+    "trip_manual_badge": "Manuel",
     "energy": "Énergie",
     "looking": "Recherche de votre voiture…",
     "looking_hint": "Par Internet, cela peut prendre jusqu'à une minute. Sur le Wi-Fi de la voiture, c'est plus rapide.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Défaut de recharge",
     "cat_trips_started": "Trajet commencé",
     "cat_trips_ended": "Trajet terminé",
+    "cat_trips_manual_reminder": "Trajet manuel toujours en cours",
     "group_surveillance": "Surveillance",
     "group_vehicle": "Véhicule",
     "group_security": "Sécurité",

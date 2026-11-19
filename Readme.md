@@ -8,7 +8,7 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
-**Contents:** [What's new](#whats-new-in-v1414) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
+**Contents:** [What's new](#whats-new-in-v1415) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
 
@@ -21,7 +21,34 @@ They share one Android UID, which is what lets the UI talk to the daemons over l
 
 A third app, the **companion** (`net.bladewatch.companionapp`), goes on your phone or computer, never on the car. It is optional, and it is how you reach the car remotely: see [Install the companion app](#install-the-companion-app).
 
-## What's new in v1.4.1.4
+## What's new in v1.4.1.5
+
+Record a trip on purpose, and a trip that is costed by how the car was actually driven.
+
+- **Start Trip / Stop Trip, front and centre on the car's Dashboard.** One large button, the
+  first thing under the title. Press it and a *manual trip* records until you press the same
+  button again. It does not end when you park, turn the car off, or restart the head unit, and it
+  is never thrown away for being short. If you press it while an automatically detected trip is
+  running, that trip ends and a fresh manual one begins. A trip you forget is ended for you after
+  seven days. If you never press it, trips are detected exactly as before.
+- **A reminder if you forget to stop it.** When the car is turned off, or has sat in Park for 30
+  minutes, with a manual trip still recording, the companion gets an alert and the car shows a
+  "Trip still recording" dialog the next time its screen is on, with **Stop trip** and **Keep
+  recording**. Once per stop. The companion only shows that a manual trip is recording (and marks
+  manual trips in its trip list); starting and stopping stays on the car.
+- **EV and HEV driving are costed separately.** On a plug-in hybrid a trip is cut at every
+  EV/HEV mode change. EV driving is costed from electricity (kWh) only and HEV driving from fuel
+  only, and a trip that switches is the sum of its parts. The trip detail, in the car and in the
+  companion, shows an EV section and an HEV section; the HEV section shows litres and no kWh at
+  all. A battery-only car is unchanged.
+- **Your trip history is cleared once.** The first time the car starts on this version, every
+  stored trip, its weekly and monthly totals, and the learned range figures are deleted. Older
+  trips were costed on both electricity and fuel for the whole drive and have no EV/HEV split, so
+  they cannot be re-costed correctly. Your prices, currency and units are kept. This happens
+  once; trips recorded from then on are never touched.
+- **One version everywhere:** 1.4.1.5.
+
+### v1.4.1.4
 
 A 6-digit PIN, held by the car, to keep Settings away from anyone with physical access — a
 valet, a passenger, a child in the back seat.
@@ -40,7 +67,6 @@ valet, a passenger, a child in the back seat.
   change or clear the car's PIN without re-entering the old one. With no companion at hand, the
   PIN can also be cleared over ADB at the car — see
   [docs/ipc-auth-and-secrets.md](docs/ipc-auth-and-secrets.md#settings-pin-lock-bladewatch-hr6r).
-- **One version everywhere:** 1.4.1.4.
 
 ### v1.4.1.3
 
@@ -485,7 +511,7 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
   ```bash
   cd companion
   flutter build ios --release --no-codesign
-  V=$(plutil -extract CFBundleShortVersionString raw ios/Runner/Info.plist)   # 1.4.1.4
+  V=$(plutil -extract CFBundleShortVersionString raw ios/Runner/Info.plist)   # 1.4.1.5
   rm -rf build/ipa && mkdir -p build/ipa/Payload
   cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
   (cd build/ipa && zip -qry "BladeWatch-$V.ipa" Payload && zip -q "BladeWatch-$V-sidestore.zip" "BladeWatch-$V.ipa" && rm -rf Payload "BladeWatch-$V.ipa")
@@ -503,6 +529,24 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
   To update, build and send the new zip the same way: SideStore replaces the app and keeps its
   data, so it stays paired. The 7-day limit of a free Apple ID applies here too; SideStore
   refreshes the app for you.
+
+  **Installing SideStore itself (once).** The steps above assume SideStore is already on the
+  iPhone. If it is not, follow the [official SideStore docs](https://docs.sidestore.io/docs/intro),
+  which are the source of truth and change with iOS releases. In outline:
+
+  1. On the iPhone, turn on Developer Mode (Settings > Privacy & Security) and make sure a
+     passcode is set (placing the pairing file fails without one).
+  2. Install **LocalDevVPN** from the App Store. SideStore needs it connected to install and
+     refresh apps.
+  3. On the Mac, install [iloader](https://github.com/nab138/iloader) from its GitHub releases,
+     connect the iPhone by cable, and tap Trust on the iPhone.
+  4. In iloader, sign in with your Apple ID and choose to install SideStore. iloader also places
+     the pairing file SideStore needs on the iPhone.
+  5. On the iPhone, trust the developer profile (Settings > General > VPN & Device Management),
+     open LocalDevVPN and tap Connect, then open SideStore and sign in with the same Apple ID.
+
+  The pairing file can go stale after an iOS update or a device reset: reconnect to the Mac and
+  have iloader create a new one. A free Apple ID allows three sideloaded apps at a time.
 
 ### Pair it with the car
 

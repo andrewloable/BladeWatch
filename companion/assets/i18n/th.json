@@ -1559,6 +1559,14 @@
     "sync_database": "ซิงก์ฐานข้อมูล"
   },
   "companion": {
+    "trip_ev_title": "การขับขี่แบบไฟฟ้า (EV)",
+    "trip_hev_title": "การขับขี่แบบไฮบริด (HEV)",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "กำลังบันทึกการเดินทางแบบกำหนดเอง",
+    "manual_trip_started": "เริ่มเมื่อ",
+    "manual_trip_elapsed": "ระยะเวลา",
+    "trip_manual_badge": "กำหนดเอง",
     "energy": "พลังงาน",
     "looking": "กำลังค้นหารถของคุณ…",
     "looking_hint": "ผ่านอินเทอร์เน็ตอาจใช้เวลาถึงหนึ่งนาที บน Wi-Fi ของรถจะเร็วกว่า",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "การชาร์จขัดข้อง",
     "cat_trips_started": "เริ่มการเดินทาง",
     "cat_trips_ended": "สิ้นสุดการเดินทาง",
+    "cat_trips_manual_reminder": "ยังคงบันทึกการเดินทางแบบกำหนดเองอยู่",
     "group_surveillance": "เฝ้าระวัง",
     "group_vehicle": "รถ",
     "group_security": "ความปลอดภัย",

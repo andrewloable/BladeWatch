@@ -2,6 +2,7 @@ package net.bladewatch.app.server.connect.impl
 
 import android.util.Base64
 import com.google.protobuf.Descriptors
+import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.server.SurveillanceApiHandler
 import net.bladewatch.app.server.connect.ConnectDispatcher
 import net.bladewatch.app.server.connect.ConnectException
@@ -87,24 +88,20 @@ class SurveillanceServiceImpl {
         return json { SurveillanceApiHandler.setConfig(flatBody) }
     }
 
+    // Flat GetSurveillanceStatusResponse, reshaped from the nested REST {status:{...}} by
+    // flatStatus (BladeWatch-nrwh). What each field means:
+    //   pipelineRunning    = the camera pipeline runs. True during plain dashcam recording too.
+    //   surveillanceActive = the persisted user preference (surveillance.surveillanceEnabled).
+    //                        Not armed: it stays true while sentry is waiting or stopped.
+    //   armed              = sentry is processing frames right now. The only "watching" signal.
+    //   cameraYielded / nativeAppActive are copied from the REST status (BladeWatch-gyg1.2).
     @Throws(ConnectException::class)
     private fun handleGetStatus(req: String?, clientIdentity: String?): ConnectResponse =
-        // REST emits a NESTED {success, status:{initialized, enabled, active, ...}}; the proto
-        // GetSurveillanceStatusResponse is FLAT {pipeline_running, surveillance_active, error}.
-        // Map status.active → pipelineRunning (the GPU pipeline is running) and status.enabled →
-        // surveillanceActive (the user's surveillance toggle).
         json {
-            val status = SurveillanceApiHandler.getStatus().optJSONObject("status")
-            val flat = JSONObject()
-            if (status != null) {
-                flat.put("pipelineRunning", status.optBoolean("active", false))
-                flat.put("surveillanceActive", status.optBoolean("enabled", false))
-                // BladeWatch-gyg1.2: already computed by BydCameraCoordinator and already in the
-                // REST status object -- these two field names match exactly, no reshaping.
-                flat.put("cameraYielded", status.optBoolean("cameraYielded", false))
-                flat.put("nativeAppActive", status.optBoolean("nativeAppActive", false))
-            }
-            flat
+            flatStatus(
+                SurveillanceApiHandler.getStatus().optJSONObject("status"),
+                UnifiedConfigManager.isSurveillanceEnabled()
+            )
         }
 
     @Throws(ConnectException::class)
@@ -144,6 +141,28 @@ class SurveillanceServiceImpl {
         json { SurveillanceApiHandler.reconcile() }
 
     companion object {
+        /**
+         * Builds the flat GetSurveillanceStatusResponse body. [status] is the REST "status"
+         * object, or null when the daemon gave none. [userEnabled] is the persisted preference,
+         * read from UnifiedConfigManager, never from status.enabled (the in-memory intent flag
+         * that went stale in BladeWatch-l55j). With a null status only surveillanceActive is set;
+         * the protobuf defaults cover the rest.
+         */
+        @JvmStatic
+        internal fun flatStatus(status: JSONObject?, userEnabled: Boolean): JSONObject {
+            val flat = JSONObject()
+            flat.put("surveillanceActive", userEnabled)
+            if (status != null) {
+                flat.put("pipelineRunning", status.optBoolean("active", false))
+                flat.put("armed", status.optBoolean("armed", false))
+                // BladeWatch-gyg1.2: already computed by BydCameraCoordinator and already in the
+                // REST status object -- these two field names match exactly, no reshaping.
+                flat.put("cameraYielded", status.optBoolean("cameraYielded", false))
+                flat.put("nativeAppActive", status.optBoolean("nativeAppActive", false))
+            }
+            return flat
+        }
+
         /**
          * Boolean config toggles the REST handler reads with has()-gating. The Connect client
          * sends a FULL config snapshot, but JsonFormat omits any bool that is false, so the

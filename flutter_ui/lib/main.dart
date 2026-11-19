@@ -64,6 +64,9 @@ import 'shell/app_shell.dart';
 import 'shell/locale_controller.dart';
 import 'shell/route_stubs.dart';
 import 'shell/shell_controller.dart';
+import 'shell/trip_reminder_controller.dart';
+import 'shell/trip_reminder_host.dart';
+import 'package:bladewatch_theme/blade_intro.dart';
 import 'theme/hud_theme.dart';
 
 void main() {
@@ -118,6 +121,10 @@ class BladeWatchApp extends StatefulWidget {
   /// it, not only the Settings > Security pane.
   final SettingsLockController? settingsLockController;
 
+  /// Watches for the "trip still recording" reminder (BladeWatch-gklt.6). Root-owned because its
+  /// dialog must cover whichever screen is up, not only the Dashboard.
+  final TripReminderController? tripReminderController;
+
   const BladeWatchApp({
     super.key,
     this.shellController,
@@ -128,6 +135,7 @@ class BladeWatchApp extends StatefulWidget {
     this.setupGuideController,
     this.appearanceController,
     this.settingsLockController,
+    this.tripReminderController,
   });
 
   @override
@@ -203,6 +211,9 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
         systemService: _systemService,
         daemonChannel: _daemonChannel,
       );
+
+  late final TripReminderController _tripReminderController =
+      widget.tripReminderController ?? TripReminderController(tripsService: _tripsService);
 
   late final SettingsAboutController _settingsAboutController =
       widget.settingsAboutController ?? SettingsAboutController(versionSource: _appVersionInfo);
@@ -299,6 +310,10 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
 
   bool _startupComplete = false;
 
+  /// BladeWatch-sjz4: the animated launch intro is showing. It is an overlay: the startup
+  /// checks run underneath it, so it never delays the app.
+  bool _introDone = false;
+
   // BladeWatch-hr6r: the head unit's screen sleeps with the app process alive, so Settings must
   // not come back unlocked for the next person in the car just because the screen woke up again.
   // onPause covers the normal "went to the background" transition; onHide is the newer,
@@ -321,6 +336,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     _shellController.dispose();
     _startupController.dispose();
     _dashboardController.dispose();
+    _tripReminderController.dispose();
     _settingsAboutController.dispose();
     _diagnosticsController.dispose();
     _tripsController.dispose();
@@ -357,6 +373,19 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
         locale: _localeController.locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        // The animated intro over everything, dialogs included, until it finishes. Its first frame
+        // matches the native launch drawable (the 48 dp icon on black), so the handoff is invisible.
+        builder: (context, child) => Stack(
+          children: [
+            child!,
+            if (!_introDone)
+              BladeIntro(
+                logo: const AssetImage('assets/brand/app_icon.png'),
+                logoSize: 48,
+                onDone: () => setState(() => _introDone = true),
+              ),
+          ],
+        ),
         // A Builder here, not the outer build()'s own `context`, is required:
         // that outer context sits above this very MaterialApp (it's the
         // context this widget was given by ITS OWN parent), so it has no
@@ -374,7 +403,9 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
             // of fresh on each build, would go stale.
             _shellController.routeGuard = (_) => _settingsLockController.admit(context);
             return _startupComplete
-                ? AppShell(
+                ? TripReminderHost(
+                    controller: _tripReminderController,
+                    child: AppShell(
                     controller: _shellController,
                     onLanguageTap: () => _showLanguagePicker(context),
                     dashboardScreen: DashboardScreen(
@@ -435,6 +466,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                       locationController: _locationController,
                       onOpenLocation: () => _shellController.selectRoute(BwRoutes.location),
                     ),
+                  ),
                   )
                 : StartupScreen(
                     controller: _startupController,

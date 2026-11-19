@@ -254,6 +254,7 @@ const GetSurveillanceStatusResponse$json = {
     {'1': 'error', '3': 4, '4': 1, '5': 9, '10': 'error'},
     {'1': 'camera_yielded', '3': 5, '4': 1, '5': 8, '10': 'cameraYielded'},
     {'1': 'native_app_active', '3': 6, '4': 1, '5': 8, '10': 'nativeAppActive'},
+    {'1': 'armed', '3': 7, '4': 1, '5': 8, '10': 'armed'},
   ],
   '9': [
     {'1': 3, '2': 4},
@@ -267,7 +268,7 @@ final $typed_data.Uint8List getSurveillanceStatusResponseDescriptor = $convert.b
     'gIUg9waXBlbGluZVJ1bm5pbmcSLwoTc3VydmVpbGxhbmNlX2FjdGl2ZRgCIAEoCFISc3VydmVp'
     'bGxhbmNlQWN0aXZlEhQKBWVycm9yGAQgASgJUgVlcnJvchIlCg5jYW1lcmFfeWllbGRlZBgFIA'
     'EoCFINY2FtZXJhWWllbGRlZBIqChFuYXRpdmVfYXBwX2FjdGl2ZRgGIAEoCFIPbmF0aXZlQXBw'
-    'QWN0aXZlSgQIAxAEUg5hY3RpdmVfY2FtZXJhcw==');
+    'QWN0aXZlEhQKBWFybWVkGAcgASgIUgVhcm1lZEoECAMQBFIOYWN0aXZlX2NhbWVyYXM=');
 
 @$core.Deprecated('Use enableSurveillanceRequestDescriptor instead')
 const EnableSurveillanceRequest$json = {

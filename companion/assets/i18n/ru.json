@@ -1559,6 +1559,14 @@
     "sync_database": "Синхронизировать базу"
   },
   "companion": {
+    "trip_ev_title": "Электрический режим (EV)",
+    "trip_hev_title": "Гибридный режим (HEV)",
+    "trip_kwh_per_100": "кВт·ч / 100 {unit}",
+    "trip_l_per_100": "л / 100 {unit}",
+    "manual_trip_recording": "Идёт запись ручной поездки",
+    "manual_trip_started": "Начата",
+    "manual_trip_elapsed": "Длительность",
+    "trip_manual_badge": "Ручная",
     "energy": "Энергия",
     "looking": "Ищем ваш автомобиль…",
     "looking_hint": "Через интернет это может занять до минуты. В сети Wi-Fi автомобиля — быстрее.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Ошибка зарядки",
     "cat_trips_started": "Поездка началась",
     "cat_trips_ended": "Поездка завершена",
+    "cat_trips_manual_reminder": "Ручная поездка всё ещё записывается",
     "group_surveillance": "Охрана",
     "group_vehicle": "Автомобиль",
     "group_security": "Безопасность",

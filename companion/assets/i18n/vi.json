@@ -1559,6 +1559,14 @@
     "sync_database": "Đồng bộ cơ sở dữ liệu"
   },
   "companion": {
+    "trip_ev_title": "Lái xe điện (EV)",
+    "trip_hev_title": "Lái xe hybrid (HEV)",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "Đang ghi chuyến đi thủ công",
+    "manual_trip_started": "Bắt đầu",
+    "manual_trip_elapsed": "Thời lượng",
+    "trip_manual_badge": "Thủ công",
     "energy": "Năng lượng",
     "looking": "Đang tìm xe của bạn…",
     "looking_hint": "Qua Internet có thể mất tới một phút. Trên Wi-Fi của xe sẽ nhanh hơn.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Lỗi sạc",
     "cat_trips_started": "Bắt đầu chuyến đi",
     "cat_trips_ended": "Kết thúc chuyến đi",
+    "cat_trips_manual_reminder": "Chuyến đi thủ công vẫn đang được ghi",
     "group_surveillance": "Giám sát",
     "group_vehicle": "Xe",
     "group_security": "An ninh",

@@ -1559,6 +1559,14 @@
     "sync_database": "Sync Database"
   },
   "companion": {
+    "trip_ev_title": "Electric (EV) driving",
+    "trip_hev_title": "Hybrid (HEV) driving",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "Manual trip recording",
+    "manual_trip_started": "Started",
+    "manual_trip_elapsed": "Running for",
+    "trip_manual_badge": "Manual",
     "energy": "Energy",
     "looking": "Looking for your car…",
     "looking_hint": "Over the internet this can take up to a minute. On the car's Wi-Fi it is quicker.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Charging fault",
     "cat_trips_started": "Trip started",
     "cat_trips_ended": "Trip ended",
+    "cat_trips_manual_reminder": "Manual trip still recording",
     "group_surveillance": "Surveillance",
     "group_vehicle": "Vehicle",
     "group_security": "Security",

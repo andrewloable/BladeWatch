@@ -433,9 +433,13 @@ class TripScoreEngine {
         // D. Efficiency — kWh/km against realistic BYD EV baselines, gradient-adjusted. Uphill
         // widens the acceptable range; downhill shifts bestEff below zero, because a good driver
         // should be GAINING battery on a descent.
-        val energyUsed = trip.getEnergyUsedKwh()
-        if (energyUsed > 0 && trip.distanceKm >= MIN_EFFICIENCY_DISTANCE) {
-            val kwhPerKm = energyUsed / trip.distanceKm
+        // The ELECTRIC leg only (BladeWatch-reml.2): with HEV driving, kWh over the EV kilometres, and a
+        // trip with no EV driving at all scores neutral instead of being judged on a battery it did
+        // not use. A trip with no HEV driving is its whole trip, exactly as before.
+        val energyUsed = trip.getElectricLegKwh()
+        val legKm = trip.getElectricLegKm()
+        if (energyUsed > 0 && legKm >= MIN_EFFICIENCY_DISTANCE) {
+            val kwhPerKm = energyUsed / legKm
             var bestEff: Double
             var worstEff: Double
             when (kinState) {
@@ -451,10 +455,10 @@ class TripScoreEngine {
             } else {
                 clamp(((worstEff - kwhPerKm) / effRange * 100).roundToInt(), 0, 100)
             }
-        } else if (trip.distanceKm >= MIN_EFFICIENCY_DISTANCE) {
+        } else if (legKm >= MIN_EFFICIENCY_DISTANCE) {
             val socDelta = trip.socStart - trip.socEnd
             trip.efficiencyScore = if (socDelta > 0) {
-                val consumptionPerKm = socDelta / trip.distanceKm
+                val consumptionPerKm = socDelta / legKm
                 clamp(((3.5 - consumptionPerKm) / 3.0 * 100).roundToInt(), 0, 100)
             } else {
                 DEFAULT_SCORE

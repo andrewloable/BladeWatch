@@ -3076,4 +3076,73 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settings_lock_save_failed =>
       'Speichern fehlgeschlagen. Versuchen Sie es erneut.';
+
+  @override
+  String get dashboard_trip_start => 'Fahrt starten';
+
+  @override
+  String get dashboard_trip_stop => 'Fahrt beenden';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Manuelle Fahrt wird aufgezeichnet · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Automatische Fahrt läuft. Eine manuelle Fahrt beendet sie und beginnt eine neue.';
+
+  @override
+  String get dashboard_trip_error =>
+      'Das Auto ist nicht erreichbar. Bitte erneut versuchen.';
+
+  @override
+  String get trip_reminder_title => 'Fahrt wird noch aufgezeichnet';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Sie haben das Auto ausgeschaltet, während Ihre manuelle Fahrt aufgezeichnet wurde ($elapsed bisher).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'Das Auto steht seit 30 Minuten, während Ihre manuelle Fahrt aufgezeichnet wurde ($elapsed bisher).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Weiter aufzeichnen';
+
+  @override
+  String get trip_reminder_stop => 'Fahrt beenden';
+
+  @override
+  String get trips_manual_badge => 'Manuell';
+
+  @override
+  String get trips_detail_ev_title => 'Elektrisches Fahren (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Hybridfahren (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'l / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'l / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Bisher: Strom $electric · Kraftstoff $fuel · gesamt $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Bisher: Strom $electric';
+  }
 }

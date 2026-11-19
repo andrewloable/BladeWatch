@@ -125,7 +125,10 @@
     "trip_started": "Viaggio iniziato",
     "trip_ended": "Viaggio terminato",
     "trip_summary_km": "{0} km · {1} min",
-    "trip_summary_mi": "{0} mi · {1} min"
+    "trip_summary_mi": "{0} mi · {1} min",
+    "manual_trip_reminder_title": "Viaggio ancora in registrazione",
+    "manual_trip_reminder_acc_off": "Hai spento l’auto, ma il tuo viaggio manuale è ancora in registrazione. Apri BladeWatch e tocca Termina viaggio se hai finito.",
+    "manual_trip_reminder_parked": "L’auto è parcheggiata da 30 minuti e il tuo viaggio manuale è ancora in registrazione. Tocca Termina viaggio se hai finito."
   },
   "vehicle_control": {
     "cloud_required": "Connettere un account BYD nelle impostazioni per utilizzare questo controllo",

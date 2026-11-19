@@ -193,6 +193,21 @@ The bootstrap entrypoint used by shell-launched Java daemons. It creates an Andr
 
 The central long-running daemon. It starts local command and web servers, initializes the camera/GPU pipeline, config, auth, storage, telemetry, trip analytics, BYD collection, notifications, and surveillance IPC.
 
+#### Trip lifecycle (`TripDetector`, `TripAnalyticsManager`)
+
+`TripDetector` is a gear state machine: IDLE, ACTIVE, PARK_PENDING. An automatically detected trip
+ends 120 s after Park at speed 0, or at ACC OFF, and is discarded under one minute or 0.2 km. A
+**manual trip** (BladeWatch-gklt) is an ACTIVE trip started with `startManualTrip` (the Start Trip
+button, over `TripsService.StartManualTrip`) that ignores all of that: only `stopManualTrip`, or a
+seven-day safety net, ends it, and it is never discarded. `TripAnalyticsManager` owns the pieces
+around it: the telemetry recorder (paused while ACC is OFF), `ManualTripStore` (the durable copy,
+restored in `initComponents`), `ManualTripReminder` (the "stop it?" rules, driven by gear and ACC
+events and a one-minute tick) and `EnergyModeSegments` (the EV/HEV split, fed every 5 s). When a
+trip ends, the split is closed, the trip is scored and costed by mode (the electric leg and the
+HEV leg separately), persisted, and rolled into the weekly and monthly totals and the range
+estimator. The Connect surface is `StartManualTrip`, `StopManualTrip`, `GetActiveTrip` and
+`AcknowledgeTripReminder`; see http-api-reference.md.
+
 ### `HttpServer`
 
 Embedded HTTP server. It dispatches ConnectRPC calls under `/bladewatch.v1.<Service>/<Method>`

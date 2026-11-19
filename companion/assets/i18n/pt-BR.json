@@ -1559,6 +1559,14 @@
     "sync_database": "Sincronizar banco de dados"
   },
   "companion": {
+    "trip_ev_title": "Direção elétrica (EV)",
+    "trip_hev_title": "Direção híbrida (HEV)",
+    "trip_kwh_per_100": "kWh / 100 {unit}",
+    "trip_l_per_100": "L / 100 {unit}",
+    "manual_trip_recording": "Viagem manual em gravação",
+    "manual_trip_started": "Início",
+    "manual_trip_elapsed": "Duração",
+    "trip_manual_badge": "Manual",
     "energy": "Energia",
     "looking": "Procurando seu carro…",
     "looking_hint": "Pela internet isso pode levar até um minuto. No Wi-Fi do carro é mais rápido.",
@@ -1713,6 +1721,7 @@
     "cat_vehicle_charging_fault": "Falha na carga",
     "cat_trips_started": "Viagem iniciada",
     "cat_trips_ended": "Viagem encerrada",
+    "cat_trips_manual_reminder": "Viagem manual ainda gravando",
     "group_surveillance": "Vigilância",
     "group_vehicle": "Veículo",
     "group_security": "Segurança",

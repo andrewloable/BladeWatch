@@ -166,7 +166,7 @@ object CameraDaemon {
 
     // ==================== SURVEILLANCE ====================
     private var gpuPipeline: GpuSurveillancePipeline? = null
-    private var surveillanceEnabled = false
+    @Volatile private var surveillanceEnabled = false
     @Volatile private var safeZoneSuppressed = false
     // Pending ACC OFF state: if ACC goes off before GPU pipeline is ready,
     // queue the request and apply it once the pipeline initializes
@@ -174,7 +174,8 @@ object CameraDaemon {
 
     // ==================== DOOR LOCK GATE (surveillance arm/disarm) ====================
     // Surveillance is only armed after doors are locked (reduces false triggers from owner exiting).
-    @Volatile private var doorLockListenerArmed = false
+    // The arm state and every ARM/DISARM decision live in DoorLockArmGate (BladeWatch-l55j).
+    private val doorLockGate = DoorLockArmGate()
 
     // Two parallel lock-event sources, both active simultaneously while the
     // gate is open: the device-SDK typed listener and a periodic poll. They
@@ -1679,7 +1680,7 @@ object CameraDaemon {
      * before arming. If ACC turns ON during the lock wait, surveillance is NOT armed.
      */
     private fun registerDoorLockListenerAndArmOnLock() {
-        doorLockListenerArmed = false
+        val session = doorLockGate.reset()
 
         // Two parallel lock-event sources, both active simultaneously while
         // the gate is open:
@@ -1712,13 +1713,7 @@ object CameraDaemon {
                     log("LOCK GATE TIMEOUT: ACC is ON — not arming")
                     return@Thread
                 }
-                if (!doorLockListenerArmed && !surveillanceEnabled) {
-                    log(
-                        "LOCK GATE TIMEOUT: No lock detected within " +
-                            (DOOR_LOCK_ARM_TIMEOUT_MS / 1000) + "s — force-arming surveillance"
-                    )
-                    applyLockEvent(true, "timeout")
-                }
+                applyLockTimeout(session)
             } catch (ignored: InterruptedException) {
             }
         }, "DoorLockTimeout").start()
@@ -1736,20 +1731,38 @@ object CameraDaemon {
      */
     @Synchronized
     private fun applyLockEvent(locked: Boolean, source: String) {
-        if (AccMonitor.isAccOn()) {
-            log("LOCK GATE [$source]: " + (if (locked) "LOCKED" else "UNLOCKED") + " but ACC is ON — ignoring")
-            return
+        val accOn = AccMonitor.isAccOn()
+        when (doorLockGate.onLockEvent(locked, accOn)) {
+            DoorLockArmGate.Action.ARM -> {
+                log("LOCK GATE [$source]: LOCKED — arming surveillance")
+                enableSurveillance()
+            }
+            DoorLockArmGate.Action.DISARM -> {
+                log("LOCK GATE [$source]: UNLOCKED — disarming surveillance (owner returning)")
+                disableSurveillance()
+            }
+            DoorLockArmGate.Action.NONE -> if (accOn) {
+                log("LOCK GATE [$source]: " + (if (locked) "LOCKED" else "UNLOCKED") + " but ACC is ON — ignoring")
+            }
         }
-        if (locked) {
-            if (doorLockListenerArmed) return
-            log("LOCK GATE [$source]: LOCKED — arming surveillance")
-            doorLockListenerArmed = true
-            enableSurveillance()
-        } else {
-            if (!doorLockListenerArmed) return
-            log("LOCK GATE [$source]: UNLOCKED — disarming surveillance (owner returning)")
-            disableSurveillance()
-            doorLockListenerArmed = false
+    }
+
+    /**
+     * The 60 s force-arm timeout. Decided by DoorLockArmGate.onTimeout(accOn, session), which depends
+     * only on ACC state, whether the gate already armed, and whether [session] is still the current
+     * gate session. A leftover flag from an earlier ACC cycle used to skip arming silently (BladeWatch-l55j).
+     */
+    @Synchronized
+    private fun applyLockTimeout(session: Int) {
+        when (doorLockGate.onTimeout(AccMonitor.isAccOn(), session)) {
+            DoorLockArmGate.Action.ARM -> {
+                log(
+                    "LOCK GATE TIMEOUT: No lock detected within " +
+                        (DOOR_LOCK_ARM_TIMEOUT_MS / 1000) + "s — force-arming surveillance"
+                )
+                enableSurveillance()
+            }
+            else -> log("LOCK GATE TIMEOUT: no action (already armed, ACC on, or superseded by a newer gate session)")
         }
     }
 
@@ -1823,7 +1836,7 @@ object CameraDaemon {
                                 "surveillance still active — force-disabling"
                         )
                         disableSurveillance()
-                        doorLockListenerArmed = false
+                        doorLockGate.disarm()
                         return@Thread
                     }
                 } catch (e: Exception) {
@@ -1988,7 +2001,7 @@ object CameraDaemon {
      * Clean up all door lock gate resources. Called on ACC ON.
      */
     private fun cleanupDoorLockGate() {
-        doorLockListenerArmed = false
+        doorLockGate.reset()
 
         // Detach both lock-event sources
         unsubscribeDeviceLockListener()
@@ -2191,6 +2204,8 @@ object CameraDaemon {
             // Stop door lock gate: detach device-SDK listener, stop
             // unlock poll, stop ACC-ON disarm watchdog.
             cleanupDoorLockGate()
+            // BladeWatch-l55j: pipeline.onAccOn() below disables the sentry engine; the flag must follow it.
+            surveillanceEnabled = false
 
             // Clear safe-zone suppression flag. It was set during the prior
             // ACC OFF in a safe zone to record "would have armed surveillance,
@@ -2569,6 +2584,9 @@ object CameraDaemon {
             status["initialized"] = pipeline.isInitialized
             status["enabled"] = surveillanceEnabled
             status["active"] = pipeline.isRunning
+            // Truthful "sentry is watching" signal (BladeWatch-nrwh). Distinct from
+            // "enabled" (in-memory intent flag) and "active" (camera pipeline running).
+            status["armed"] = pipeline.isSurveillanceMode && pipeline.sentry?.isActive == true
             status["recording"] = pipeline.sentry != null && pipeline.sentry!!.isRecording()
             status["frameCount"] = pipeline.camera?.getFrameCount() ?: 0
             status["encoderType"] = "gpu-zero-copy"

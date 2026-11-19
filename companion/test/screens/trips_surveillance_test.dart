@@ -408,8 +408,8 @@ void main() {
   });
 
   group('SurveillanceScreen', () {
-    void stubAll(TestSession s, {bool active = true}) {
-      s.rpc.stubJson('SurveillanceService', 'GetStatus', {'surveillanceActive': active, 'pipelineRunning': active});
+    void stubAll(TestSession s, {bool active = true, bool? armed}) {
+      s.rpc.stubJson('SurveillanceService', 'GetStatus', {'surveillanceActive': active, 'pipelineRunning': active, 'armed': armed ?? active});
       s.rpc.stubJson('SurveillanceService', 'GetConfig', {
         'config': {
           'sensitivity': 3,
@@ -541,6 +541,22 @@ void main() {
       expect((sent.nightMode, sent.detectPerson, sent.distancePreset, sent.deterrentAction), (true, true, 'FAR', 'FLASH'));
       expect(sent.sensitivity, 5);
       expect(find.text(t('toast.saved')), findsOneWidget);
+      await unmount(tester);
+    });
+
+    testWidgets('the title says Active only while armed; the switch stays the saved preference', (tester) async {
+      final s = TestSession();
+      // Preference on, sentry not armed (door-lock wait, battery stop, outside the schedule).
+      stubAll(s, armed: false);
+      await pumpScreen(tester, s, const SurveillanceScreen(), size: const Size(1200, 3000));
+      expect(find.text(t('surveillance.inactive')), findsOneWidget);
+      expect(tester.widget<SwitchListTile>(find.byKey(const ValueKey('surv.active'))).value, isTrue);
+      await unmount(tester);
+
+      stubAll(s, armed: true);
+      await pumpScreen(tester, s, const SurveillanceScreen(), size: const Size(1200, 3000));
+      expect(find.text(t('surveillance.active')), findsOneWidget);
+      expect(tester.widget<SwitchListTile>(find.byKey(const ValueKey('surv.active'))).value, isTrue);
       await unmount(tester);
     });
 

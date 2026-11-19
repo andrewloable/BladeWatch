@@ -3092,4 +3092,73 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get settings_lock_save_failed =>
       'Impossible d\'enregistrer. Réessayez.';
+
+  @override
+  String get dashboard_trip_start => 'Démarrer le trajet';
+
+  @override
+  String get dashboard_trip_stop => 'Arrêter le trajet';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Trajet manuel en cours · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Trajet automatique en cours. Démarrer un trajet manuel le termine et en commence un nouveau.';
+
+  @override
+  String get dashboard_trip_error =>
+      'Impossible de joindre la voiture. Réessayez.';
+
+  @override
+  String get trip_reminder_title => 'Trajet toujours en cours d’enregistrement';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Vous avez éteint la voiture pendant l’enregistrement de votre trajet manuel ($elapsed jusqu’ici).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'La voiture est à l’arrêt depuis 30 minutes pendant l’enregistrement de votre trajet manuel ($elapsed jusqu’ici).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Continuer l’enregistrement';
+
+  @override
+  String get trip_reminder_stop => 'Arrêter le trajet';
+
+  @override
+  String get trips_manual_badge => 'Manuel';
+
+  @override
+  String get trips_detail_ev_title => 'Conduite électrique (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Conduite hybride (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'kWh / 100 km';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'kWh / 100 mi';
+
+  @override
+  String get trips_detail_l_per_100km => 'L / 100 km';
+
+  @override
+  String get trips_detail_l_per_100mi => 'L / 100 mi';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Jusqu’ici : électricité $electric · carburant $fuel · total $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Jusqu’ici : électricité $electric';
+  }
 }

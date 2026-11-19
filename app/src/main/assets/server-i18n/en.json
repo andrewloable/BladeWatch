@@ -125,7 +125,10 @@
     "trip_started": "Trip started",
     "trip_ended": "Trip ended",
     "trip_summary_km": "{0} km · {1} min",
-    "trip_summary_mi": "{0} mi · {1} min"
+    "trip_summary_mi": "{0} mi · {1} min",
+    "manual_trip_reminder_title": "Trip still recording",
+    "manual_trip_reminder_acc_off": "You turned the car off, but your manual trip is still recording. Open BladeWatch and tap Stop Trip if you are done.",
+    "manual_trip_reminder_parked": "The car has been parked for 30 minutes and your manual trip is still recording. Tap Stop Trip if you are done."
   },
   "vehicle_control": {
     "cloud_required": "Connect a BYD account in Settings to use this control",

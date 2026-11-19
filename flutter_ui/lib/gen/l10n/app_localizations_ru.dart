@@ -3086,4 +3086,73 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get settings_lock_save_failed =>
       'Не удалось сохранить. Попробуйте снова.';
+
+  @override
+  String get dashboard_trip_start => 'Начать поездку';
+
+  @override
+  String get dashboard_trip_stop => 'Остановить поездку';
+
+  @override
+  String dashboard_trip_manual_running(String elapsed, String distance) {
+    return 'Идёт запись ручной поездки · $elapsed · $distance';
+  }
+
+  @override
+  String get dashboard_trip_auto_running_hint =>
+      'Идёт автоматическая поездка. Начав ручную поездку, вы завершите её и начнёте новую.';
+
+  @override
+  String get dashboard_trip_error =>
+      'Не удалось связаться с автомобилем. Повторите попытку.';
+
+  @override
+  String get trip_reminder_title => 'Поездка всё ещё записывается';
+
+  @override
+  String trip_reminder_body_acc_off(String elapsed) {
+    return 'Вы выключили автомобиль во время записи ручной поездки (пока $elapsed).';
+  }
+
+  @override
+  String trip_reminder_body_parked(String elapsed) {
+    return 'Автомобиль стоит на парковке уже 30 минут во время записи ручной поездки (пока $elapsed).';
+  }
+
+  @override
+  String get trip_reminder_keep => 'Продолжить запись';
+
+  @override
+  String get trip_reminder_stop => 'Остановить поездку';
+
+  @override
+  String get trips_manual_badge => 'Ручная';
+
+  @override
+  String get trips_detail_ev_title => 'Электрический режим (EV)';
+
+  @override
+  String get trips_detail_hev_title => 'Гибридный режим (HEV)';
+
+  @override
+  String get trips_detail_kwh_per_100km => 'кВт·ч / 100 км';
+
+  @override
+  String get trips_detail_kwh_per_100mi => 'кВт·ч / 100 миль';
+
+  @override
+  String get trips_detail_l_per_100km => 'л / 100 км';
+
+  @override
+  String get trips_detail_l_per_100mi => 'л / 100 миль';
+
+  @override
+  String dashboard_trip_live_cost(String electric, String fuel, String total) {
+    return 'Пока: электричество $electric · топливо $fuel · всего $total';
+  }
+
+  @override
+  String dashboard_trip_live_cost_ev(String electric) {
+    return 'Пока: электричество $electric';
+  }
 }

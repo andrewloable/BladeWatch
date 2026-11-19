@@ -276,6 +276,38 @@ A `0` in either price means "not configured", not "free": the leg is still recor
 is simply not costed. `fuelTankCapacityL` has no default value because BYD local data
 does not expose a tank size and one must not be guessed.
 
+#### Manual trip state and the EV/HEV columns (BladeWatch-gklt, BladeWatch-reml)
+
+A manual trip is open for hours or days, but a trip is only written to the trips table when it
+ends, so the open one is kept in `/storage/emulated/0/BladeWatch/data/active_manual_trip.json`
+(next to the trip database, never under `/data/local/tmp`). `ManualTripStore` owns it: a small JSON
+file with `version: 1`, the trip's start readings (time, SoC, kWh, fuel and electricity counters,
+GPS, outside temperature, odometer), the recorder's running statistics (distance, maximum speed,
+speed sum and sample count), whether telemetry is paused, and an `extras` object holding the
+reminder state (`reminder`, with its acknowledged sequence) and the open EV/HEV tracker
+(`energySegments`). It is written atomically (a temp file, then a rename); a file that cannot be
+parsed is renamed to `.bad` and ignored. It is saved when a manual trip starts, on every ACC OFF
+and ON, on every gear change, every 60 s, when a reminder is acknowledged and at daemon
+shutdown, and it is deleted once the trip has been persisted. On the next daemon start it is read
+back, the telemetry file `<startTime>.jsonl.gz` keeps growing (the recorder appends), and the
+seven-day auto-stop is re-armed with the remaining time. The trip sync never indexes the open
+trip's telemetry file as a finished trip.
+
+The `trips` table gained `is_manual` (BOOLEAN), `ev_km`, `ev_kwh`, `hev_km`, `hev_litres` (DOUBLE
+PRECISION, default 0) and `energy_segments` (CLOB: the EV/HEV timeline, capped at 200 segments
+while the totals are never capped). EV segments carry kWh and no litres; HEV segments carry litres
+and no kWh. A trip recorded before the split has `energy_segments` NULL, and every figure reads
+as it did before. The orphan sweep (`deleteOrphanedTrips`) spares manual trips: one stopped
+within a second has a duration of 0 but is kept on purpose.
+
+The one-time history wipe records itself in a `schema_flags` table (`name`, `applied_at`) with
+the row `trips_wipe_energy_mode_v1`, inside the database, so a restored database brings its own
+flag. It runs right after the database opens, before anything reads trips: the telemetry files
+are deleted first, then, in one transaction, the rows of `trips`, `routes`, `weekly_rollups`,
+`monthly_rollups` and `consumption_buckets` and the flag. That order matters: the other way round
+a crash could leave orphan telemetry files that the trip sync would re-index as trips. It touches
+nothing else, and sparing only the open manual trip's telemetry file.
+
 #### Currency
 
 `currency` stores a currency **symbol** (`$`, `€`, `₱`), chosen from a list, never typed and never

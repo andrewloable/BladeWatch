@@ -125,7 +125,10 @@
     "trip_started": "주행 시작",
     "trip_ended": "주행 종료",
     "trip_summary_km": "{0} km · {1}분",
-    "trip_summary_mi": "{0} mi · {1}분"
+    "trip_summary_mi": "{0} mi · {1}분",
+    "manual_trip_reminder_title": "주행이 아직 기록 중입니다",
+    "manual_trip_reminder_acc_off": "차량 전원을 껐지만 수동 주행이 아직 기록 중입니다. 끝났다면 BladeWatch를 열고 주행 중지를 누르세요.",
+    "manual_trip_reminder_parked": "차량이 30분 동안 주차되어 있지만 수동 주행이 아직 기록 중입니다. 끝났다면 주행 중지를 누르세요."
   },
   "vehicle_control": {
     "cloud_required": "이 컨트롤을 사용하기 위해 설정에서 BYD 계정을 연결",

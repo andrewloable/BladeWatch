@@ -125,7 +125,10 @@
     "trip_started": "Viaje iniciado",
     "trip_ended": "Viaje finalizado",
     "trip_summary_km": "{0} km · {1} min",
-    "trip_summary_mi": "{0} mi · {1} min"
+    "trip_summary_mi": "{0} mi · {1} min",
+    "manual_trip_reminder_title": "El viaje sigue grabándose",
+    "manual_trip_reminder_acc_off": "Apagaste el coche, pero tu viaje manual sigue grabándose. Abre BladeWatch y toca Detener viaje si ya terminaste.",
+    "manual_trip_reminder_parked": "El coche lleva 30 minutos estacionado y tu viaje manual sigue grabándose. Toca Detener viaje si ya terminaste."
   },
   "vehicle_control": {
     "cloud_required": "Conectar una cuenta BYD en Configuración para usar este control",

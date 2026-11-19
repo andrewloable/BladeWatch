@@ -72,6 +72,22 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  // BladeWatch-gklt.7: a trip the driver started with the Start Trip button carries a Manual badge.
+  testWidgets('a manual trip row carries a Manual badge and an auto trip row does not', (tester) async {
+    stubAllLoads(trips: [
+      {...aTrip(id: 1), 'manual': true},
+      aTrip(id: 2),
+      {...aTrip(id: 3, score: 0), 'manual': true},
+    ]);
+    await pumpScreen(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('trips.row.1.manual')), findsOneWidget);
+    expect(find.byKey(const ValueKey('trips.row.3.manual')), findsOneWidget, reason: 'also without a score');
+    expect(find.byKey(const ValueKey('trips.row.2.manual')), findsNothing);
+    expect(find.text('Manual'), findsNWidgets(2));
+  });
+
   testWidgets('shows a loading indicator before the first load resolves', (tester) async {
     await pumpScreen(tester);
     // stubAllLoads not called: load() will error since nothing is stubbed;

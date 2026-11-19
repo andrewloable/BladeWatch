@@ -27,6 +27,11 @@ import net.bladewatch.app.monitor.VehicleDataMonitor
  *  - PARK_PENDING + 120s elapsed -> finalize trip, notify listener -> IDLE
  *
  * Called from `CameraDaemon.onGearChanged()` when gear transitions occur.
+ *
+ * **Manual trips (BladeWatch-gklt).** The driver can also start a trip with the Start Trip
+ * button ([startManualTrip]). A manual trip sits in ACTIVE and ignores everything above: Park,
+ * the debounce, ACC OFF and the minimum duration/distance. Only [stopManualTrip] ends it, plus a
+ * 7-day safety net ([MANUAL_MAX_DURATION_MS]).
  */
 class TripDetector {
 
@@ -53,6 +58,10 @@ class TripDetector {
 
     @Volatile
     private var parkDebounceTask: ScheduledFuture<*>? = null
+
+    /** The 7-day safety auto-stop of the open manual trip, if any. */
+    @Volatile
+    private var manualAutoStopTask: ScheduledFuture<*>? = null
 
     init {
         logger.info("TripDetector created")
@@ -138,6 +147,11 @@ class TripDetector {
 
     /** ACTIVE state: trip in progress, watching for Park gear. */
     private fun handleActiveGearChange(newGear: Int) {
+        if (activeTrip?.isManual == true) {
+            // A manual trip never ends on Park: only the Stop Trip button ends it.
+            logger.info("Manual trip: gear ${GearMonitor.gearToString(newGear)} ignored")
+            return
+        }
         if (newGear == GearMonitor.GEAR_P) {
             // Only start the debounce if the car is actually stopped.
             val speed = GpsMonitor.getInstance().speed
@@ -168,10 +182,119 @@ class TripDetector {
 
     // ==================== TRIP LIFECYCLE ====================
 
+    // ==================== MANUAL TRIPS ====================
+
+    /**
+     * Start a manual trip (the Start Trip button). Idempotent: with a manual trip already open
+     * it returns that trip and notifies nobody. With an AUTO trip in progress, that trip is
+     * finalized first through the normal path (so it may be discarded if short) and a fresh
+     * manual trip starts from now.
+     */
+    @Synchronized
+    fun startManualTrip(): TripRecord {
+        val current = activeTrip
+        if (current != null && current.isManual && state != State.IDLE) return current
+        if (state != State.IDLE) {
+            logger.info("Manual trip requested while an auto trip is active -> ending the auto trip")
+            cancelParkDebounceTimer()
+            finalizeActiveTrip()
+        }
+        startTrip(manual = true)
+        scheduleManualAutoStop(MANUAL_MAX_DURATION_MS)
+        return activeTrip!!
+    }
+
+    /**
+     * End the open manual trip. Returns false, changing nothing, when no manual trip is open: an
+     * auto trip in progress is left alone.
+     */
+    @Synchronized
+    fun stopManualTrip(): Boolean {
+        val trip = activeTrip
+        if (trip == null || !trip.isManual || state == State.IDLE) return false
+        logger.info("Manual trip stopped by the driver")
+        finalizeActiveTrip()
+        return true
+    }
+
+    /** Whether the open trip (if any) was started with the Start Trip button. */
+    fun isManualTripActive(): Boolean = state != State.IDLE && activeTrip?.isManual == true
+
+    /** Odometer reading at the start of the open trip (km), -1 if unavailable. */
+    fun getStartOdometerKm(): Double = startOdometerKm
+
+    /**
+     * Re-open a manual trip saved before a daemon restart (BladeWatch-gklt.2). Silent: no
+     * onTripStarted, because that trip was announced the first time and its recorder is restored
+     * by the caller. The 7-day safety net is re-armed with the REMAINING time; a trip already past
+     * it ends at once. Returns false (and does nothing) when a trip is already open.
+     */
+    @Synchronized
+    fun restoreManualTrip(trip: TripRecord, startOdometerKm: Double): Boolean {
+        if (state != State.IDLE) return false
+        trip.isManual = true
+        activeTrip = trip
+        this.startOdometerKm = startOdometerKm
+        parkStartTime = 0
+        state = State.ACTIVE
+        val remaining = MANUAL_MAX_DURATION_MS - (System.currentTimeMillis() - trip.startTime)
+        if (remaining <= 0) {
+            logger.info("Restored manual trip is past the 7-day limit -> ending it")
+            stopManualTrip()
+        } else {
+            logger.info("Manual trip restored (started ${trip.startTime}, ${remaining / 1000}s to auto-stop)")
+            scheduleManualAutoStop(remaining)
+        }
+        return true
+    }
+
+    /**
+     * ACC went OFF. An auto trip ends at once (the gear change to P may not fire reliably during
+     * power-down); a manual trip stays open, by design.
+     */
+    @Synchronized
+    fun onAccOff() {
+        if (state == State.IDLE) return
+        if (activeTrip?.isManual == true) {
+            logger.info("ACC OFF: manual trip stays open")
+            return
+        }
+        logger.info("ACC OFF: finalizing active trip")
+        finalizeActiveTrip()
+    }
+
+    /**
+     * (Re)arm the safety net: end the open manual trip after [delayMs]. Internal so the restore
+     * path can re-arm it with the REMAINING time after a daemon restart.
+     */
+    internal fun scheduleManualAutoStop(delayMs: Long) {
+        cancelManualAutoStop()
+        manualAutoStopTask = scheduler.schedule({
+            synchronized(this@TripDetector) {
+                if (isManualTripActive()) {
+                    logger.info("Manual trip auto-stop: open for more than 7 days")
+                    stopManualTrip()
+                }
+            }
+        }, delayMs, TimeUnit.MILLISECONDS)
+    }
+
+    /** Remaining time of the scheduled safety auto-stop, or null when none is pending. */
+    internal fun manualAutoStopDelayMs(): Long? =
+        manualAutoStopTask?.takeIf { !it.isDone }?.getDelay(TimeUnit.MILLISECONDS)
+
+    private fun cancelManualAutoStop() {
+        manualAutoStopTask?.let {
+            if (!it.isDone) it.cancel(false)
+            manualAutoStopTask = null
+        }
+    }
+
     /** Start a new trip. Creates a TripRecord and notifies the listener. */
-    private fun startTrip() {
+    private fun startTrip(manual: Boolean = false) {
         val now = System.currentTimeMillis()
         val trip = TripRecord()
+        trip.isManual = manual
         activeTrip = trip
         trip.startTime = now
 
@@ -277,6 +400,7 @@ class TripDetector {
         }
 
         cancelParkDebounceTimer()
+        cancelManualAutoStop()
 
         val now = System.currentTimeMillis()
         // Use the time gear first went to P as the real end time, not the current time, which
@@ -326,9 +450,9 @@ class TripDetector {
         computeEfficiency(trip)
         logFinalized(trip)
 
-        // Check minimum thresholds
+        // Check minimum thresholds. A manual trip was started on purpose: always keep it.
         val durationMs = trip.endTime - trip.startTime
-        if (durationMs < MIN_TRIP_DURATION_MS) {
+        if (!trip.isManual && durationMs < MIN_TRIP_DURATION_MS) {
             val reason =
                 "Duration ${durationMs / 1000}s < minimum ${MIN_TRIP_DURATION_MS / 1000}s"
             logger.info("Trip discarded: $reason")
@@ -336,7 +460,7 @@ class TripDetector {
             return
         }
 
-        if (trip.distanceKm < MIN_TRIP_DISTANCE_KM) {
+        if (!trip.isManual && trip.distanceKm < MIN_TRIP_DISTANCE_KM) {
             val reason = "Distance ${trip.distanceKm}km < minimum ${MIN_TRIP_DISTANCE_KM}km"
             logger.info("Trip discarded: $reason")
             discardTrip(reason)
@@ -502,10 +626,14 @@ class TripDetector {
 
     // ==================== SHUTDOWN ====================
 
-    /** Shut down the detector: finalize any active trip and stop the scheduler. */
+    /**
+     * Shut down the detector: finalize an active AUTO trip and stop the scheduler. An open
+     * manual trip is NOT finalized: it must survive a daemon restart (the caller saves it).
+     */
     fun shutdown() {
         logger.info("Shutting down TripDetector")
-        finalizeActiveTrip()
+        if (!isManualTripActive()) finalizeActiveTrip()
+        cancelManualAutoStop()
         scheduler.shutdownNow()
     }
 
@@ -515,6 +643,9 @@ class TripDetector {
         internal const val PARK_DEBOUNCE_MS = 120_000L     // 2 minutes
         internal const val MIN_TRIP_DURATION_MS = 60_000L  // 1 minute
         internal const val MIN_TRIP_DISTANCE_KM = 0.2      // 200 metres
+
+        /** A manual trip left open longer than this is ended automatically (owner decision). */
+        internal const val MANUAL_MAX_DURATION_MS = 7L * 24 * 60 * 60 * 1000
 
         /**
          * Normalise one HAL reading to the TripRecord convention: -1 means unavailable, and any

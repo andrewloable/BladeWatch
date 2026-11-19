@@ -43,6 +43,12 @@ const TripSummary$json = {
     {'1': 'fuel_cost', '3': 22, '4': 1, '5': 1, '10': 'fuelCost'},
     {'1': 'electric_cost', '3': 23, '4': 1, '5': 1, '10': 'electricCost'},
     {'1': 'has_fuel_data', '3': 24, '4': 1, '5': 8, '10': 'hasFuelData'},
+    {'1': 'manual', '3': 25, '4': 1, '5': 8, '10': 'manual'},
+    {'1': 'ev_km', '3': 26, '4': 1, '5': 1, '10': 'evKm'},
+    {'1': 'ev_kwh', '3': 27, '4': 1, '5': 1, '10': 'evKwh'},
+    {'1': 'hev_km', '3': 28, '4': 1, '5': 1, '10': 'hevKm'},
+    {'1': 'hev_litres', '3': 29, '4': 1, '5': 1, '10': 'hevLitres'},
+    {'1': 'has_energy_split', '3': 30, '4': 1, '5': 8, '10': 'hasEnergySplit'},
   ],
 };
 
@@ -61,7 +67,10 @@ final $typed_data.Uint8List tripSummaryDescriptor = $convert.base64Decode(
     'YXJ0TG9uEhcKB2VuZF9sYXQYEiABKAFSBmVuZExhdBIXCgdlbmRfbG9uGBMgASgBUgZlbmRMb2'
     '4SHAoKZXh0X3RlbXBfYxgUIAEoBVIIZXh0VGVtcEMSHwoLbGl0cmVzX3VzZWQYFSABKAFSCmxp'
     'dHJlc1VzZWQSGwoJZnVlbF9jb3N0GBYgASgBUghmdWVsQ29zdBIjCg1lbGVjdHJpY19jb3N0GB'
-    'cgASgBUgxlbGVjdHJpY0Nvc3QSIgoNaGFzX2Z1ZWxfZGF0YRgYIAEoCFILaGFzRnVlbERhdGE=');
+    'cgASgBUgxlbGVjdHJpY0Nvc3QSIgoNaGFzX2Z1ZWxfZGF0YRgYIAEoCFILaGFzRnVlbERhdGES'
+    'FgoGbWFudWFsGBkgASgIUgZtYW51YWwSEwoFZXZfa20YGiABKAFSBGV2S20SFQoGZXZfa3doGB'
+    'sgASgBUgVldkt3aBIVCgZoZXZfa20YHCABKAFSBWhldkttEh0KCmhldl9saXRyZXMYHSABKAFS'
+    'CWhldkxpdHJlcxIoChBoYXNfZW5lcmd5X3NwbGl0GB4gASgIUg5oYXNFbmVyZ3lTcGxpdA==');
 
 @$core.Deprecated('Use tripDetailDescriptor instead')
 const TripDetail$json = {
@@ -774,6 +783,174 @@ final $typed_data.Uint8List getGpsTraceResponseDescriptor = $convert.base64Decod
     'IgAygLMhcuYmxhZGV3YXRjaC52MS5HcHNQb2ludFIDZ3BzEhQKBWVycm9yGAMgASgJUgVlcnJv'
     'cg==');
 
+@$core.Deprecated('Use activeTripStatusDescriptor instead')
+const ActiveTripStatus$json = {
+  '1': 'ActiveTripStatus',
+  '2': [
+    {'1': 'active', '3': 1, '4': 1, '5': 8, '10': 'active'},
+    {'1': 'manual', '3': 2, '4': 1, '5': 8, '10': 'manual'},
+    {'1': 'start_time_ms', '3': 3, '4': 1, '5': 3, '10': 'startTimeMs'},
+    {'1': 'distance_km', '3': 4, '4': 1, '5': 1, '10': 'distanceKm'},
+    {'1': 'auto_stop_at_ms', '3': 5, '4': 1, '5': 3, '10': 'autoStopAtMs'},
+    {'1': 'reminder_seq', '3': 6, '4': 1, '5': 3, '10': 'reminderSeq'},
+    {'1': 'reminder_reason', '3': 7, '4': 1, '5': 9, '10': 'reminderReason'},
+    {
+      '1': 'reminder_acked_seq',
+      '3': 8,
+      '4': 1,
+      '5': 3,
+      '10': 'reminderAckedSeq'
+    },
+    {'1': 'telemetry_paused', '3': 9, '4': 1, '5': 8, '10': 'telemetryPaused'},
+    {
+      '1': 'live_cost_available',
+      '3': 10,
+      '4': 1,
+      '5': 8,
+      '10': 'liveCostAvailable'
+    },
+    {
+      '1': 'live_electric_cost',
+      '3': 11,
+      '4': 1,
+      '5': 1,
+      '10': 'liveElectricCost'
+    },
+    {'1': 'live_fuel_cost', '3': 12, '4': 1, '5': 1, '10': 'liveFuelCost'},
+    {'1': 'live_currency', '3': 13, '4': 1, '5': 9, '10': 'liveCurrency'},
+    {'1': 'live_has_fuel', '3': 14, '4': 1, '5': 8, '10': 'liveHasFuel'},
+  ],
+};
+
+/// Descriptor for `ActiveTripStatus`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List activeTripStatusDescriptor = $convert.base64Decode(
+    'ChBBY3RpdmVUcmlwU3RhdHVzEhYKBmFjdGl2ZRgBIAEoCFIGYWN0aXZlEhYKBm1hbnVhbBgCIA'
+    'EoCFIGbWFudWFsEiIKDXN0YXJ0X3RpbWVfbXMYAyABKANSC3N0YXJ0VGltZU1zEh8KC2Rpc3Rh'
+    'bmNlX2ttGAQgASgBUgpkaXN0YW5jZUttEiUKD2F1dG9fc3RvcF9hdF9tcxgFIAEoA1IMYXV0b1'
+    'N0b3BBdE1zEiEKDHJlbWluZGVyX3NlcRgGIAEoA1ILcmVtaW5kZXJTZXESJwoPcmVtaW5kZXJf'
+    'cmVhc29uGAcgASgJUg5yZW1pbmRlclJlYXNvbhIsChJyZW1pbmRlcl9hY2tlZF9zZXEYCCABKA'
+    'NSEHJlbWluZGVyQWNrZWRTZXESKQoQdGVsZW1ldHJ5X3BhdXNlZBgJIAEoCFIPdGVsZW1ldHJ5'
+    'UGF1c2VkEi4KE2xpdmVfY29zdF9hdmFpbGFibGUYCiABKAhSEWxpdmVDb3N0QXZhaWxhYmxlEi'
+    'wKEmxpdmVfZWxlY3RyaWNfY29zdBgLIAEoAVIQbGl2ZUVsZWN0cmljQ29zdBIkCg5saXZlX2Z1'
+    'ZWxfY29zdBgMIAEoAVIMbGl2ZUZ1ZWxDb3N0EiMKDWxpdmVfY3VycmVuY3kYDSABKAlSDGxpdm'
+    'VDdXJyZW5jeRIiCg1saXZlX2hhc19mdWVsGA4gASgIUgtsaXZlSGFzRnVlbA==');
+
+@$core.Deprecated('Use startManualTripRequestDescriptor instead')
+const StartManualTripRequest$json = {
+  '1': 'StartManualTripRequest',
+};
+
+/// Descriptor for `StartManualTripRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List startManualTripRequestDescriptor =
+    $convert.base64Decode('ChZTdGFydE1hbnVhbFRyaXBSZXF1ZXN0');
+
+@$core.Deprecated('Use startManualTripResponseDescriptor instead')
+const StartManualTripResponse$json = {
+  '1': 'StartManualTripResponse',
+  '2': [
+    {
+      '1': 'status',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.ActiveTripStatus',
+      '10': 'status'
+    },
+  ],
+};
+
+/// Descriptor for `StartManualTripResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List startManualTripResponseDescriptor =
+    $convert.base64Decode(
+        'ChdTdGFydE1hbnVhbFRyaXBSZXNwb25zZRI3CgZzdGF0dXMYASABKAsyHy5ibGFkZXdhdGNoLn'
+        'YxLkFjdGl2ZVRyaXBTdGF0dXNSBnN0YXR1cw==');
+
+@$core.Deprecated('Use stopManualTripRequestDescriptor instead')
+const StopManualTripRequest$json = {
+  '1': 'StopManualTripRequest',
+};
+
+/// Descriptor for `StopManualTripRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List stopManualTripRequestDescriptor =
+    $convert.base64Decode('ChVTdG9wTWFudWFsVHJpcFJlcXVlc3Q=');
+
+@$core.Deprecated('Use stopManualTripResponseDescriptor instead')
+const StopManualTripResponse$json = {
+  '1': 'StopManualTripResponse',
+  '2': [
+    {'1': 'stopped', '3': 1, '4': 1, '5': 8, '10': 'stopped'},
+  ],
+};
+
+/// Descriptor for `StopManualTripResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List stopManualTripResponseDescriptor =
+    $convert.base64Decode(
+        'ChZTdG9wTWFudWFsVHJpcFJlc3BvbnNlEhgKB3N0b3BwZWQYASABKAhSB3N0b3BwZWQ=');
+
+@$core.Deprecated('Use getActiveTripRequestDescriptor instead')
+const GetActiveTripRequest$json = {
+  '1': 'GetActiveTripRequest',
+};
+
+/// Descriptor for `GetActiveTripRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getActiveTripRequestDescriptor =
+    $convert.base64Decode('ChRHZXRBY3RpdmVUcmlwUmVxdWVzdA==');
+
+@$core.Deprecated('Use getActiveTripResponseDescriptor instead')
+const GetActiveTripResponse$json = {
+  '1': 'GetActiveTripResponse',
+  '2': [
+    {
+      '1': 'status',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.ActiveTripStatus',
+      '10': 'status'
+    },
+  ],
+};
+
+/// Descriptor for `GetActiveTripResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getActiveTripResponseDescriptor = $convert.base64Decode(
+    'ChVHZXRBY3RpdmVUcmlwUmVzcG9uc2USNwoGc3RhdHVzGAEgASgLMh8uYmxhZGV3YXRjaC52MS'
+    '5BY3RpdmVUcmlwU3RhdHVzUgZzdGF0dXM=');
+
+@$core.Deprecated('Use acknowledgeTripReminderRequestDescriptor instead')
+const AcknowledgeTripReminderRequest$json = {
+  '1': 'AcknowledgeTripReminderRequest',
+  '2': [
+    {'1': 'reminder_seq', '3': 1, '4': 1, '5': 3, '10': 'reminderSeq'},
+  ],
+};
+
+/// Descriptor for `AcknowledgeTripReminderRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List acknowledgeTripReminderRequestDescriptor =
+    $convert.base64Decode(
+        'Ch5BY2tub3dsZWRnZVRyaXBSZW1pbmRlclJlcXVlc3QSIQoMcmVtaW5kZXJfc2VxGAEgASgDUg'
+        'tyZW1pbmRlclNlcQ==');
+
+@$core.Deprecated('Use acknowledgeTripReminderResponseDescriptor instead')
+const AcknowledgeTripReminderResponse$json = {
+  '1': 'AcknowledgeTripReminderResponse',
+  '2': [
+    {
+      '1': 'status',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.ActiveTripStatus',
+      '10': 'status'
+    },
+  ],
+};
+
+/// Descriptor for `AcknowledgeTripReminderResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List acknowledgeTripReminderResponseDescriptor =
+    $convert.base64Decode(
+        'Ch9BY2tub3dsZWRnZVRyaXBSZW1pbmRlclJlc3BvbnNlEjcKBnN0YXR1cxgBIAEoCzIfLmJsYW'
+        'Rld2F0Y2gudjEuQWN0aXZlVHJpcFN0YXR1c1IGc3RhdHVz');
+
 const $core.Map<$core.String, $core.dynamic> TripsServiceBase$json = {
   '1': 'TripsService',
   '2': [
@@ -847,6 +1024,26 @@ const $core.Map<$core.String, $core.dynamic> TripsServiceBase$json = {
       '2': '.bladewatch.v1.GetGpsTraceRequest',
       '3': '.bladewatch.v1.GetGpsTraceResponse'
     },
+    {
+      '1': 'StartManualTrip',
+      '2': '.bladewatch.v1.StartManualTripRequest',
+      '3': '.bladewatch.v1.StartManualTripResponse'
+    },
+    {
+      '1': 'StopManualTrip',
+      '2': '.bladewatch.v1.StopManualTripRequest',
+      '3': '.bladewatch.v1.StopManualTripResponse'
+    },
+    {
+      '1': 'GetActiveTrip',
+      '2': '.bladewatch.v1.GetActiveTripRequest',
+      '3': '.bladewatch.v1.GetActiveTripResponse'
+    },
+    {
+      '1': 'AcknowledgeTripReminder',
+      '2': '.bladewatch.v1.AcknowledgeTripReminderRequest',
+      '3': '.bladewatch.v1.AcknowledgeTripReminderResponse'
+    },
   ],
 };
 
@@ -890,6 +1087,17 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.GetGpsTraceRequest': GetGpsTraceRequest$json,
   '.bladewatch.v1.GetGpsTraceResponse': GetGpsTraceResponse$json,
   '.bladewatch.v1.GpsPoint': GpsPoint$json,
+  '.bladewatch.v1.StartManualTripRequest': StartManualTripRequest$json,
+  '.bladewatch.v1.StartManualTripResponse': StartManualTripResponse$json,
+  '.bladewatch.v1.ActiveTripStatus': ActiveTripStatus$json,
+  '.bladewatch.v1.StopManualTripRequest': StopManualTripRequest$json,
+  '.bladewatch.v1.StopManualTripResponse': StopManualTripResponse$json,
+  '.bladewatch.v1.GetActiveTripRequest': GetActiveTripRequest$json,
+  '.bladewatch.v1.GetActiveTripResponse': GetActiveTripResponse$json,
+  '.bladewatch.v1.AcknowledgeTripReminderRequest':
+      AcknowledgeTripReminderRequest$json,
+  '.bladewatch.v1.AcknowledgeTripReminderResponse':
+      AcknowledgeTripReminderResponse$json,
 };
 
 /// Descriptor for `TripsService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -914,4 +1122,12 @@ final $typed_data.Uint8List tripsServiceDescriptor = $convert.base64Decode(
     'JsYWRld2F0Y2gudjEuR2V0VGVsZW1ldHJ5UmVzcG9uc2USYAoPR2V0U2ltaWxhclRyaXBzEiUu'
     'YmxhZGV3YXRjaC52MS5HZXRTaW1pbGFyVHJpcHNSZXF1ZXN0GiYuYmxhZGV3YXRjaC52MS5HZX'
     'RTaW1pbGFyVHJpcHNSZXNwb25zZRJUCgtHZXRHcHNUcmFjZRIhLmJsYWRld2F0Y2gudjEuR2V0'
-    'R3BzVHJhY2VSZXF1ZXN0GiIuYmxhZGV3YXRjaC52MS5HZXRHcHNUcmFjZVJlc3BvbnNl');
+    'R3BzVHJhY2VSZXF1ZXN0GiIuYmxhZGV3YXRjaC52MS5HZXRHcHNUcmFjZVJlc3BvbnNlEmAKD1'
+    'N0YXJ0TWFudWFsVHJpcBIlLmJsYWRld2F0Y2gudjEuU3RhcnRNYW51YWxUcmlwUmVxdWVzdBom'
+    'LmJsYWRld2F0Y2gudjEuU3RhcnRNYW51YWxUcmlwUmVzcG9uc2USXQoOU3RvcE1hbnVhbFRyaX'
+    'ASJC5ibGFkZXdhdGNoLnYxLlN0b3BNYW51YWxUcmlwUmVxdWVzdBolLmJsYWRld2F0Y2gudjEu'
+    'U3RvcE1hbnVhbFRyaXBSZXNwb25zZRJaCg1HZXRBY3RpdmVUcmlwEiMuYmxhZGV3YXRjaC52MS'
+    '5HZXRBY3RpdmVUcmlwUmVxdWVzdBokLmJsYWRld2F0Y2gudjEuR2V0QWN0aXZlVHJpcFJlc3Bv'
+    'bnNlEngKF0Fja25vd2xlZGdlVHJpcFJlbWluZGVyEi0uYmxhZGV3YXRjaC52MS5BY2tub3dsZW'
+    'RnZVRyaXBSZW1pbmRlclJlcXVlc3QaLi5ibGFkZXdhdGNoLnYxLkFja25vd2xlZGdlVHJpcFJl'
+    'bWluZGVyUmVzcG9uc2U=');

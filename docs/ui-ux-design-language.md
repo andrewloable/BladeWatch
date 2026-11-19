@@ -623,6 +623,21 @@ reached by scrolling (measured on the car).
   `dashboard_hud_overview`, uppercased) at 20 dp bold, tracking 0.05em, cyan with a glow in dark; on the right
   `SECURE_LINK: ACTIVE` only while the Remote access tile is Online (`pear.enabled && running && reachable`),
   otherwise `SECURE_LINK: OFFLINE`. The reference's label is unconditional; a link that is not up is never claimed.
+- *Manual trip control* (BladeWatch-gklt.5, v1.4.1.5): the first block under the title bar, ahead of the
+  summary card. One full-width `FilledButton.icon`, at least 72 dp tall (a head unit used at arm's
+  length), 22 dp bold, tracking 0.1em, upper-cased. `START TRIP` is filled with the accent and a
+  play icon; while a manual trip records it is `STOP TRIP`, filled with `hud.warning` and a stop icon,
+  with a 14 dp line under it, `Manual trip recording · H:MM:SS · 3.5 km` (the clock ticks every second;
+  the distance is in km like the rest of the Dashboard). While an automatic trip is open the button
+  stays `START TRIP` and the line says that starting a manual trip ends the automatic one. It is
+  disabled while a start or stop is in flight, and a failure shows a 14 dp magenta line under it.
+  Label text is `pageBackground` on the fill so it reads on both the dark and the light HUD. Under the
+  detail line, while an open trip has a configured rate, a 14 dp bold accent line shows the cost so far
+  (`So far: electricity $0.42 · fuel $1.10 · total $1.52`, or electricity alone with no fuel price).
+- *Trip reminder dialog* (BladeWatch-gklt.6): an `AlertDialog` on the HUD theme, mounted above the shell
+  so it covers any page, one at a time, not dismissible by tapping outside. Title `Trip still
+  recording`; the body names the reason (car turned off, or parked 30 minutes) and how long the trip
+  has run; **Keep recording** (text button) and **Stop trip** (filled).
 - *Summary card* (`HudPanel`, 12 dp radius, 24 padding, gradient left to right in dark, flat white in light): header
   `THIS WEEK TELEMETRY` (`dashboard_trips_this_week` + `dashboard_hud_telemetry`) with a magenta microchip icon, and
   the View all trips button (a 26 dp box; the 48 dp touch target is absorbed by trimming the card's top padding by 11

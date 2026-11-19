@@ -28,6 +28,33 @@ class TripEventNotifier private constructor() : TripDetector.TripListener {
         publish("trips.started", Messages.get("notifications.trip_started"), "", data)
     }
 
+    /**
+     * Remind the driver that a manual trip is still recording (BladeWatch-gklt.4). Not a
+     * [TripDetector.TripListener] callback: the [net.bladewatch.app.trips.ManualTripReminder]
+     * rules decide when, this only publishes.
+     */
+    fun onManualTripReminder(reason: String, startTime: Long) {
+        val data = JSONObject()
+        try {
+            data.put("reason", reason)
+            data.put("startTime", startTime)
+        } catch (ignored: Exception) {
+            logger.warn("Failed to build manual trip reminder data: " + ignored.message)
+        }
+        val bodyKey = if (reason == net.bladewatch.app.trips.ManualTripReminder.REASON_PARKED) {
+            "notifications.manual_trip_reminder_parked"
+        } else {
+            "notifications.manual_trip_reminder_acc_off"
+        }
+        publish(
+            "trips.manual_reminder",
+            Messages.get("notifications.manual_trip_reminder_title"),
+            Messages.get(bodyKey),
+            data,
+            NotificationEvent.Severity.WARN,
+        )
+    }
+
     override fun onTripEnded(trip: TripRecord) {
         val data = JSONObject()
         try {
@@ -93,12 +120,16 @@ class TripEventNotifier private constructor() : TripDetector.TripListener {
             )
         }
 
-        private fun publish(category: String, title: String, body: String, data: JSONObject) {
+        private fun publish(
+            category: String,
+            title: String,
+            body: String,
+            data: JSONObject,
+            severity: NotificationEvent.Severity = NotificationEvent.Severity.INFO,
+        ) {
             try {
                 NotificationBus.get().publish(
-                    NotificationEvent(
-                        category, NotificationEvent.Severity.INFO, title, body, null, "/trips", data
-                    )
+                    NotificationEvent(category, severity, title, body, null, "/trips", data)
                 )
             } catch (t: Throwable) {
                 logger.warn("Failed to publish trip notification: " + t.message)

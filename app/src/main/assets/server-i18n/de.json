@@ -125,7 +125,10 @@
     "trip_started": "Fahrt gestartet",
     "trip_ended": "Fahrt beendet",
     "trip_summary_km": "{0} km · {1} Min.",
-    "trip_summary_mi": "{0} mi · {1} Min."
+    "trip_summary_mi": "{0} mi · {1} Min.",
+    "manual_trip_reminder_title": "Fahrt wird noch aufgezeichnet",
+    "manual_trip_reminder_acc_off": "Sie haben das Auto ausgeschaltet, aber Ihre manuelle Fahrt wird noch aufgezeichnet. Öffnen Sie BladeWatch und tippen Sie auf „Fahrt beenden“, wenn Sie fertig sind.",
+    "manual_trip_reminder_parked": "Das Auto steht seit 30 Minuten, und Ihre manuelle Fahrt wird noch aufgezeichnet. Tippen Sie auf „Fahrt beenden“, wenn Sie fertig sind."
   },
   "vehicle_control": {
     "cloud_required": "Verbinden Sie ein BYD-Konto in Einstellungen, um diese Steuerung zu verwenden",
