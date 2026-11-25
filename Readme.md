@@ -8,6 +8,8 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
+**Read the full guide on loable.tech:** [BladeWatch — free BYD dashcam & sentry mode app](https://loable.tech/bladewatch-byd-dashcam-sentry/), a step-by-step install walkthrough with screenshots of the car and companion apps.
+
 **Contents:** [What's new](#whats-new-in-v1416) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
